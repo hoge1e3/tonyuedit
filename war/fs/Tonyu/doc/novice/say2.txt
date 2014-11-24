@@ -1,0 +1,47 @@
+* メッセージを表示しましょう．
+
+ゲームスタートしたときに，
+猫に[[@figref itadaki.png]]のようなメッセージを表示させてみましょう．
+
+[[メッセージの表示>itadaki.png]]
+
+
+それにはまず，猫に名前をつける必要があります．
+なんでもかまいませんが，白いので[[@cfrag siro]] と名前をつけましょう．
+
+<<code Game
+siro=new Cat;
+apple1=new Apple;
+apple1.x=200;
+apple1.y=150;
+apple2=new Apple;
+apple2.x=300;
+apple2.y=100;
+>>
+
+そして，[[@cfrag siro]]にメッセージを表示させます．
+メッセージを表示するには，[[@cfrag say]]という命令を使います．
+
+<<code Game itadaki
+siro=new Cat;
+siro.say("いただきまーす");
+apple1=new Apple;
+apple1.x=200;
+apple1.y=150;
+apple2=new Apple;
+apple2.x=300;
+apple2.y=100;
+>>
+
+
+命令を実行するとき，実行する相手のキャラクタを指定するときは次の形式を使います．
+
+<<code
+キャラクタ名 . 命令名 ( 引数  )
+>>
+
+[[@plistref itadaki]] では，キャラクタ名は [[@cfrag siro]]，
+ 命令名は[[@cfrag say]] です．つまり[[@cfrag siro]] に対して，
+[[@cfrag say]]という命令を行わせています．
+
+そして，引数の部分に，表示させるメッセージである[[@cfrag "いただきまーす"]] という文字列（文字が並んだもの）を指定しています．文字列は [[@cfrag "]]で囲む点に注意してください．

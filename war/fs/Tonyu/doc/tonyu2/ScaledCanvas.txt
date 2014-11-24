@@ -1,0 +1,12 @@
+[[api]]
+
+*ScaledCanvasクラス
+
+ゲーム画面をあらわすオブジェクトです．[[Boot]]クラスで[[@cfrag $Screen]] というオブジェクトで初期化されます．
+
+**メソッド
+
+-[[resize]]
+-[[setBGColor]]
+
+ 

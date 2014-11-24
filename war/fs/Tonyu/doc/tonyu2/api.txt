@@ -1,0 +1,31 @@
+[[index]]
+
+*標準クラス
+
+Tonyu2で最初から使えるクラス群です．[[ファイルシステム>fs]]上の/Tonyu/Kernel/ で定義されています．
+
+-[[Actor]]
+-[[BaseActor]]
+-[[Boot]]
+-[[Sprites]]
+-[[ScaledCanvas]]
+-[[NoviceActor]]
+-[[MathMod]]
+-[[Map]]
+-[[Panel]]
+-[[Pad]]
+
+*グローバル変数
+
+-[[$Screen>ScaledCanvas]]
+-[[$mouseX, $mouseY]]
+-[[$touches]]
+-[[$screenWidth,$screenHeight]]
+
+*[[チュートリアル]]
+
+*[[用途別リファレンス]]
+
+
+
+
