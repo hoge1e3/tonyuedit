@@ -41,6 +41,7 @@ public class Shell implements ServletCartridge {
             Function f=(Function)ScriptableObject.getProperty(getJSObj() ,"cmdLine");
             //Object res=jsRun.call(f, new Object[]{ args } );
             Object res=jsRun.call(f, new Object[]{ argss} );
+            resp.setContentType("text/plain; charset=utf8");
             resp.getWriter().print(res);
             return true;
         } else {
