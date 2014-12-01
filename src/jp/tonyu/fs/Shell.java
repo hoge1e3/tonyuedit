@@ -36,24 +36,33 @@ public class Shell implements ServletCartridge {
             throws IOException {
         String u=req.getPathInfo();
         if (u.startsWith("/rsh")) {
-            String argss=req.getParameter("args");
-            //Object args=jsRun.getJSONWrapper().parse(argss);// JSON.decode(argss);
-            Function f=(Function)ScriptableObject.getProperty(getJSObj() ,"cmdLine");
-            //Object res=jsRun.call(f, new Object[]{ args } );
-            Object res=jsRun.call(f, new Object[]{ argss} );
-            resp.setContentType("text/plain; charset=utf8");
-            resp.getWriter().print(res);
-            return true;
+            return rsh(req, resp);
         } else {
             return false;
         }
+    }
+    public boolean rsh(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        String argss=req.getParameter("args");
+        if (argss==null) {
+            throw new RuntimeException("No args provided");
+        }
+        Function f=(Function)ScriptableObject.getProperty(getJSObj() ,"cmdLine");
+        Object res=jsRun.call(f, new Object[]{ argss} );
+        resp.setContentType("text/plain; charset=utf8");
+        resp.getWriter().print(res);
+        return true;
     }
 
     @Override
     public boolean post(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        // TODO 自動生成されたメソッド・スタブ
-        return false;
+        String u=req.getPathInfo();
+        if (u.startsWith("/rsh")) {
+            return rsh(req, resp);
+        } else {
+            return false;
+        }
     }
 
 }

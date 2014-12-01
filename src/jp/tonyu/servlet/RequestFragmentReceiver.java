@@ -68,17 +68,17 @@ public class RequestFragmentReceiver implements ServletCartridge {
         if (u.startsWith(RUN_FRAGMENTS)) {
             //String sesid = req.getSession().getId();
             //System.out.println("sesid="+sesid);
-            String redirectTo=req.getParameter("redirectTo");
+            //String redirectTo=req.getParameter("redirectTo");
             String id=req.getParameter("id");
-            String user=req.getParameter("user");
-            String chk=req.getParameter(PARAM_CHK);
+            //String user=req.getParameter("user");
+            //String chk=req.getParameter(PARAM_CHK);
 
-            System.out.println("runFrag Rediect to "+redirectTo);
+            //System.out.println("runFrag Rediect to "+redirectTo);
             /*if (redirectTo!=null) {
 
                 return runFragmentsRemote(req, resp, id);
             } else {*/
-                return runFragmentsLocal(req, resp, id, user,chk);
+                return runFragmentsLocal(req, resp, id/*, user,chk*/);
             //}
         }
         return c.post(req, resp);
@@ -133,7 +133,7 @@ public class RequestFragmentReceiver implements ServletCartridge {
         return true;
     }*/
     public boolean runFragmentsLocal(HttpServletRequest req,
-            HttpServletResponse resp, String id, String user, String chk)
+            HttpServletResponse resp, String id/*, String user, String chk*/)
             throws IOException {
 
 
@@ -161,8 +161,8 @@ public class RequestFragmentReceiver implements ServletCartridge {
             for (Entity e: it) {
                 dss.delete(e.getKey());
             }
-            System.out.println("RFRecv user="+user);
-            /*if (user!=null) {
+            /*System.out.println("RFRecv user="+user);
+            if (user!=null) {
                 String calcChk=UploadClient.sum(id+user);
                 System.out.println("calcChk="+calcChk+"  chk="+chk);
                 if (calcChk.equals(chk))  {

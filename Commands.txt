@@ -1,0 +1,40 @@
+jp.tonyu.auth.LoginCartridge
+GET
+/edit/login
+/edit/logout
+/edit/verify_oauthed_user
+/edit/currentUser
+/edit/adduser
+POST
+/edit/login
+/edit/logout
+/edit/verify_oauthed_user
+/edit/passwd
+/edit/oauthKey
+
+jp.tonyu.blob.BlobCartridge
+
+jp.tonyu.edit.DocumentCartridge
+
+jp.tonyu.edit.JSRun
+
+jp.tonyu.edit.Uploadclient
+
+jp.tonyu.fs.GLSFileSync
+GET /edit/getDirInfo
+GET/POST /edit/File2LSSync
+GET/POST /edit/LS2FileSync
+ base:String(default: "/")
+ data:{path:(String|{name:String,text:String,lastUpdate:long,trashed:boolean})}
+GET /edit/LS2FileSyncForm
+
+jp.tonyu.servlet.RequestFragmentReceiver
+POST /edit/sendFragment/
+ id:String
+ seq:int
+ len:int
+ content:String
+  * Concatenated content: JSON of params+ pathInfo:
+POST /edit/runFragments/
+ id:String
+

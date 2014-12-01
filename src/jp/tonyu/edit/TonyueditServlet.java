@@ -46,7 +46,7 @@ public class TonyueditServlet extends HttpServlet {
 		lc.insert(tc);
 		GLSFileSync syn=new GLSFileSync(r);
 		Shell sh=new Shell(r);
-		MultiServletCartridge msc = new MultiServletCartridge(r,syn,lc,sh,
+		MultiServletCartridge msc = new MultiServletCartridge(r,syn,lc,sh,new DocumentCartridge(r.getFs()),
 		        new UploadClient(a,sgn), new BlobCartridge(a, dss, sgn, false));
         return new RequestFragmentReceiver(a,dss,msc);
 	}

@@ -70,7 +70,7 @@ public class GLSFileSync implements ServletCartridge {
     		));
         	return true;
         }
-        if (u.startsWith("/rmall")) {
+        /*if (u.startsWith("/rmall")) {
         	String k=req.getParameter("key");
         	if (LSEmulator.removeAll(k)) {
         		resp.getWriter().println("rmall done");
@@ -78,7 +78,7 @@ public class GLSFileSync implements ServletCartridge {
         		resp.getWriter().println(LSEmulator.key);
         	}
         	return true;
-        }
+        }*/
 		return false;
 	}
 
