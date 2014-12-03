@@ -27,6 +27,8 @@ import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.util.Streams;
 import net.arnx.jsonic.JSON;
 
+import com.google.appengine.api.blobstore.BlobInfo;
+import com.google.appengine.api.blobstore.BlobInfoFactory;
 import com.google.appengine.api.blobstore.BlobKey;
 import com.google.appengine.api.blobstore.BlobstoreInputStream;
 import com.google.appengine.api.blobstore.BlobstoreService;
@@ -41,9 +43,11 @@ public class BlobCartridge implements ServletCartridge {
     Auth auth;
     boolean readFree;
     RequestSigner sgn;
+    BlobInfoFactory bif;
     public BlobCartridge(Auth a,DatastoreService dss, RequestSigner sgn, boolean readFree) {
         bst=new BlobStore(bs, dss);
         this.auth=a;
+        bif=new BlobInfoFactory(dss);
         this.readFree=readFree;
         this.sgn=sgn;
     }
@@ -72,6 +76,58 @@ public class BlobCartridge implements ServletCartridge {
             return uploadBlobToExe(req,resp);
         }
         return false;
+    }
+    @Override
+    public boolean post(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        String u=req.getPathInfo();
+        if (u.startsWith("/blobUploadDone")) {
+            return blobUploadDone(req, resp);
+        }
+        return false;
+    }
+    public boolean blobUploadDone(HttpServletRequest req,
+            HttpServletResponse resp) throws IOException {
+        String user=req.getParameter(BlobStore.KEY_USER);
+        String project=req.getParameter(BlobStore.KEY_PRJ);
+        String fileName=req.getParameter(BlobStore.KEY_FN);
+        String chk=req.getParameter(UploadClient.PARAM_CHK);
+
+        if (user==null || project==null || fileName==null) {
+            resp.setStatus(500);
+            resp.getWriter().print("user ("+user+") project ("+project+") fileName ("+fileName+") is not specified");
+            return true;
+        }
+
+        Map<String, List<BlobKey>> keys = bs.getUploads(req);
+        List<String> keyStrList=new Vector<String>();
+        BlobKey found=null;
+        for (String name:keys.keySet()) {
+            List<BlobKey> bks = keys.get(name);
+            System.out.println(name+": ");
+            for (BlobKey bk:bks) {
+                found=bk;
+                System.out.println(bk.getKeyString());
+                keyStrList.add(bk.getKeyString());
+            }
+        }
+        if (chk!=null) {
+            BlobInfo binfo = bif.loadBlobInfo(found);
+            String hash = binfo.getMd5Hash();
+            System.out.println("Chk="+chk+"  hash="+hash+"  sum(user+hash)="+ sgn.sum(user+hash));
+            if (chk.equals( sgn.sum(user+hash) ) ){
+                auth.su(user);
+            }
+        }
+        if (!auth.currentUserId().equals(user)) {
+            resp.setStatus(500);
+            resp.getWriter().print("upload permission denied");
+            return true;
+        }
+        bst.putKey(user, project, fileName, found);
+        //System.out.println(req.getParameter("test"));
+        resp.getWriter().print("Added");
+        return true;
     }
     public boolean serveBlob(HttpServletResponse resp, String path)
             throws IOException {
@@ -116,11 +172,6 @@ public class BlobCartridge implements ServletCartridge {
             resp.getWriter().print("delete permission denied");
             return true;
         }
-        //BlobKey blobKey = bst.getKey(user, project, fileName);//  new BlobKey(bk);
-        /*
-        String bk=req.getParameter("key");
-        BlobKey blobKey = new BlobKey(bk);
-        */
         bst.delete(user, project, fileName);
         resp.getWriter().print("Deleted");
         return true;
@@ -206,11 +257,13 @@ public class BlobCartridge implements ServletCartridge {
         writer.append(fileName).append(CRLF).flush();
 
         // Send normal chk.
+        BlobInfo binfo = bif.loadBlobInfo(blobKey);
+        String hash=binfo.getMd5Hash();
         writer.append("--" + boundary).append(CRLF);
         writer.append("Content-Disposition: form-data; name=\""+UploadClient.PARAM_CHK+"\"").append(CRLF);
         writer.append("Content-Type: text/plain; charset=" + charset).append(CRLF);
         writer.append(CRLF);
-        writer.append(sgn.sum(user)).append(CRLF).flush();
+        writer.append(sgn.sum(user+hash)).append(CRLF).flush();
 
 
         // Send binary file.
@@ -232,25 +285,7 @@ public class BlobCartridge implements ServletCartridge {
         // End of multipart/form-data.
         writer.append("--" + boundary+"--").append(CRLF).flush();
 
-        //resp part
-        //InputStream responseStream = new BufferedInputStream(connection.getInputStream());
 
-        /*------
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httppost = new HttpPost(bupURL);
-        MultipartEntity reqEntity = new MultipartEntity();
-        InputStream blobIn=new BlobstoreInputStream(blobKey);
-        reqEntity.addPart("file", new InputStreamBody(blobIn, fileName));
-        reqEntity.addPart(BlobStore.KEY_USER, new StringBody(user));
-        reqEntity.addPart(BlobStore.KEY_PRJ, new StringBody(project));
-        reqEntity.addPart(BlobStore.KEY_FN, new StringBody(fileName));
-        reqEntity.addPart(UploadClient.PARAM_CHK, new StringBody(UploadClient.sum(user)) );
-        httppost.setEntity(reqEntity);
-
-        System.out.println("executing request " + httppost.getRequestLine());
-        HttpResponse response = httpclient.execute(httppost);
-        HttpEntity resEntity = response.getEntity();
-         */
         InputStream ri = connection.getInputStream(); //resEntity.getContent();
         Streams.redirect(ri, resp.getOutputStream());
         return true;
@@ -273,53 +308,6 @@ public class BlobCartridge implements ServletCartridge {
             ct="audio/ogg";
         }
         return ct;
-    }
-
-    @Override
-    public boolean post(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
-        String u=req.getPathInfo();
-        if (u.startsWith("/blobUploadDone")) {
-            String user=req.getParameter(BlobStore.KEY_USER);
-            String project=req.getParameter(BlobStore.KEY_PRJ);
-            String fileName=req.getParameter(BlobStore.KEY_FN);
-            String chk=req.getParameter(UploadClient.PARAM_CHK);
-
-            if (user==null || project==null || fileName==null) {
-                resp.setStatus(500);
-                resp.getWriter().print("user ("+user+") project ("+project+") fileName ("+fileName+") is not specified");
-                return true;
-            }
-            if (chk!=null) {
-                System.out.println("Chk="+chk+"  sum(user)="+ sgn.sum(user));
-                if (chk.equals( sgn.sum(user) ) ){
-                    auth.su(user);
-                }
-            }
-            if (!auth.currentUserId().equals(user)) {
-                resp.setStatus(500);
-                resp.getWriter().print("upload permission denied");
-                return true;
-            }
-            Map<String, List<BlobKey>> keys = bs.getUploads(req);
-            List<String> keyStrList=new Vector<String>();
-            BlobKey found=null;
-            for (String name:keys.keySet()) {
-                List<BlobKey> bks = keys.get(name);
-                System.out.println(name+": ");
-                for (BlobKey bk:bks) {
-                    found=bk;
-                    System.out.println(bk.getKeyString());
-                    keyStrList.add(bk.getKeyString());
-                }
-            }
-            bst.putKey(user, project, fileName, found);
-            //System.out.println(req.getParameter("test"));
-            resp.getWriter().print("Added");
-            return true;
-        }
-
-        return false;
     }
 
 }

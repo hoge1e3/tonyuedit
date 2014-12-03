@@ -13,6 +13,16 @@ POST
 /edit/oauthKey
 
 jp.tonyu.blob.BlobCartridge
+POST /blobUploadDone  (obtain actual url by GET /blobURL)
+ user:String
+ project:String
+ fileName:String
+ chk:String
+
+GET /edit/serveBlob/
+GET /edit/deleteBlob/
+GET /edit/retainBlobs
+GET /edit/uploadBlobToExe
 
 jp.tonyu.edit.DocumentCartridge
 
