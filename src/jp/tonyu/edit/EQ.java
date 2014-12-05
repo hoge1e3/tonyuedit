@@ -98,9 +98,11 @@ public class EQ  {
         throw new RuntimeException("Invalid key : "+key);
     }
     public Iterable<Entity> asIterable(DatastoreService datastoreService) {
-        Filter filter= filters.size()==1? filters.get(0) : CompositeFilterOperator.and(filters.toArray(new Query.FilterPredicate[0]));
-        //System.out.println("EQ:asit "+filter);
-        query.setFilter(filter);
+        if (filters.size()>0) {
+            Filter filter= filters.size()==1? filters.get(0) : CompositeFilterOperator.and(filters.toArray(new Query.FilterPredicate[0]));
+            //System.out.println("EQ:asit "+filter);
+            query.setFilter(filter);
+        }
         Iterable<Entity> it = datastoreService.prepare(query).asIterable();
         return it;
     }

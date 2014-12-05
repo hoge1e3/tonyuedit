@@ -75,6 +75,12 @@ public class BlobCartridge implements ServletCartridge {
         if (u.startsWith("/uploadBlobToExe")) {
             return uploadBlobToExe(req,resp);
         }
+        if (u.startsWith("/scanBlobMD5s")) {
+            bst.scanAll();
+            resp.getWriter().print("OK");
+            return true;
+        }
+
         return false;
     }
     @Override
