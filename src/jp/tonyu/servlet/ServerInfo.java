@@ -8,7 +8,13 @@ public class ServerInfo {
     public static final String tonyuedit_server="http://tonyuedit.appspot.com";
     public static final String tonyuexe_server="http://tonyuexe.appspot.com";
     public static boolean isExe(HttpServletRequest req) {
-        return req.getServerName().indexOf("localhost")>=0 && req.getServerPort()==8887 ||
+        return isLocal(req) && req.getServerPort()==8887 ||
                 req.getServerName().indexOf("tonyuexe")>=0 ;
+    }
+    public static boolean isLocal(HttpServletRequest req) {
+        return req.getServerName().indexOf("localhost")>=0;
+    }
+    public static String exeURL(HttpServletRequest req) {
+        return isLocal(req) ? tonyuexe_local : tonyuexe_server;
     }
 }

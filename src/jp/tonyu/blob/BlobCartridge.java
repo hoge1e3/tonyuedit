@@ -1,6 +1,7 @@
 package jp.tonyu.blob;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,6 +25,7 @@ import jp.tonyu.auth.RequestSigner;
 import jp.tonyu.edit.UploadClient;
 import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
+import jp.tonyu.util.HTMLDecoder;
 import jp.tonyu.util.Streams;
 import net.arnx.jsonic.JSON;
 
@@ -80,8 +82,40 @@ public class BlobCartridge implements ServletCartridge {
             resp.getWriter().print("OK");
             return true;
         }
-
+        if (u.startsWith("/blobMD5sOfProject")) {
+            String user=req.getParameter("user");
+            String project=req.getParameter("project");
+            Map<String, String> res = bst.md5sOfProject(user,project);
+            resp.getWriter().print(JSON.encode(res));
+            return true;
+        }
+        if (u.startsWith("/forkBlobs")) {
+            return forkBlobs(req,resp);
+        }
         return false;
+    }
+    private boolean forkBlobs(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if (ServerInfo.isExe(req)) return false;
+        String dstUser=auth.currentUserId();
+        if (dstUser==null) {
+            resp.getWriter().print("LoginRequired");
+            return true;
+        }
+        String srcUser=req.getParameter("srcUser");
+        String srcProject=req.getParameter("srcProject");
+        String dstProject=req.getParameter("dstProject");
+        String urlString=ServerInfo.exeURL(req)+"/exe/blobMD5sOfProject"+
+        "?user="+HTMLDecoder.encode(srcUser)+
+        "&project="+HTMLDecoder.encode(srcProject)
+        ;
+        URL url = new URL(urlString);
+        URLConnection uc = url.openConnection();
+        InputStream in = uc.getInputStream();
+        String buf=Streams.stream2str(in);
+        Map md5s = (Map)JSON.decode(buf);
+        bst.forkBlob(md5s, dstUser, dstProject);
+        resp.getWriter().print("Forked");
+        return true;
     }
     @Override
     public boolean post(HttpServletRequest req, HttpServletResponse resp)

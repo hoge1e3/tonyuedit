@@ -1,9 +1,12 @@
 package jp.tonyu.blob;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import jp.tonyu.edit.EQ;
 
+import com.google.appengine.api.blobstore.BlobInfo;
 import com.google.appengine.api.blobstore.BlobInfoFactory;
 import com.google.appengine.api.blobstore.BlobKey;
 import com.google.appengine.api.blobstore.BlobstoreService;
@@ -44,8 +47,13 @@ public class BlobStore {
     }
     public void scanAll() {
         for (Entity e: EQ.$(KIND_BLOB).asIterable(dss)) {
-            BlobKey key = new BlobKey(""+EQ.$(e).attr(KEY_BLOBKEY));
-            putMD5(key);
+            EQ ee = EQ.$(e);
+            String blk = ""+ee.attr(KEY_BLOBKEY);
+            BlobKey key = new BlobKey(blk);
+            BlobKey nk = putMD5(key);
+            if (!blk.equals(nk.getKeyString())) {
+                ee.attr(KEY_BLOBKEY,nk.getKeyString()).putTo(dss);
+            }
         }
     }
     public BlobKey putMD5(BlobKey key) {
@@ -61,6 +69,17 @@ public class BlobStore {
             .putTo(dss);
             return key;
         }
+    }
+    public Map<String, String> md5sOfProject(String user,String project) {
+        Map<String, String> res=new HashMap<String, String>();
+        for (Entity e:EQ.$(KIND_BLOB).attr(KEY_USER,user).attr(KEY_PRJ,project).asIterable(dss)) {
+            EQ ee = EQ.$(e);
+            String key = ""+ee.attr(KEY_BLOBKEY);
+            BlobInfo inf=bif.loadBlobInfo(new BlobKey(key));
+            String hash=inf.getMd5Hash();
+            res.put(""+ee.attr(KEY_FN), hash);
+        }
+        return res;
     }
     public void putKey(String user,String project, String fileName, BlobKey key) {
         key=putMD5(key);
@@ -103,5 +122,18 @@ public class BlobStore {
             return MEDIATYPE_IMAGE;
         }
     }
-
+    public void forkBlob(Map<String,String> md5s, String user, String project) {
+        System.out.println("Forking "+user+"/"+project+" MD5s="+md5s);
+        for (String fn:md5s.keySet()) {
+            String md5=md5s.get(fn);
+            BlobKey key=fromMD5(md5);
+            if (key==null) {
+                System.out.println(user+"/"+project+"/"+fn+" is not found");
+                continue;
+            }
+            String keystr= key.getKeyString();
+            EQ.$("<"+KIND_BLOB+">").attr(KEY_USER,user).attr(KEY_PRJ,project).
+            attr(KEY_FN,fn).attr(KEY_BLOBKEY,keystr).putTo(dss);
+        }
+    }
 }
