@@ -24,6 +24,7 @@ import jp.tonyu.fs.Shell;
 import jp.tonyu.servlet.MultiServletCartridge;
 import jp.tonyu.servlet.RequestFragmentReceiver;
 import jp.tonyu.servlet.ServletCartridge;
+import jp.tonyu.udb.UDBCartridge;
 
 @SuppressWarnings("serial")
 public class TonyueditServlet extends HttpServlet {
@@ -46,8 +47,11 @@ public class TonyueditServlet extends HttpServlet {
 		lc.insert(tc);
 		GLSFileSync syn=new GLSFileSync(r);
 		Shell sh=new Shell(r);
-		MultiServletCartridge msc = new MultiServletCartridge(r,syn,lc,sh,new DocumentCartridge(r.getFs()),
-		        new UploadClient(a,sgn), new BlobCartridge(a, dss, sgn, false));
+		MultiServletCartridge msc = new MultiServletCartridge(
+		        r,syn,lc,sh,new DocumentCartridge(r.getFs()),
+		        new UDBCartridge(dss, a, false),
+		        new UploadClient(a,sgn),
+		        new BlobCartridge(a, dss, sgn, false));
         return new RequestFragmentReceiver(a,dss,msc);
 	}
 	@Override

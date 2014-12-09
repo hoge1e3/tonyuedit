@@ -159,7 +159,7 @@ public class BlobCartridge implements ServletCartridge {
                 auth.su(user);
             }
         }
-        if (!auth.currentUserId().equals(user)) {
+        if (!user.equals(auth.currentUserId())) {
             resp.setStatus(500);
             resp.getWriter().print("upload permission denied");
             return true;
@@ -180,7 +180,7 @@ public class BlobCartridge implements ServletCartridge {
             resp.getWriter().print("user project fileName is not specified");
             return true;
         }
-        if (!auth.currentUserId().equals(user) && !readFree) {
+        if (!user.equals(auth.currentUserId()) && !readFree) {
             resp.setStatus(500);
             resp.getWriter().print("read permission denied");
             return true;
@@ -207,7 +207,7 @@ public class BlobCartridge implements ServletCartridge {
             resp.getWriter().print("user project fileName is not specified");
             return true;
         }
-        if (!auth.currentUserId().equals(user)) {
+        if (!user.equals(auth.currentUserId())) {
             resp.setStatus(500);
             resp.getWriter().print("delete permission denied");
             return true;

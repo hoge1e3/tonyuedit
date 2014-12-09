@@ -66,7 +66,7 @@ public class UploadClient implements ServletCartridge {
         String prj=req.getParameter(PARAM_PRJ);
 
         String urlString=getExeServerURL(req, URL_PRJ_INFO);
-        String user = auth.currentUserId();
+        String user = auth.currentUserId()+"";
         String postStr =
                 PARAM_PRJ+"="+URLEncoder.encode(prj, "utf8")+"&"+
                         PARAM_USR+"="+URLEncoder.encode(user,"utf8")+"&"+
@@ -124,6 +124,9 @@ public class UploadClient implements ServletCartridge {
         OutputStream os = uc.getOutputStream();
 
         String user = auth.currentUserId();
+        if(user==null) {
+            throw new RuntimeException("Login Required");
+        }
         String postStr =
                 PARAM_PRJ+"="+URLEncoder.encode(prj, "utf8")+"&"+
                 PARAM_USR+"="+URLEncoder.encode(user,"utf8")+"&"+

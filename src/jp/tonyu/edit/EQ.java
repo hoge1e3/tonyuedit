@@ -24,6 +24,9 @@ public class EQ  {
         filters=new Vector<Query.FilterPredicate>();
     }
     public boolean isQuery() {return filters!=null;}
+    public static EQ $new(String kind) {
+        return $("<"+kind+">");
+    }
     public static EQ $(Object o) {
         if (o instanceof EQ) {
             EQ r = (EQ) o;
@@ -135,5 +138,10 @@ public class EQ  {
     }
     public EQ find1$(DatastoreService dss) {
         return $(find1(dss));
+    }
+    public void getFrom(Map src) {
+        for (Object key:src.keySet()) {
+            attr(key, src.get(key));
+        }
     }
 }
