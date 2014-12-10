@@ -33,6 +33,7 @@ public class UDB {
         this.appAuth = appAuth;
     }
     public Vector<Map<String,Object>> select(String kind, Map<String,Object> where) {
+        String orgKind=kind;
         kind=genKind(kind);
         EQ e=$(kind);
         for (String key:where.keySet()) {
@@ -45,7 +46,7 @@ public class UDB {
             Map<String, Object> dst= new HashMap<String, Object>(prop);
             dst=entity2obj(dst);
             dst.put(KEY_ID, re.getKey().getId());
-            dst.put(KEY_KIND, kind);
+            dst.put(KEY_KIND, orgKind);
             res.add(dst);
         }
         return res;
@@ -88,7 +89,7 @@ public class UDB {
     private Key extractKey(Map<String, Object> record) {
         String id=""+record.remove(KEY_ID);
         String kind=""+record.remove(KEY_KIND);
-        return KeyFactory.createKey(kind, id);
+        return KeyFactory.createKey(genKind(kind), id);
     }
     public void delete(Map<String,Object>... records) {
         for (Map<String,Object> record:records) {

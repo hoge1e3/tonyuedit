@@ -78,6 +78,7 @@ public class UDBCartridge implements ServletCartridge {
         Map<String, Object>[] records = getRecords(req);
         String kind=getKind(req);
         List<Long> res = db.insert(kind, records);
+        resp.setContentType("text/json; charset=utf8");
         resp.getWriter().print(JSON.encode(res));
         return true;
     }
@@ -91,6 +92,7 @@ public class UDBCartridge implements ServletCartridge {
         for (int i=0 ;i<res.size() ;i++) {
             res.set(i, obj2json(res.get(i))  );
         }
+        resp.setContentType("text/json; charset=utf8");
         resp.getWriter().print(JSON.encode(res));
         return true;
     }

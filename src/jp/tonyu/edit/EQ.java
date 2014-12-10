@@ -1,5 +1,6 @@
 package jp.tonyu.edit;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -56,13 +57,6 @@ public class EQ  {
     public Entity get() {
         return t;
     }
-    public static Object unwrap(Object value) {
-        if (value instanceof EQ) {
-            EQ r = (EQ) value;
-            return r.get();
-        }
-        return value;
-    }
     public EQ attr$(Object key) {
         return $(attr(key));
     }
@@ -87,18 +81,28 @@ public class EQ  {
         if (isEmpty()) return this;
         if (key instanceof String) {
             String s = (String) key;
-            Object unwraped = unwrap(value);
-            if (unwraped instanceof String) {
-                String str = (String) unwraped;
-                if (str.length()>=500) {
-                    unwraped=new Text(str);
-                }
-            }
-            t.setProperty(s, unwraped);
+            Object prop = fitToEntityProperty(value);
+            t.setProperty(s, prop);
             return this;
         }
-
         throw new RuntimeException("Invalid key : "+key);
+    }
+    public Object fitToEntityProperty(Object value) {
+        if (value instanceof EQ) {
+            EQ r = (EQ) value;
+            return r.get();
+        } else if (value instanceof String) {
+            String str = (String) value;
+            if (str.length()>=500) {
+               return new Text(str);
+            }
+            return str;
+        } else if (value instanceof BigDecimal) {
+            BigDecimal bc=(BigDecimal)value;
+            return bc.doubleValue();
+        } else {
+            return value;
+        }
     }
     public Iterable<Entity> asIterable(DatastoreService datastoreService) {
         if (filters.size()>0) {
