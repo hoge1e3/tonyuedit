@@ -69,6 +69,7 @@ public class UDB {
             EQ nr = EQ.$new(kind);
             nr.getFrom(record);
             nr.putTo(dss);
+            System.out.println("INS:"+nr.get().getKey());
             res.add(nr.get().getKey().getId());
         }
         return res;
@@ -87,13 +88,20 @@ public class UDB {
         }
     }
     private Key extractKey(Map<String, Object> record) {
-        String id=""+record.remove(KEY_ID);
+        long id=((Number)record.remove(KEY_ID)).longValue();
         String kind=""+record.remove(KEY_KIND);
         return KeyFactory.createKey(genKind(kind), id);
     }
     public void delete(Map<String,Object>... records) {
         for (Map<String,Object> record:records) {
             Key key=extractKey(record);
+            System.out.println("Delete key:"+key);
+            /*try {
+                Entity entity = dss.get(key);
+            } catch (EntityNotFoundException e) {
+                System.out.println(e.getMessage());//e.printStackTrace();
+            }*/
+
             dss.delete(key);
         }
     }
