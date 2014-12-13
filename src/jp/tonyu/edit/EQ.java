@@ -11,6 +11,7 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.CompositeFilterOperator;
 import com.google.appengine.api.datastore.Query.Filter;
 import com.google.appengine.api.datastore.Query.FilterOperator;
+import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.datastore.Text;
 
 public class EQ  {
@@ -72,6 +73,33 @@ public class EQ  {
             return got;
         }
         throw new RuntimeException("Invalid key : "+key);
+    }
+    public EQ cmp(String key, FilterOperator op, Object value) {
+        if (isQuery()) {
+            filters.add(new Query.FilterPredicate(key, op, value));
+        }
+        return this;
+    }
+    public EQ gt(String key, Object value) {
+        return cmp(key,FilterOperator.GREATER_THAN,value);
+    }
+    public EQ ge(String key, Object value) {
+        return cmp(key,FilterOperator.GREATER_THAN_OR_EQUAL,value);
+    }
+    public EQ lt(String key, Object value) {
+        return cmp(key,FilterOperator.LESS_THAN,value);
+    }
+    public EQ le(String key, Object value) {
+        return cmp(key,FilterOperator.LESS_THAN_OR_EQUAL,value);
+    }
+    public EQ ne(String key, Object value) {
+        return cmp(key,FilterOperator.NOT_EQUAL,value);
+    }
+    public EQ sort(String key, boolean desc) {
+        if (isQuery()) {
+            query.addSort(key, desc? SortDirection.DESCENDING : SortDirection.ASCENDING);
+        }
+        return this;
     }
     public EQ attr(Object key, Object value) {
         if (isQuery()) {

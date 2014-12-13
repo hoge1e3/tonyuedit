@@ -3,6 +3,7 @@ package jp.tonyu.edit;
 import java.io.IOException;
 
 import javax.print.attribute.standard.SheetCollate;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,8 @@ public class TonyueditServlet extends HttpServlet {
 		//MemCache c=(MemCache)req.getSession().getAttribute(KEY_CACHE);
         //if (c==null) req.getSession().setAttribute(KEY_CACHE, c=new MemCache());
 		MemCache c=new MemCache();
-        JSRun r=new JSRun(c,  a);
+		ServletContext servletContext = getServletContext();
+        JSRun r=new JSRun(c,  a, servletContext);
         DatastoreService dss=r.dss;
         OAuthKeyDB okb = new OAuthKeyDB(dss);
         RequestSigner sgn= new RequestSigner(okb);

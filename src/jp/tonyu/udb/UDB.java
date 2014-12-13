@@ -36,9 +36,20 @@ public class UDB {
         String orgKind=kind;
         kind=genKind(kind);
         EQ e=$(kind);
+        int limit=-1;
         for (String key:where.keySet()) {
             Object value=where.get(key);
-            e.attr(key, value );
+            if ("$order".equals(key)) {
+                Map<String,Number> ords=(Map<String,Number>) value;
+                for (String sk:ords.keySet()) {
+                    Number dir=ords.get(sk);
+                    e.sort(sk, dir.doubleValue()<0);
+                }
+            } else if ("$limit".equals(key)) {
+                limit=((Number)value).intValue();
+            } else {
+                e.attr(key, value );
+            }
         }
         Vector<Map<String,Object>> res=new Vector<Map<String,Object>>();
         for (Entity re:e.asIterable(dss)) {
