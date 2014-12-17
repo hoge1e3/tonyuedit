@@ -2,13 +2,16 @@ package jp.tonyu.udb;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import net.arnx.jsonic.JSON;
 
 import jp.tonyu.edit.EQ;
+import jp.tonyu.util.Convert;
 import jp.tonyu.util.MD5;
 
 import com.google.appengine.api.datastore.DatastoreService;
@@ -21,7 +24,7 @@ import com.google.appengine.api.datastore.Text;
 import static jp.tonyu.edit.EQ.$;
 public class UDB {
     public static final String KEY_TYPEMAP = "__typeMap";
-
+    //public static final Object HIDDEN=new Object();
     private static final String KEY_KIND = "_kind";
     private static final String KEY_ID = "_id";
     private static final String SEP = "/+*/-_\\";
@@ -33,10 +36,12 @@ public class UDB {
         this.appAuth = appAuth;
     }
     public Vector<Map<String,Object>> select(String kind, Map<String,Object> where) {
-        String orgKind=kind;
+        String userKind=kind;
         kind=genKind(kind);
         EQ e=$(kind);
-        int limit=-1;
+        int limit=Integer.MAX_VALUE,offset=0;
+        List hideList=null;
+        Vector<Map<String,Object>> res=new Vector<Map<String,Object>>();
         for (String key:where.keySet()) {
             Object value=where.get(key);
             if ("$order".equals(key)) {
@@ -45,22 +50,43 @@ public class UDB {
                     Number dir=ords.get(sk);
                     e.sort(sk, dir.doubleValue()<0);
                 }
+            } else if ("$hide".equals(key)) {
+                hideList = (List)JSON.decode(""+value);
             } else if ("$limit".equals(key)) {
                 limit=((Number)value).intValue();
+            } else if ("$offset".equals(key)) {
+                offset=((Number)value).intValue();
+            } else if (KEY_ID.equals(key)) {
+                try {
+                    Entity re = dss.get(KeyFactory.createKey(kind, ((Number)value).longValue()));
+                    res.add(entity2obj(re, userKind, new HashSet<String>()));
+                    return res;
+                } catch (EntityNotFoundException e1) {
+                    e1.printStackTrace();
+                }
             } else {
                 e.attr(key, value );
             }
         }
-        Vector<Map<String,Object>> res=new Vector<Map<String,Object>>();
+        Set<String> hideSet=new HashSet<String>();
+        if (hideList!=null) {
+            hideSet.addAll(hideList);
+        }
+        int i=0;
         for (Entity re:e.asIterable(dss)) {
-            Map<String, Object> prop = re.getProperties();
-            Map<String, Object> dst= new HashMap<String, Object>(prop);
-            dst=entity2obj(dst);
-            dst.put(KEY_ID, re.getKey().getId());
-            dst.put(KEY_KIND, orgKind);
-            res.add(dst);
+            if (i++<offset) continue;
+            res.add(entity2obj(re, userKind, hideSet));
+            if (res.size()>=limit) break;
         }
         return res;
+    }
+    private Map<String,Object> entity2obj(Entity re,String userKind, Set<String> hideSet) {
+        Map<String, Object> prop = re.getProperties();
+        Map<String, Object> dst= new HashMap<String, Object>(prop);
+        dst=entity2obj(dst, hideSet);
+        dst.put(KEY_ID, re.getKey().getId());
+        dst.put(KEY_KIND, userKind);
+        return dst;
     }
     private String genKind(String kind) {
         String raw="_"+appAuth.user+"_"+appAuth.project+"_"+kind;
@@ -128,6 +154,9 @@ public class UDB {
         Map<String, Object> res=new HashMap<String,Object>();
         for (String key:obj.keySet()) {
             Object value=obj.get(key);
+            /*if (value==HIDDEN) {
+                continue;
+            }*/
             if (value instanceof Map || value instanceof List) {
                 annotateType(res, key,"obj");
                 res.put(key, str2text(JSON.encode(value)) );
@@ -140,12 +169,16 @@ public class UDB {
         }
         return res;
     }
-    public static  Map<String, Object> entity2obj(Map<String, Object> e) {
+    public static  Map<String, Object> entity2obj(Map<String, Object> e,Set<String> hiddenKey) {
         Map<String, Object> res=new HashMap<String,Object>();
         if (e.containsKey(KEY_TYPEMAP)) {
             e.put(KEY_TYPEMAP, JSON.decode(e.get(KEY_TYPEMAP)+""));
         }
         for (String key:e.keySet()) {
+            if (hiddenKey.contains(key)) {
+                //res.put(key, HIDDEN);
+                continue;
+            }
             if (KEY_TYPEMAP.equals(key)) continue;
             Object value=e.get(key);
             String type=annotateType(e, key);

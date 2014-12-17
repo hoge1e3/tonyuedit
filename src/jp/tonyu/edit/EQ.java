@@ -103,7 +103,8 @@ public class EQ  {
     }
     public EQ attr(Object key, Object value) {
         if (isQuery()) {
-            filters.add(new Query.FilterPredicate(key+"", FilterOperator.EQUAL, value));
+            filters.add(new Query.FilterPredicate(key+"", FilterOperator.EQUAL,
+                    fitToEntityProperty(value) ));
             return this;
         }
         if (isEmpty()) return this;
