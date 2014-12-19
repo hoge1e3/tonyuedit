@@ -1,5 +1,38 @@
-HTML HELP
+Contoller (Game machine)
+ layer
+jsdo.it -> load from tonyuexe
 ファイルが増えるとメニューがあふれる
-project info with jsonp
-Fork
+ Main Selector
+Library 公開
+ Merge project
+Timestamp on Appauth
+
+Doc同期を省力化
+ ls -json
+
+RAM disk
+Kernel
+ ThreadGroup
+ colorメソッド
+
+
+言語仕様
+ bug  a[i]/10  / = reg??
+ \()=>
+ \{  }
+ \myProp {}
+ \myProp=val {}
+ Exception
+
+Rapid Kernel read
+ (pre-compiled kernel)
+
+OK Fork お待ちください
+OK Loading Proejct list
+ OK animation
+ OK limit 10 and next
+ OK loading(ゲーム開始時)
+OK HTML HELP
+OK project info with jsonp
+OK fork
 
