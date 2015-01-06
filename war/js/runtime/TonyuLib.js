@@ -120,9 +120,10 @@ Tonyu=function () {
                 threads.push(thread);
             }
         }
-        function addObj(obj) {
+        function addObj(obj, methodName) {
             var th=thread();
-            th.enter(obj.fiber$main());
+            if (!methodName) methodName="main";
+            th.enter(obj["fiber$"+methodName]());
             add(th);
             return th;
         }
@@ -304,7 +305,7 @@ Tonyu=function () {
         return res;
     }
     function not_a_tonyu_object(o) {
-        console.log(o);
+        console.log("Not a tonyu object: ",o);
         throw o+" is not a tonyu object";
     }
     function hasKey(k, obj) {
