@@ -8,25 +8,27 @@ return Tonyu.Project=function (dir, kernelDir) {
     var traceTbl=Tonyu.TraceTbl();
     var env={classes:{}, traceTbl:traceTbl, options:{compiler:{}} };
     TPR.EXT=".tonyu";
-    function orderByInheritance(classes) {
+    TPR.NSP_KER="kernel";
+    TPR.NSP_USR="user";
+    function orderByInheritance(classes) {/*ENVC*/
         var added={};
         var res=[];
         var ccnt=0;
-        for (var n in classes) {
+        for (var n in classes) {/*ENVC*/
             added[n]=false;
             ccnt++;
         }
         while (res.length<ccnt) {
             var p=res.length;
-            for (var n in classes) {
+            for (var n in classes) {/*ENVC*/
                 if (added[n]) continue;
-                var c=classes[n];
+                var c=classes[n];/*ENVC*/
                 var spc=c.superClass;
                 var deps=[spc];
                 var ready=true;
                 if (c.includes) deps=deps.concat(c.includes);
                 deps.forEach(function (cl) {
-                    ready=ready && (!cl || cl.builtin || added[cl.name]);
+                    ready=ready && (!cl || cl.builtin || added[cl.fullName]);//CFN cl.name -> cl.fullName
                 });
                 if (ready) {
                     res.push(c);
@@ -68,49 +70,62 @@ return Tonyu.Project=function (dir, kernelDir) {
     		//  BaseActor  <-  Actor            <- MyActor
     		//   ^ in user     ^ only in kernel   ^ in user
     		//    => Actor does not inherit BaseActor in user but BaseActor in kernel
-    		TPR.compileDir(dir);
-        	return;
+    		TPR.compileDir(TPR.NSP_KER,[dir, kernelDir]);
+    	} else {
+            if (!env.kernelClasses) TPR.compileKernel();
+            TPR.compileUser();
     	}
-    	if (!env.kernelClasses) TPR.compileKernel();
-    	TPR.compileUser();
     };
     TPR.compileKernel=function () {
-    	TPR.compileDir(kernelDir);
+    	TPR.compileDir(TPR.NSP_KER, [kernelDir]);
     	env.kernelClasses=env.classes;
     };
     TPR.compileUser=function () {
-    	TPR.compileDir(dir,env.kernelClasses);
+    	TPR.compileDir(TPR.NSP_USR, [dir],env.kernelClasses);
     };
-    TPR.compileDir=function (cdir, baseClasses) {
+    TPR.compileDir=function (nsp ,dirs, baseClasses) {
         TPR.getOptions();
         Tonyu.runMode=false;
-        env.classes=Tonyu.extend({}, baseClasses || {});
-        var skip=Tonyu.extend({}, baseClasses || {});
+        env.classes=Tonyu.extend({}, baseClasses || {});/*ENVC*/
+        env.aliases={};
+        for (var n in env.classes) {
+            var cl=env.classes[n];
+            env.aliases[ cl.shortName] = cl.fullName;
+        }
+        var skip=Tonyu.extend({}, baseClasses || {});/*ENVC*/
         Tonyu.currentProject=TPR;
         Tonyu.globals.$currentProject=TPR;
-        if (TPR.isKernelEditable()) kernelDir.each(collect);
-        cdir.each(collect);
+        //if (TPR.isKernelEditable()) kernelDir.each(collect);
+        //cdir.each(collect);
+        for (var i=dirs.length-1; i>=0 ; i--) {
+            dirs[i].each(collect);
+        }
         function collect(f) {
             if (f.endsWith(TPR.EXT)) {
                 var nb=f.truncExt(TPR.EXT);
-                env.classes[nb]={
+                var fullCn=nsp+"."+nb;
+                env.classes[fullCn]={/*ENVC*/ //CFN nb->fullCn
                         name:nb,
+                        fullName: fullCn,
+                        shortName: nb,
+                        nameSpace:nsp,
                         src:{
                             tonyu: f
                         }
                 };
-                delete skip[nb];
+                env.aliases[nb]=fullCn;
+                delete skip[fullCn];//CFN nb->fullCn
             }
         }
-        for (var n in env.classes) {
-        	if (skip[n]) continue;
+        for (var n in env.classes) {/*ENVC*/
+        	if (skip[n]) continue;/*ENVC*/
             console.log("initClassDecl: "+n);
-            Tonyu.Compiler.initClassDecls(env.classes[n], env);
+            Tonyu.Compiler.initClassDecls(env.classes[n], env);/*ENVC*/
         }
-        var ord=orderByInheritance(env.classes);
+        var ord=orderByInheritance(env.classes);/*ENVC*/
         ord.forEach(function (c) {
-        	if (skip[c.name]) return;
-            console.log("genJS :"+c.name);
+        	if (skip[c.fullName]) return;//CFN c.name->c.fullName
+            console.log("genJS :"+c.fullName);
             Tonyu.Compiler.genJS(c, env);
             try {
                 eval(c.src.js);
@@ -195,9 +210,44 @@ return Tonyu.Project=function (dir, kernelDir) {
         if (!env.options) {
             env.options=Tonyu.defaultOptions;
         }
-        if (!env.options.compiler) env.options.compiler={};
-        env.options.compiler.commentLastPos=TPR.runScriptMode || StackTrace.isAvailable();
+        TPR.fixOptions(env.options);
         return env.options;
+    };
+    TPR.fixOptions=function (opt) {
+        if (!opt.compiler) opt.compiler={};
+        opt.compiler.commentLastPos=TPR.runScriptMode || StackTrace.isAvailable();
+        opt.run.mainClass=TPR.fixClassName(opt.run.mainClass);
+        opt.run.bootClass=TPR.fixClassName(opt.run.bootClass);
+    };
+    TPR.fixClassName=function (cn) {
+        if (TPR.classExists(cn)) return cn;
+        var cna=cn.split(".");
+        var sn=cna.pop();
+        var res;
+        res=TPR.NSP_USR+"."+sn;
+        if (TPR.classExists(res)) return res;
+        res=TPR.NSP_KER+"."+sn;
+        if (TPR.classExists(res)) return res;
+        return cn;
+    };
+    TPR.classExists=function (fullCn) {
+        var cna=fullCn.split(".");
+        if (cna.length==1) return false;
+        var nsp=cna[0], sn=cna[1] ;
+        if (TPR.isKernelEditable()) {
+            if (nsp==TPR.NSP_KER) {
+                if (dir.rel(sn+TPR.EXT).exists()) return true;
+                if (kernelDir.rel(sn+TPR.EXT).exists()) return true;
+            }
+        } else {
+            if (nsp==TPR.NSP_KER) {
+                if (kernelDir.rel(sn+TPR.EXT).exists()) return true;
+            }
+            if (nsp==TPR.NSP_USR) {
+                if (dir.rel(sn+TPR.EXT).exists()) return true;
+            }
+        }
+        return false;
     };
     TPR.setOptions=function (r) {
         if (r) env.options=r;
@@ -206,7 +256,7 @@ return Tonyu.Project=function (dir, kernelDir) {
     };
     TPR.rawBoot=function (mainClassName) {
         //var thg=Tonyu.threadGroup();
-        var mainClass=Tonyu.getClass(mainClassName);// window[mainClassName];
+        var mainClass=Tonyu.getClass(mainClassName);
         if (!mainClass) throw TError( mainClassName+" というクラスはありません", "不明" ,0);
         //Tonyu.runMode=true;
         var main=new mainClass();
@@ -219,34 +269,7 @@ return Tonyu.Project=function (dir, kernelDir) {
 	th.steps();
         //thg.run(0);
     };
-/*    TPR.boot=function (mainClassName) {
-        TPR.loadResource(function () {ld(mainClassName);});
-    };
-    function ld(mainClassName){
-        var thg=Tonyu.threadGroup();
-        var cv=$("canvas")[0];
-        var mainClass=Tonyu.getClass(mainClassName);// window[mainClassName];
-        if (!mainClass) throw TError( mainClassName+" というクラスはありません", "不明" ,0);
-        //Sprites.clear();
-        //Sprites.drawGrid=Tonyu.noviceMode;
-        Tonyu.runMode=true;
-        var main=new mainClass();
-        thg.addObj(main);
-        //TPR.currentThreadGroup=
-        Tonyu.setGlobal("$currentThreadGroup",thg);
-        $LASTPOS=0;
 
-        Tonyu.setGlobal("$pat_fruits",30);
-        Tonyu.setGlobal("$screenWidth",cv.width);
-        Tonyu.setGlobal("$screenHeight",cv.height);
-        thg.run(33, function () {
-            Key.update();
-            $screenWidth=cv.width;
-            $screenHeight=cv.height;
-            //Sprites.draw(cv);
-            //Sprites.checkHit();
-        });
-    };*/
     TPR.isKernel=function (className) {
         var r=kernelDir.rel(className+TPR.EXT);
         if (r.exists()) return r;
@@ -257,11 +280,11 @@ return Tonyu.Project=function (dir, kernelDir) {
     };
     TPR.getDir=function () {return dir;};
     TPR.getName=function () { return dir.name().replace(/\/$/,""); };
-    TPR.renameClassName=function (o,n) {
+    TPR.renameClassName=function (o,n) {// o: key of aliases
         TPR.compile();
-        var cls=TPR.env.classes;
-        for (var cln in cls) {
-            var klass=cls[cln];
+        var cls=TPR.env.classes;/*ENVC*/
+        for (var cln in cls) {/*ENVC*/
+            var klass=cls[cln];/*ENVC*/
             var f=klass.src.tonyu;
             var a=klass.annotation;
             var changes=[];

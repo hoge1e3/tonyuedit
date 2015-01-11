@@ -276,7 +276,24 @@ Tonyu=function () {
         return globals[n];
     }
     function getClass(n) {
-        return classes[n];
+        //CFN: n.split(".")
+        var ns=n.split(".");
+        var res=classes;
+        ns.forEach(function (na) {
+            if (!res) return;
+            res=res[na];
+        });
+        if (!res && ns.length==1) {
+            var found;
+            for (var nn in classes) {
+                var nr=classes[nn][n];
+                if (nr) {
+                    if (!res) { res=nr; found=nn+"."+n; }
+                    else throw new Error("曖昧なクラス名： "+nn+"."+n+", "+found);
+                }
+            }
+        }
+        return res;//classes[n];
     }
     function bindFunc(t,meth) {
     	return function () {
