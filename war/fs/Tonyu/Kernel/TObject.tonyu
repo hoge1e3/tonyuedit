@@ -1,3 +1,4 @@
+extends null;
 native Tonyu;
 \new (options) {
     if (typeof options=="object") extend(options);

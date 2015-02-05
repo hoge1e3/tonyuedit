@@ -1,3 +1,4 @@
+extends Actor;
 native Math;
 native $;
 \new (param){

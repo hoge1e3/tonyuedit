@@ -57,7 +57,7 @@ return Tonyu.Project=function (dir, kernelDir) {
     };
     TPR.rawRun=function (mainClassName) {
         TPR.compile();
-        thumbnail.set(TPR, 2000);
+        if (!TPR.runScriptMode) thumbnail.set(TPR, 2000);
         TPR.rawBoot(mainClassName);
     };
     /*TPR.run=function (mainClassName) {
@@ -261,7 +261,8 @@ return Tonyu.Project=function (dir, kernelDir) {
         //Tonyu.runMode=true;
         var main=new mainClass();
         var th=Tonyu.thread();
-        th.enter(main.fiber$main());
+        th.apply(main,"main");
+        //main.fiber$main(th);
 
         TPR.runningThread=th; //thg.addObj(main);
         TPR.runningObj=main;

@@ -2,8 +2,8 @@
   var rom={
     base: '/Tonyu/Kernel/',
     data: {
-      '': '{".desktop":{"lastUpdate":1418199307653},"Actor.tonyu":{"lastUpdate":1414051292629},"BaseActor.tonyu":{"lastUpdate":1418199307655},"Boot.tonyu":{"lastUpdate":1416889517769},"InputDevice.tonyu":{"lastUpdate":1416889517771},"Keys.tonyu":{"lastUpdate":1411529063832},"Map.tonyu":{"lastUpdate":1412840047455},"MapEditor.tonyu":{"lastUpdate":1413954028924},"MathMod.tonyu":{"lastUpdate":1400120164000},"MML.tonyu":{"lastUpdate":1407216015130},"NoviceActor.tonyu":{"lastUpdate":1411021950732},"Panel.tonyu":{"lastUpdate":1418198857560},"ScaledCanvas.tonyu":{"lastUpdate":1414051292632},"Sprites.tonyu":{"lastUpdate":1416889517770},"TObject.tonyu":{"lastUpdate":1400120164000},"TQuery.tonyu":{"lastUpdate":1403517241136},"WaveTable.tonyu":{"lastUpdate":1400120164000},"Pad.tonyu":{"lastUpdate":1414554218357}}',
-      '.desktop': '{"runMenuOrd":["TouchedTestMain","Main1023","Main2","MapLoad","Main","AcTestM","NObjTest","NObjTest2","AcTest","AltBoot","Ball","Bar","Bounce","MapTest","MapTest2nd","SetBGCTest","Label","PanelTest","Boot","InputDevice","Sprites","BaseActor"]}',
+      '': '{".desktop":{"lastUpdate":1421820402827},"Actor.tonyu":{"lastUpdate":1414051292629},"BaseActor.tonyu":{"lastUpdate":1421824721488},"Boot.tonyu":{"lastUpdate":1421384746171},"InputDevice.tonyu":{"lastUpdate":1416889517771},"Keys.tonyu":{"lastUpdate":1411529063832},"Map.tonyu":{"lastUpdate":1421122635939},"MapEditor.tonyu":{"lastUpdate":1421122635944},"MathMod.tonyu":{"lastUpdate":1421824721489},"MML.tonyu":{"lastUpdate":1421824721491},"NoviceActor.tonyu":{"lastUpdate":1411021950732},"Panel.tonyu":{"lastUpdate":1421820402831},"ScaledCanvas.tonyu":{"lastUpdate":1421122635940},"Sprites.tonyu":{"lastUpdate":1421122635941},"TObject.tonyu":{"lastUpdate":1421122635941},"TQuery.tonyu":{"lastUpdate":1403517241136},"WaveTable.tonyu":{"lastUpdate":1400120164000},"Pad.tonyu":{"lastUpdate":1421122635944},"DxChar.tonyu":{"lastUpdate":1421383049524},"MediaPlayer.tonyu":{"lastUpdate":1421383070767},"PlainChar.tonyu":{"lastUpdate":1421383084999},"SecretChar.tonyu":{"lastUpdate":1421383101403},"SpriteChar.tonyu":{"lastUpdate":1421383110209},"T1Line.tonyu":{"lastUpdate":1421383126796},"T1Map.tonyu":{"lastUpdate":1421383136414},"T1Page.tonyu":{"lastUpdate":1421383148587},"T1Text.tonyu":{"lastUpdate":1421383157722},"TextChar.tonyu":{"lastUpdate":1421383188873}}',
+      '.desktop': '{"runMenuOrd":["Main0121","Main1023","TouchedTestMain","Main2","MapLoad","Main","AcTestM","NObjTest","NObjTest2","AcTest","AltBoot","Ball","Bar","Bounce","MapTest","MapTest2nd","SetBGCTest","Label","PanelTest","BaseActor","Panel","MathMod"]}',
       'Actor.tonyu': 
         'extends BaseActor;\n'+
         'native Sprites;\n'+
@@ -86,9 +86,13 @@
         '    this.animMode=false;\n'+
         '}\n'+
         '\\update() {\n'+
-        '    ifwait {\n'+
+        '    onUpdate();\n'+
+        '    if(_thread) {\n'+
         '        _thread.suspend();\n'+
         '    }\n'+
+        '}\n'+
+        'nowait \\onUpdate() {\n'+
+        '    \n'+
         '}\n'+
         '\\updateEx(updateT){\n'+
         '    for(var updateCount=0;updateCount<updateT;updateCount++){\n'+
@@ -210,12 +214,6 @@
         '    if (p!=null) this.p=p;\n'+
         '}\n'+
         '\n'+
-        'nowait \\rnd(r) {\n'+
-        '    if (typeof r=="number") {\n'+
-        '        return Math.floor(Math.random()*r);\n'+
-        '    }\n'+
-        '    return Math.random();\n'+
-        '}\n'+
         'nowait \\detectShape() {\n'+
         '    if (typeof p!="number") {\n'+
         '        if (text!=null) return;\n'+
@@ -245,7 +243,7 @@
         '    }\n'+
         '}\n'+
         'nowait \\draw(ctx) {\n'+
-        '    if (x==null || y==null) return;\n'+
+        '    if (x==null || y==null || _isInvisible) return;\n'+
         '    detectShape();\n'+
         '    if (pImg) {\n'+
         '        ctx.save();\n'+
@@ -353,9 +351,43 @@
         '    }\n'+
         '    mml.play(mmls);\n'+
         '    return mml;\n'+
+        '}\n'+
+        '// from PlainChar\n'+
+        '\\color(r,g,b) {\n'+
+        '    return "rgb("+[r,g,b].join(",")+")";\n'+
+        '}\n'+
+        '\\drawText(x,y,text,col,size) {\n'+
+        '    if ($debug) return;\n'+
+        '    if (!size) size=15;\n'+
+        '    if (!col) col="cyan";\n'+
+        '    var tp=all(T1Text).find \\(t) {return t.hidden;};\n'+
+        '    if (tp.length>0) {\n'+
+        '        tp[0].extend{x,y,text,fillStyle:col, size,hidden:false};\n'+
+        '    }else {\n'+
+        '        new T1Text{x,y,text,fillStyle:col, size};  \n'+
+        '    }\n'+
+        '}\n'+
+        '\\drawLine(x,y,tx,ty,col) {\n'+
+        '    if (!col) col="white";\n'+
+        '    var tp=all(T1Line).find \\(t) {return t.hidden;};\n'+
+        '    if (tp.length>0) {\n'+
+        '        tp[0].extend{x,y,tx,ty,col};\n'+
+        '    }else {\n'+
+        '        new T1Line{x,y,tx,ty,col};  \n'+
+        '    }\n'+
+        '}\n'+
+        '\\loadPage(page,arg){\n'+
+        '    all().die();\n'+
+        '    new page(arg);\n'+
+        '    die();\n'+
+        '}\n'+
+        '\n'+
+        '\\setVisible(v) {\n'+
+        '    _isInvisible=!v;\n'+
         '}'
       ,
       'Boot.tonyu': 
+        'extends Actor;\n'+
         'native $;\n'+
         'native TError;\n'+
         'native $LASTPOS;\n'+
@@ -425,6 +457,8 @@
         '$consolePrintY=465-15;\n'+
         '$panel=new Panel{align:"center",x:$screenWidth/2,y:$screenHeight/2,width:$screenWidth,height:$screenHeight,zOrder:-1,layer:$FrontSprites};\n'+
         'if (typeof SplashScreen!="undefined") SplashScreen.hide();\n'+
+        'initFPSParams();\n'+
+        '\n'+
         'while (true) {\n'+
         '    ti=new Date().getTime();\n'+
         '    thg.steps();\n'+
@@ -432,15 +466,145 @@
         '    $InputDevice.update();\n'+
         '    $screenWidth=$Screen.width;\n'+
         '    $screenHeight=$Screen.height;\n'+
-        '    $Screen.fillCanvas($Screen.buf[0]);\n'+
-        '    $Sprites.draw($Screen.buf[0]);\n'+
-        '    $FrontSprites.draw($Screen.buf[0]);\n'+
-        '    $Screen.draw();\n'+
+        '    if (doDraw == 1) { // フレームスキップの時は描画しない\n'+
+        '        $Screen.fillCanvas($Screen.buf[0]);\n'+
+        '        $Sprites.draw($Screen.buf[0]);\n'+
+        '        $FrontSprites.draw($Screen.buf[0]);\n'+
+        '        $Screen.draw();\n'+
+        '        measureFps(); // FPS計測\n'+
+        '    }\n'+
         '    $Sprites.checkHit();\n'+
-        '    wt=33-(new Date().getTime()-ti);\n'+
-        '    if (wt<0) wt=0;\n'+
-        '    waitFor(Tonyu.timeout(wt));\n'+
-        '}'
+        '    \n'+
+        '    fps_rpsCnt ++;\n'+
+        '    waitFrame(_fps, _frameSkip); // FPS制御\n'+
+        '}\n'+
+        '\n'+
+        'nowait \\initFPSParams() {\n'+
+        '    // フレームレートの設定\n'+
+        '    _fps = 30;\n'+
+        '    _frameSkip = 4;\n'+
+        '    \n'+
+        '    // フレームレート制御でつかう変数 //\n'+
+        '    frameCnt = 0;\n'+
+        '    wtFrac = 0;\n'+
+        '    frameDelay = 0;\n'+
+        '    frameSkipCount = 0;\n'+
+        '    frameSkipSW = 0;\n'+
+        '    doDraw = 1;\n'+
+        '    // フレームレート計測でつかう変数 //\n'+
+        '    fps_fpsStartTime = 0;\n'+
+        '    fps_fpsTimeCnt = 1;\n'+
+        '    fps_fpsCnt = -1;\n'+
+        '    fps_fps = 0;\n'+
+        '    fps_rpsCnt = 0;\n'+
+        '    fps_rps = 0;\n'+
+        '    fps_oldTime = 0;\n'+
+        '    \n'+
+        '    $Boot = this; // アクセスできるようにした\n'+
+        '}\n'+
+        '\n'+
+        '// Tonyu1の$System.setFrameRate() //\n'+
+        'nowait \\setFrameRate(fps, frameSkipMax) {\n'+
+        '    _fps = fps;\n'+
+        '    if (!frameSkipMax) frameSkipMax=5;\n'+
+        '    _frameSkip = frameSkipMax - 1; // Tonyu1では最小が1なので-1\n'+
+        '}\n'+
+        '\n'+
+        '// FPS（計測したフレームレート）を返す //\n'+
+        'nowait \\getMeasureFps() {\n'+
+        '    return fps_fps;\n'+
+        '}\n'+
+        '\n'+
+        '// RPS（計測した実行レート）を返す //\n'+
+        'nowait \\getMeasureRps() {\n'+
+        '    return fps_rps;\n'+
+        '}\n'+
+        '\n'+
+        '\n'+
+        '// フレームレートの制御 //\n'+
+        '\\waitFrame(fps, frameSkipMax) {\n'+
+        '    var wt, nowWt, waitDo;\n'+
+        '    frameCnt++;\n'+
+        '    \n'+
+        '    \n'+
+        '    wt = 1000/fps; // 待機時間設定\n'+
+        '    wtFrac += wt - floor(wt);\n'+
+        '    if (wtFrac >= 1) {\n'+
+        '        wt += floor(wtFrac); // 端数を待機時間に追加\n'+
+        '        wtFrac -= floor(wtFrac);\n'+
+        '    }\n'+
+        '    wt = floor(wt);\n'+
+        '    //print(wt+" "+floor(wtFrac));\n'+
+        '    \n'+
+        '    /*\n'+
+        '    if (frameCnt % 3 == 0) wt = 16; // 待機時間設定\n'+
+        '    else                   wt = 17; // 待機時間設定\n'+
+        '    */\n'+
+        '    \n'+
+        '    wt -= frameDelay;\n'+
+        '    waitFor(Tonyu.timeout(1));\n'+
+        '    nowWt = (new Date().getTime()-ti);\n'+
+        '    if (frameSkipSW == 0) waitDo = 0;\n'+
+        '    while (wt > nowWt) {\n'+
+        '        waitFor(Tonyu.timeout(1));\n'+
+        '        nowWt = (new Date().getTime()-ti);\n'+
+        '        waitDo = 1;\n'+
+        '    }\n'+
+        '    frameDelay = nowWt - wt; // 処理落ち計算\n'+
+        '    // 待機したか？\n'+
+        '    if (waitDo == 0) {\n'+
+        '        frameSkipCount ++; // スキップ回数にカウント\n'+
+        '        doDraw = 0;\n'+
+        '    } else {\n'+
+        '        doDraw = 1;\n'+
+        '    }\n'+
+        '    // フレームスキップ最大か //\n'+
+        '    frameSkipSW = 0;\n'+
+        '    if (frameSkipCount >= frameSkipMax) {\n'+
+        '        frameDelay = 0;\n'+
+        '        frameSkipCount = 0;\n'+
+        '        frameSkipSW = 1;\n'+
+        '    }\n'+
+        '    \n'+
+        '}\n'+
+        '\n'+
+        '\n'+
+        '// FPS計測 //\n'+
+        'nowait \\measureFps() {\n'+
+        '    var fps_nowTime;\n'+
+        '    fps_nowTime = new Date().getTime();\n'+
+        '    if (fps_oldTime == 0) fps_oldTime = new Date().getTime();\n'+
+        '    fps_fpsCnt ++;\n'+
+        '    fps_fpsTimeCnt += fps_nowTime - fps_oldTime;\n'+
+        '    if (fps_nowTime - fps_fpsStartTime >= 1000) {\n'+
+        '        fps_fps = ((1000 / fps_fpsTimeCnt) * fps_fpsCnt);\n'+
+        '        //fps_fpsStr = trunc(fps_fps)+"."+(floor(fps_fps*10)%10);\n'+
+        '        fps_fpsCnt = 0;\n'+
+        '        fps_fpsTimeCnt = 0;\n'+
+        '        fps_fpsStartTime = fps_nowTime;\n'+
+        '        fps_rps = fps_rpsCnt;\n'+
+        '        fps_rpsCnt = 0;\n'+
+        '    }\n'+
+        '    fps_oldTime = fps_nowTime;\n'+
+        '}\n'+
+        '\n'
+      ,
+      'DxChar.tonyu': 
+        'extends SpriteChar;\n'+
+        '\n'+
+        '\\new (xx,yy,pp,ff,sz,rt,al){\n'+
+        '    super(xx,yy,pp,ff);\n'+
+        '    scaleX=1;\n'+
+        '    if (sz) scaleX=sz;\n'+
+        '    angle=0;\n'+
+        '    if (rt) angle=rt;\n'+
+        '    alpha=255;\n'+
+        '    if (al) alpha=al;\n'+
+        '}\n'+
+        '\\draw(c) {\n'+
+        '    rotation=angle;\n'+
+        '    super.draw(c);\n'+
+        '}\n'
       ,
       'InputDevice.tonyu': 
         'extends null;\n'+
@@ -606,6 +770,7 @@
       ,
       'MML.tonyu': 
         'extends TObject;\n'+
+        'includes MathMod;\n'+
         'native T;\n'+
         '\n'+
         'mmlBuf=[];\n'+
@@ -664,6 +829,7 @@
         '}\n'
       ,
       'Map.tonyu': 
+        'extends Actor;\n'+
         'native Math;\n'+
         'native $;\n'+
         '\\new (param){\n'+
@@ -785,6 +951,7 @@
         '}\n'
       ,
       'MapEditor.tonyu': 
+        'extends Actor;\n'+
         'native prompt;\n'+
         'loadMode=false;\n'+
         'print("Load Data?: Y or N");\n'+
@@ -980,29 +1147,29 @@
         'extends null;\n'+
         'native Math;\n'+
         '\n'+
-        '\\sin(d) {\n'+
+        'nowait \\sin(d) {\n'+
         '    return Math.sin(rad(d));\n'+
         '}\n'+
-        '\\cos(d) {\n'+
+        'nowait \\cos(d) {\n'+
         '    return Math.cos(rad(d));\n'+
         '}\n'+
-        '\\rad(d) {\n'+
+        'nowait \\rad(d) {\n'+
         '    return d/180*Math.PI;\n'+
         '}\n'+
-        '\\deg(d) {\n'+
+        'nowait \\deg(d) {\n'+
         '    return d/Math.PI*180;\n'+
         '}\n'+
         '\n'+
-        '\\abs(v) {\n'+
+        'nowait \\abs(v) {\n'+
         '    return Math.abs(v);\n'+
         '}\n'+
-        '\\atan2(x,y) {\n'+
+        'nowait \\atan2(x,y) {\n'+
         '    return deg(Math.atan2(x,y));\n'+
         '}\n'+
-        '\\floor(x) {\n'+
+        'nowait \\floor(x) {\n'+
         '    return Math.floor(x);\n'+
         '}\n'+
-        '\\angleDiff(a,b) {\n'+
+        'nowait \\angleDiff(a,b) {\n'+
         '    var c;\n'+
         '    a=floor(a);\n'+
         '    b=floor(b);\n'+
@@ -1015,15 +1182,47 @@
         '    }\n'+
         '    return c;\n'+
         '}\n'+
-        '\\sqrt(t) {\n'+
+        'nowait \\sqrt(t) {\n'+
         '    return Math.sqrt(t);\n'+
         '}\n'+
-        '\\dist(dx,dy) {\n'+
+        'nowait \\dist(dx,dy) {\n'+
         '    if (typeof dx=="object") {\n'+
         '        var t=dx;\n'+
         '        dx=t.x-x;dy=t.y-y;\n'+
         '    }\n'+
         '    return sqrt(dx*dx+dy*dy);\n'+
+        '}\n'+
+        'nowait \\trunc(f) {\n'+
+        '    if(f>=0) return Math.floor(f);\n'+
+        '    else return Math.ceil(f);\n'+
+        '}\n'+
+        'nowait \\ceil(f){\n'+
+        '    return Math.ceil(f);\n'+
+        '}\n'+
+        '\n'+
+        'nowait \\rnd(r) {\n'+
+        '    if (typeof r=="number") {\n'+
+        '        return Math.floor(Math.random()*r);\n'+
+        '    }\n'+
+        '    return Math.random();\n'+
+        '}'
+      ,
+      'MediaPlayer.tonyu': 
+        '\n'+
+        '\\play() {\n'+
+        '    \n'+
+        '}\n'+
+        '\\stop() {\n'+
+        '    \n'+
+        '}\n'+
+        '\\playSE() {\n'+
+        '    \n'+
+        '}\n'+
+        '\\setDelay(){\n'+
+        '    \n'+
+        '}\n'+
+        '\\setVolume(){\n'+
+        '    \n'+
         '}'
       ,
       'NoviceActor.tonyu': 
@@ -1070,6 +1269,7 @@
         '}'
       ,
       'Pad.tonyu': 
+        'extends Actor;\n'+
         '\\new(opt) {\n'+
         '    super(opt);\n'+
         '    padImageP = $pat_inputPad;\n'+
@@ -1174,6 +1374,7 @@
         '}'
       ,
       'Panel.tonyu': 
+        'extends Actor;\n'+
         'native $;\n'+
         'native Math;\n'+
         'native isNaN;\n'+
@@ -1191,13 +1392,13 @@
         '    buf=$("<canvas>").attr{width,height};\n'+
         '}\n'+
         '\\setFillStyle(color){\n'+
-        '    this.color=color;\n'+
+        '    this.fillStyle=color;\n'+
         '}\n'+
         '\\fillRect(x,y,rectWidth,rectHeight){\n'+
         '    ctx=buf[0].getContext("2d");\n'+
         '    ctx.save();\n'+
         '    //ctx.clearRect(0,0,this.width,this.height);\n'+
-        '    ctx.fillStyle=color;\n'+
+        '    ctx.fillStyle=fillStyle;\n'+
         '    ctx.fillRect(x,y,rectWidth,rectHeight);\n'+
         '    ctx.restore();\n'+
         '}\n'+
@@ -1206,7 +1407,7 @@
         '    ctx.save();\n'+
         '    //ctx.clearRect(0,0,this.width,this.height);\n'+
         '    ctx.textAlign = align;\n'+
-        '    ctx.fillStyle=color;\n'+
+        '    ctx.fillStyle=fillStyle;\n'+
         '    ctx.font=size+"px \'Courier New\'";\n'+
         '    ctx.fillText(text,x,y);\n'+
         '    ctx.restore();\n'+
@@ -1259,7 +1460,89 @@
         '    ctx.restore();\n'+
         '}'
       ,
+      'PlainChar.tonyu': 
+        'native Tonyu;\n'+
+        'native Math;\n'+
+        '\\new(x,y,p) {\n'+
+        '    if (Tonyu.runMode) {\n'+
+        '        var thg=currentThreadGroup();\n'+
+        '        if (thg) _th=thg.addObj(this,"tMain");\n'+
+        '        initSprite();\n'+
+        '    }\n'+
+        '    if (typeof x=="object") Tonyu.extend(this,x); \n'+
+        '    else if (typeof x=="number") {\n'+
+        '        this.x=x;\n'+
+        '        this.y=y;\n'+
+        '        this.p=p;\n'+
+        '    }\n'+
+        '}\n'+
+        '\\draw(c) {\n'+
+        '    onDraw();\n'+
+        '    if (_isInvisible) return;\n'+
+        '    super.draw(c);\n'+
+        '}\n'+
+        '\\setVisible(v) {\n'+
+        '    _isInvisible=!v;\n'+
+        '}\n'+
+        '\\onDraw() {\n'+
+        '    \n'+
+        '}\n'+
+        '\\update() {\n'+
+        '    onUpdate();\n'+
+        '    super.update();\n'+
+        '}\n'+
+        '\\onUpdate() {\n'+
+        '    \n'+
+        '}\n'+
+        '\\initSprite() {\n'+
+        '    if(layer && typeof layer.add=="function"){\n'+
+        '        layer.add(this);\n'+
+        '    }else{\n'+
+        '        $Sprites.add(this);\n'+
+        '    }\n'+
+        '    onAppear();\n'+
+        '}\n'+
+        '\\tMain() {\n'+
+        '    main();\n'+
+        '    die();\n'+
+        '}\n'+
+        '\\color(r,g,b) {\n'+
+        '    return "rgb("+[r,g,b].join(",")+")";\n'+
+        '}\n'+
+        '\\drawText(x,y,text,col,size) {\n'+
+        '    if ($debug) return;\n'+
+        '    if (!size) size=15;\n'+
+        '    if (!col) col="cyan";\n'+
+        '    var tp=all(T1Text).find \\(t) {return t.hidden;};\n'+
+        '    if (tp.length>0) {\n'+
+        '        tp[0].extend{x,y,text,fillStyle:col, size,hidden:false};\n'+
+        '    }else {\n'+
+        '        new T1Text{x,y,text,fillStyle:col, size};  \n'+
+        '    }\n'+
+        '}\n'+
+        '\\drawLine(x,y,tx,ty,col) {\n'+
+        '    if (!col) col="white";\n'+
+        '    var tp=all(T1Line).find \\(t) {return t.hidden;};\n'+
+        '    if (tp.length>0) {\n'+
+        '        tp[0].extend{x,y,tx,ty,col};\n'+
+        '    }else {\n'+
+        '        new T1Line{x,y,tx,ty,col};  \n'+
+        '    }\n'+
+        '}\n'+
+        '\\appear(t) {\n'+
+        '    return t;\n'+
+        '}\n'+
+        '\\trunc(f) {\n'+
+        '    return Math.trunc(f);\n'+
+        '}\n'+
+        '\\loadPage(page,arg){\n'+
+        '    all().die();\n'+
+        '    new page(arg);\n'+
+        '    die();\n'+
+        '}'
+      ,
       'ScaledCanvas.tonyu': 
+        'extends Actor;\n'+
         'native $;\n'+
         'native Math;\n'+
         '\n'+
@@ -1352,7 +1635,34 @@
         '    $Sprites.scrollTo(scrollX,scrollY);\n'+
         '}'
       ,
+      'SecretChar.tonyu': 
+        'extends PlainChar;\n'+
+        '\n'+
+        '\\draw(c) {\n'+
+        '    \n'+
+        '}'
+      ,
+      'SpriteChar.tonyu': 
+        'extends PlainChar;\n'+
+        '\n'+
+        '\\new(x,y,p,f) {\n'+
+        '    super(x,y,p);\n'+
+        '    this.f=f;\n'+
+        '    if (!this.x) this.x=0;\n'+
+        '    if (!this.y) this.y=0;\n'+
+        '    if (!this.p) this.p=0;\n'+
+        '}\n'+
+        '\\draw(c) {\n'+
+        '    if (f) {\n'+
+        '        if (!scaleY) scaleY=scaleX;\n'+
+        '        scaleX*=-1;\n'+
+        '    }\n'+
+        '    super.draw(c);\n'+
+        '    if (f) scaleX*=-1;\n'+
+        '}'
+      ,
       'Sprites.tonyu': 
+        'extends Actor;\n'+
         'native Tonyu;\n'+
         '\\new() {\n'+
         '    sprites=[];\n'+
@@ -1480,7 +1790,100 @@
         '    sy=scrollY;\n'+
         '}'
       ,
+      'T1Line.tonyu': 
+        '\\draw(ctx) {\n'+
+        '    if (hidden) return;\n'+
+        '    \n'+
+        '    ctx.strokeStyle=col;\n'+
+        '    ctx.beginPath();\n'+
+        '    ctx.moveTo(x,y);\n'+
+        '    ctx.lineTo(tx,ty);\n'+
+        '    ctx.stroke();\n'+
+        '    hidden=true;\n'+
+        '}\n'
+      ,
+      'T1Map.tonyu': 
+        'extends Map;\n'+
+        'native Tonyu;\n'+
+        'native $;\n'+
+        '\n'+
+        '\\setBGColor(c) {\n'+
+        '    $Screen.setBGColor(c);\n'+
+        '}\n'+
+        '\\load(fileName) {\n'+
+        '    /*\n'+
+        '    o={\n'+
+        '        "chipWidth":"32","chipHeight":"32",\n'+
+        '        "pTable":[{name:"$pat_aaa", p:10}, {name:"$pat_bbb","p":25} ],\n'+
+        '        "baseData":[\n'+
+        '        [//map\n'+
+        '        [0,6],[0,5],[1,3],\n'+
+        '        [1,3],[1,2],[0,5]\n'+
+        '        ],\n'+
+        '        [//mapOn\n'+
+        '        [-1,-1],[1,4],[0,2],\n'+
+        '        [-1,-1],[-1,-1],[1,8]\n'+
+        '        ]\n'+
+        '        ]\n'+
+        '    }\n'+
+        '    */\n'+
+        '    var f=file("../maps/").rel(fileName);\n'+
+        '    var o=f.obj();\n'+
+        '    chipWidth=o.chipWidth;\n'+
+        '    chipHeight=o.chipHeight;\n'+
+        '    baseData=o.baseData;\n'+
+        '    mapTable=conv(baseData[0],o.pTable);\n'+
+        '    mapData=mapTable;\n'+
+        '    row=mapTable.length;\n'+
+        '    col=mapTable[0].length;\n'+
+        '    mapOnTable=conv(baseData[1],o.pTable);\n'+
+        '    mapOnData=mapOnTable;\n'+
+        '    \n'+
+        '    buf=$("<canvas>").attr{width:col*chipWidth,height:row*chipHeight};\n'+
+        '    initMap();   \n'+
+        '}\n'+
+        '\\conv(mat, tbl) {\n'+
+        '    var res=[];\n'+
+        '    mat.forEach \\(row) {\n'+
+        '        var rrow=[];\n'+
+        '        res.push(rrow);\n'+
+        '        row.forEach \\(dat) {// dat:[0,20]\n'+
+        '            var t=tbl[dat[0]];\n'+
+        '            if (t) rrow.push(Tonyu.globals[t.name]+dat[1]);\n'+
+        '            else rrow.push(dat[1]);\n'+
+        '        };\n'+
+        '    };\n'+
+        '    return res;\n'+
+        '}'
+      ,
+      'T1Page.tonyu': 
+        'extends PlainChar;\n'+
+        '\n'+
+        '\\initGlobals() {\n'+
+        '    $chars=$Sprites.sprites;\n'+
+        '    $Boot.setFrameRate(60);\n'+
+        '    $clBlack=color(0,0,0);\n'+
+        '    $clRed=color(255,0,0);\n'+
+        '    $clGreen=color(0,255,0);\n'+
+        '    $clYellow=color(255,255,0);\n'+
+        '    $clBlue=color(0,0,255);\n'+
+        '    $clPink=color(255,0,255);\n'+
+        '    $clAqua=color(0,255,255);\n'+
+        '    $clWhite=color(255,255,255);\n'+
+        '    $mplayer=new MediaPlayer;\n'+
+        '}'
+      ,
+      'T1Text.tonyu': 
+        '\\draw(c) {\n'+
+        '    if (hidden) return;\n'+
+        '    c.font=size+"px \'ＭＳ Ｐゴシック\'";\n'+
+        '    \n'+
+        '    super.draw(c);\n'+
+        '    hidden=true;\n'+
+        '}'
+      ,
       'TObject.tonyu': 
+        'extends null;\n'+
         'native Tonyu;\n'+
         '\\new (options) {\n'+
         '    if (typeof options=="object") extend(options);\n'+
@@ -1656,6 +2059,36 @@
         '\n'+
         '\\klass(k) {\n'+
         '    return find \\(o) { return o instanceof k; };\n'+
+        '}'
+      ,
+      'TextChar.tonyu': 
+        'extends PlainChar;\n'+
+        'native TextRect;\n'+
+        '\n'+
+        '\\new (xx,yy,t,c,s){\n'+
+        '    super(xx,yy);\n'+
+        '    text="";\n'+
+        '    col=$clWhite;\n'+
+        '    size=20;\n'+
+        '    if (!this.x) this.x=0;\n'+
+        '    if (!this.y) this.y=0;\n'+
+        '    if (t) text=t;\n'+
+        '    if (c) fillStyle=c;\n'+
+        '    if (s) size=s;\n'+
+        '}\n'+
+        '\\draw(ctx) {\n'+
+        '    if (!size) size=15;\n'+
+        '    if (!align) align="left";\n'+
+        '    if (!fillStyle) fillStyle="white";\n'+
+        '    ctx.fillStyle=fillStyle;\n'+
+        '    ctx.globalAlpha=this.alpha/255;\n'+
+        '    ctx.font=size+"px \'ＭＳ Ｐゴシック\'";\n'+
+        '    var rect=TextRect.draw(ctx, text, x, y, size, align , "fill");\n'+
+        '    width=rect.w;\n'+
+        '    height=rect.h;\n'+
+        '    \n'+
+        '    //    fillStyle=col;\n'+
+        '    //super.draw(ctx);\n'+
         '}'
       ,
       'WaveTable.tonyu': 

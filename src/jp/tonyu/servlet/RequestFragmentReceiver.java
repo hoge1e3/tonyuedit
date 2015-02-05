@@ -24,8 +24,8 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Text;
 
 import jp.tonyu.auth.Auth;
+import jp.tonyu.cartridges.UploadClient;
 import jp.tonyu.edit.EQ;
-import jp.tonyu.edit.UploadClient;
 
 public class RequestFragmentReceiver implements ServletCartridge {
     private static final String SEND_FRAGMENT = "/sendFragment";
@@ -51,8 +51,6 @@ public class RequestFragmentReceiver implements ServletCartridge {
             throws IOException {
         String u=req.getPathInfo();
         if (u.startsWith(SEND_FRAGMENT)) {
-            //String sesid = req.getSession().getId();
-            //System.out.println("sesid="+sesid);
             String redirectTo=req.getParameter("redirectTo");
             String id=req.getParameter("id");
             long seq=Long.parseLong(req.getParameter("seq"));
@@ -66,20 +64,8 @@ public class RequestFragmentReceiver implements ServletCartridge {
             }
         }
         if (u.startsWith(RUN_FRAGMENTS)) {
-            //String sesid = req.getSession().getId();
-            //System.out.println("sesid="+sesid);
-            //String redirectTo=req.getParameter("redirectTo");
             String id=req.getParameter("id");
-            //String user=req.getParameter("user");
-            //String chk=req.getParameter(PARAM_CHK);
-
-            //System.out.println("runFrag Rediect to "+redirectTo);
-            /*if (redirectTo!=null) {
-
-                return runFragmentsRemote(req, resp, id);
-            } else {*/
-                return runFragmentsLocal(req, resp, id/*, user,chk*/);
-            //}
+            return runFragmentsLocal(req, resp, id/*, user,chk*/);
         }
         return c.post(req, resp);
     }

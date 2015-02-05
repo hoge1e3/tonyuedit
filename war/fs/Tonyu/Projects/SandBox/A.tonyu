@@ -1,1 +1,5 @@
-//aaaccc
+constructor A(x) {
+    this.x=x;
+}
+x=3;
+//break;

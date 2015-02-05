@@ -90,4 +90,7 @@ public class Auth {
         System.out.println(csrfToken()+"!="+t);
         throw new RuntimeException("CSRF token does not match");
     }
+    public UserDB getUDB() {
+        return db;
+    }
 }

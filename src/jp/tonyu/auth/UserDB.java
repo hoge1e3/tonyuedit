@@ -13,11 +13,11 @@ import com.google.appengine.api.datastore.Query.FilterOperator;
 public class UserDB {
 	static final String
 		KEY_OAUTH_PROVIDER="oauthProvider",  // "Google"  "Twitter" ....
-		KEY_OAUTHED_USER_ID="oauthedUserId" ,  // User id in Google/Twitter....
-		KEY_LOCAL_USER_ID="userId", // User id in Tonyu
-	    KEY_LOCAL_PASSWORD="pasword",// Password (if not oauthed user)
-	    KEY_AGREED_TERM_VERSION="termVersion";
-	static final String KIND="User";
+		KEY_OAUTHED_USER_ID="oauthedUserId";
+    public static final String KEY_LOCAL_USER_ID="userId";
+    public static final String KEY_LOCAL_PASSWORD="pasword";
+    public static final String KEY_AGREED_TERM_VERSION="termVersion";
+    static final String KIND="User";
 	final DatastoreService datastoreService=DatastoreServiceFactory.getDatastoreService();
 	public Entity getUserEntity(String oauthProvider, String aUserId, boolean createIfNotExist) {
 		Query vQuery = new Query(KIND);

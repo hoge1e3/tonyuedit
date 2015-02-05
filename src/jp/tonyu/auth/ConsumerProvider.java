@@ -7,6 +7,6 @@ import oauth.signpost.OAuthProvider;
 
 public class ConsumerProvider implements Serializable {
 	private static final long serialVersionUID = -987748888777845279L;
-	OAuthConsumer consumer;
-	OAuthProvider provider;
+	public OAuthConsumer consumer;
+	public OAuthProvider provider;
 }

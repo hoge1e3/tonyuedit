@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import javax.servlet.ServletContext;
 
-import jp.tonyu.edit.JSRun;
+import jp.tonyu.cartridges.JSRun;
 import jp.tonyu.js.Wrappable;
 import jp.tonyu.util.Streams;
 

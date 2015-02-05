@@ -12,20 +12,23 @@ import javax.servlet.http.HttpServletResponse;
 import com.google.appengine.api.datastore.DatastoreService;
 
 import jp.tonyu.auth.Auth;
-import jp.tonyu.auth.GoogleOAuthCartridge;
-import jp.tonyu.auth.LoginCartridge;
 import jp.tonyu.auth.OAuthKeyDB;
 import jp.tonyu.auth.RequestSigner;
-import jp.tonyu.auth.TwitterOAuthCartridge;
-import jp.tonyu.blob.BlobCartridge;
+import jp.tonyu.cartridges.BlobCartridge;
+import jp.tonyu.cartridges.DocumentCartridge;
+import jp.tonyu.cartridges.GLSFileSync;
+import jp.tonyu.cartridges.GoogleOAuthCartridge;
+import jp.tonyu.cartridges.JSRun;
+import jp.tonyu.cartridges.LoginCartridge;
+import jp.tonyu.cartridges.Shell;
+import jp.tonyu.cartridges.TwitterOAuthCartridge;
+import jp.tonyu.cartridges.UDBCartridge;
+import jp.tonyu.cartridges.UploadClient;
 import jp.tonyu.debug.Log;
-import jp.tonyu.fs.GLSFileSync;
 import jp.tonyu.fs.MemCache;
-import jp.tonyu.fs.Shell;
 import jp.tonyu.servlet.MultiServletCartridge;
 import jp.tonyu.servlet.RequestFragmentReceiver;
 import jp.tonyu.servlet.ServletCartridge;
-import jp.tonyu.udb.UDBCartridge;
 
 @SuppressWarnings("serial")
 public class TonyueditServlet extends HttpServlet {
@@ -39,7 +42,7 @@ public class TonyueditServlet extends HttpServlet {
 		MemCache c=new MemCache();
 		ServletContext servletContext = getServletContext();
         JSRun r=new JSRun(c,  a, servletContext);
-        DatastoreService dss=r.dss;
+        DatastoreService dss=r.getDataStoreService();
         OAuthKeyDB okb = new OAuthKeyDB(dss);
         RequestSigner sgn= new RequestSigner(okb);
         GoogleOAuthCartridge gc=new GoogleOAuthCartridge(a,okb);
