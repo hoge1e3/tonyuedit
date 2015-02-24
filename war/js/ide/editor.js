@@ -1,21 +1,22 @@
-requirejs(["fs/ROMk","fs/ROMd","fs/ROMs", "Util", "Tonyu", "FS", "FileList", "FileMenu",
+requirejs(["Util", "Tonyu", "FS", "FileList", "FileMenu",
            "showErrorPos", "fixIndent", "Wiki", "Tonyu.Project",
            "copySample","Shell","Shell2","ImageResEditor","ProjectOptionsEditor","copyToKernel","KeyEventChecker",
            "WikiDialog","runtime", "KernelDiffDialog","Sync","searchDialog","StackTrace","syncWithKernel",
-           "UI","ResEditor"
+           "UI","ResEditor","WebSite"
           ],
-function (romk, romd, roms,  Util, Tonyu, FS, FileList, FileMenu,
+function (Util, Tonyu, FS, FileList, FileMenu,
           showErrorPos, fixIndent, Wiki, Tonyu_Project,
           copySample,sh,sh2, ImgResEdit,ProjectOptionsEditor, ctk, KeyEventChecker,
           WikiDialog, rt , KDD,Sync,searchDialog,StackTrace,swk,
-          UI,ResEditor
+          UI,ResEditor,WebSite
           ) {
 
 $(function () {
     $LASTPOS=0;
     copySample();
+    var home=FS.get(WebSite.tonyuHome);
     //if (!Tonyu.ide) Tonyu.ide={};
-    var kernelDir=FS.get("/Tonyu/Kernel/");
+    var kernelDir=home.rel("Kernel/");
     var dir=Util.getQueryString("dir", "/Tonyu/Projects/SandBox/");
     var curProjectDir=FS.get(dir);
     var curPrj=Tonyu_Project(curProjectDir, kernelDir);
@@ -413,8 +414,6 @@ $(function () {
     d=function () {
         Tonyu.currentProject.dumpJS.apply(this,arguments);
     };
-    //var w=Wiki($("#wikiViewArea"), FS.get("/Tonyu/doc/"));
-    //w.show("projectIndex");
 
     function loadDesktopEnv() {
         var d=curProjectDir.rel(".desktop");
@@ -452,7 +451,7 @@ $(function () {
     });
     var helpd=null;
     $("#refHelp").click(function () {
-    	if (!helpd) helpd=WikiDialog.create(FS.get("/Tonyu/doc/tonyu2/"));
+    	if (!helpd) helpd=WikiDialog.create(home.rel("doc/tonyu2/"));
     	helpd.show();
     });
     if (typeof progBar=="object") {progBar.clear();}

@@ -57,6 +57,14 @@ define([], function () {
     }
     window.WebSite.sampleImg=window.WebSite.top+"/images";
     window.WebSite.blobPath=window.WebSite.serverTop+"/serveBlob";
-
+    window.WebSite.isNW=(typeof process=="object" && process.__node_webkit);
+    window.WebSite.tonyuHome="/Tonyu/";
+    if (window.WebSite.isNW) {
+        if (process.env.TONYU_HOME) {
+            window.WebSite.tonyuHome=process.env.TONYU_HOME.replace(/\\/g,"/");
+        } else {
+            window.WebSite.tonyuHome=process.cwd().replace(/\\/g,"/").replace(/\/$/,"")+"/fs/Tonyu/";
+        }
+    }
     return window.WebSite;
 });

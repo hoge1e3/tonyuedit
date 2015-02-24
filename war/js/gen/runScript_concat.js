@@ -1,4 +1,4 @@
-// Created at Mon Feb 16 2015 11:08:14 GMT+0900 (東京 (標準時))
+// Created at Tue Feb 24 2015 16:32:11 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -86,8 +86,85 @@
 	return R;
 })();
 
+requireSimulator.setName('WebSite');
+define([], function () {
+    var loc=document.location.href;
+    var devMode=!!loc.match(/html\/dev\//) && !!loc.match(/localhost:3/);
+    if (loc.match(/jsrun\.it/)) {
+        window.WebSite={
+            urlAliases: {
+                "images/Ball.png":"http://jsrun.it/assets/9/X/T/b/9XTbt.png",
+                "images/base.png":"http://jsrun.it/assets/6/F/y/3/6Fy3B.png",
+                "images/Sample.png":"http://jsrun.it/assets/s/V/S/l/sVSlZ.png",
+                "images/neko.png":"http://jsrun.it/assets/j/D/9/q/jD9qQ.png",
+                "images/inputPad.png":"http://jsrun.it/assets/r/K/T/Y/rKTY9.png"
+            },top:"",devMode:devMode
+        };
+    } else if (
+      loc.match(/tonyuexe\.appspot\.com/) ||
+      loc.match(/localhost:8887/) ||
+ 	  (
+ 	    (
+ 	       loc.match(/^file:/) ||
+ 	       loc.match(/localhost/) ||
+	       loc.match(/tonyuedit\.appspot\.com/)
+	    ) &&
+	    loc.match(/\/html\/((dev)|(build))\//)
+	  )
+    ) {
+        window.WebSite={
+            urlAliases: {
+                "images/Ball.png":"../../images/Ball.png",
+                "images/base.png":"../../images/base.png",
+                "images/Sample.png":"../../images/Sample.png",
+                "images/neko.png":"../../images/neko.png",
+                "images/inputPad.png":"../../images/inputPad.png",
+                "images/mapchip.png":"../../images/mapchip.png",
+                    "images/ecl.png":"../../images/ecl.png"
+            },top:"../..",devMode:devMode
+        };
+    } else {
+        window.WebSite={
+           urlAliases: {}, top: "../..",devMode:devMode
+        };
+    }
+    window.WebSite.disableROM={};
+	if (loc.match(/tonyuedit\.appspot\.com/) || loc.match(/localhost:8888/) ) {
+	    window.WebSite.disableROM={"ROM_d.js":true};
+	}
+    if (loc.match(/\.appspot\.com/) ||  loc.match(/localhost:888[87]/)) {
+        window.WebSite.serverType="GAE";
+    }
+    if (loc.match(/localhost:3000/) ) {
+        window.WebSite.serverType="Node";
+    }
+    if (loc.match(/tonyuexe\.appspot\.com/) ||
+        loc.match(/localhost:8887/)) {
+        window.WebSite.serverTop=window.WebSite.top+"/exe"; // Fix NetModule.tonyu!!
+    } else {
+        window.WebSite.serverTop=window.WebSite.top+"/edit";// Fix NetModule.tonyu!!
+    }
+    window.WebSite.sampleImg=window.WebSite.top+"/images";
+    window.WebSite.blobPath=window.WebSite.serverTop+"/serveBlob";
+    window.WebSite.isNW=(typeof process=="object" && process.__node_webkit);
+    window.WebSite.tonyuHome="/Tonyu/";
+    if (window.WebSite.isNW) {
+        if (process.env.TONYU_HOME) {
+            window.WebSite.tonyuHome=process.env.TONYU_HOME.replace(/\\/g,"/");
+        } else {
+            window.WebSite.tonyuHome=process.cwd().replace(/\\/g,"/").replace(/\/$/,"")+"/fs/Tonyu/";
+        }
+    }
+    return window.WebSite;
+});
+
 requireSimulator.setName('FS');
-define([],function () {
+define(["WebSite"],function (WebSite) {
+    if (WebSite.isNW) {
+        var wfs=require("SFileNW");
+        if (typeof window=="object") window.FS=wfs;
+        return wfs;
+    }
     // Media Mask
     var MM_RAM=1, MM_LS=2, MM_MIX=3;
 	var ramDisk={},ramDiskUsage=null;
@@ -148,7 +225,7 @@ define([],function () {
     	var ls=getLocalStorage(path);
         var r=resolveROM(path);
         if (arguments.length==2) {
-            if (r) throw path+" is Read only.";
+            if (r) throw new Error(path+" is Read only.");
             if (text==null) delete ls[path];
             else return ls[path]=text;
         } else {
@@ -168,8 +245,8 @@ define([],function () {
     function putDirInfo(path, dinfo, trashed, media) {
         // trashed: putDirInfo is caused by trashing the file/dir.
         // if media==MM_RAM, dinfo should be only in ram, otherwise it shoule be only in localStorage
-        if (path==null) throw "putDir: Null path";
-        if (!isDir(path)) throw "Not a directory : "+path;
+        if (path==null) throw new Error( "putDir: Null path");
+        if (!isDir(path)) throw  new Error("Not a directory : "+path);
         if (media==MM_RAM) {
             ramDisk[path]=dinfo;
         } else {
@@ -191,7 +268,7 @@ define([],function () {
     }
     function getDirInfo(path ,getMask) {
         //    var MM_RAM=1, MM_LS=2;
-        if (path==null) throw "getDir: Null path";
+        if (path==null) throw  new Error("getDir: Null path");
         if (!endsWith(path,SEP)) path+=SEP;
         var dinfo={},r={};
         if (getMask & MM_RAM) {
@@ -333,12 +410,12 @@ define([],function () {
     };
     FS.get=function (path, securityDomain) {
     	if (!securityDomain) securityDomain={};
-        if (path==null) throw "FS.get: Null path";
+        if (path==null) throw  new Error("FS.get: Null path");
         if (path.isDir) return path;
         if (securityDomain.topDir && !startsWith(path,securityDomain.topDir)) {
-        	throw path+" is out of securtyDomain";
+        	throw  new Error(path+" is out of securtyDomain");
         }
-        if (!isPath(path)) throw path+": Path must starts with '/'";
+        if (!isPath(path)) throw  new Error(path+": Path must starts with '/'");
         var parent=up(path);
         var name=getName(path);
         var res;
@@ -417,9 +494,9 @@ define([],function () {
                 return FS.get(resPath, securityDomain);
             };
             dir.rm=function () {
-                if (!dir.exists()) throw path+": No such dir.";
+                if (!dir.exists()) throw  new Error(path+": No such dir.");
                 var lis=dir.ls();
-                if (lis.length>0) throw path+": Directory not empty";
+                if (lis.length>0) throw  new Error(path+": Directory not empty");
                 //lcs(path, null);
                 if (parent!=null) {
                     var r=dir.mediaType();
@@ -461,7 +538,7 @@ define([],function () {
 
             file.isDir=function () {return false;};
             file.rm=function () {
-                if (!file.exists()) throw path+": No such file.";
+                if (!file.exists()) throw new Error( path+": No such file.");
                 lcs(path, null);
                 if (parent!=null) {
                     var r=file.mediaType();
@@ -470,7 +547,7 @@ define([],function () {
                 }
             };
             file.removeWithoutTrash=function () {
-                if (!file.exists() && !file.isTrashed()) throw path+": No such file.";
+                if (!file.exists() && !file.isTrashed()) throw new Error( path+": No such file.");
                 lcs(path, null);
                 if (parent!=null) {
                     var r=file.mediaType();
@@ -523,7 +600,7 @@ define([],function () {
             //  path= /a/b/c/   base=/a/b/e/f  res= ../../c/
             var bp=(base.path ? base.path() : base);
             if (bp.substring(bp.length-1)!=SEP) {
-                throw bp+" is not a directory.";
+                throw  new Error(bp+" is not a directory.");
             }
             if (path.substring(0,bp.length)!=bp) {
                 return "../"+res.relPath(base.up());
@@ -647,76 +724,12 @@ define([],function () {
     return FS;
 });
 
-requireSimulator.setName('WebSite');
-define([], function () {
-    var loc=document.location.href;
-    var devMode=!!loc.match(/html\/dev\//) && !!loc.match(/localhost:3/);
-    if (loc.match(/jsrun\.it/)) {
-        window.WebSite={
-            urlAliases: {
-                "images/Ball.png":"http://jsrun.it/assets/9/X/T/b/9XTbt.png",
-                "images/base.png":"http://jsrun.it/assets/6/F/y/3/6Fy3B.png",
-                "images/Sample.png":"http://jsrun.it/assets/s/V/S/l/sVSlZ.png",
-                "images/neko.png":"http://jsrun.it/assets/j/D/9/q/jD9qQ.png",
-                "images/inputPad.png":"http://jsrun.it/assets/r/K/T/Y/rKTY9.png"
-            },top:"",devMode:devMode
-        };
-    } else if (
-      loc.match(/tonyuexe\.appspot\.com/) ||
-      loc.match(/localhost:8887/) ||
- 	  (
- 	    (
- 	       loc.match(/^file:/) ||
- 	       loc.match(/localhost/) ||
-	       loc.match(/tonyuedit\.appspot\.com/)
-	    ) &&
-	    loc.match(/\/html\/((dev)|(build))\//)
-	  )
-    ) {
-        window.WebSite={
-            urlAliases: {
-                "images/Ball.png":"../../images/Ball.png",
-                "images/base.png":"../../images/base.png",
-                "images/Sample.png":"../../images/Sample.png",
-                "images/neko.png":"../../images/neko.png",
-                "images/inputPad.png":"../../images/inputPad.png",
-                "images/mapchip.png":"../../images/mapchip.png",
-                    "images/ecl.png":"../../images/ecl.png"
-            },top:"../..",devMode:devMode
-        };
-    } else {
-        window.WebSite={
-           urlAliases: {}, top: "../..",devMode:devMode
-        };
-    }
-    window.WebSite.disableROM={};
-	if (loc.match(/tonyuedit\.appspot\.com/) || loc.match(/localhost:8888/) ) {
-	    window.WebSite.disableROM={"ROM_d.js":true};
-	}
-    if (loc.match(/\.appspot\.com/) ||  loc.match(/localhost:888[87]/)) {
-        window.WebSite.serverType="GAE";
-    }
-    if (loc.match(/localhost:3000/) ) {
-        window.WebSite.serverType="Node";
-    }
-    if (loc.match(/tonyuexe\.appspot\.com/) ||
-        loc.match(/localhost:8887/)) {
-        window.WebSite.serverTop=window.WebSite.top+"/exe"; // Fix NetModule.tonyu!!
-    } else {
-        window.WebSite.serverTop=window.WebSite.top+"/edit";// Fix NetModule.tonyu!!
-    }
-    window.WebSite.sampleImg=window.WebSite.top+"/images";
-    window.WebSite.blobPath=window.WebSite.serverTop+"/serveBlob";
-
-    return window.WebSite;
-});
-
 requireSimulator.setName('fs/ROMk');
 (function () {
   var rom={
     base: '/Tonyu/Kernel/',
     data: {
-      '': '{".desktop":{"lastUpdate":1421820402827},"Actor.tonyu":{"lastUpdate":1414051292629},"BaseActor.tonyu":{"lastUpdate":1421824721488},"Boot.tonyu":{"lastUpdate":1421384746171},"InputDevice.tonyu":{"lastUpdate":1416889517771},"Keys.tonyu":{"lastUpdate":1411529063832},"Map.tonyu":{"lastUpdate":1421122635939},"MapEditor.tonyu":{"lastUpdate":1421122635944},"MathMod.tonyu":{"lastUpdate":1421824721489},"MML.tonyu":{"lastUpdate":1421824721491},"NoviceActor.tonyu":{"lastUpdate":1411021950732},"Panel.tonyu":{"lastUpdate":1421820402831},"ScaledCanvas.tonyu":{"lastUpdate":1421122635940},"Sprites.tonyu":{"lastUpdate":1421122635941},"TObject.tonyu":{"lastUpdate":1421122635941},"TQuery.tonyu":{"lastUpdate":1403517241136},"WaveTable.tonyu":{"lastUpdate":1400120164000},"Pad.tonyu":{"lastUpdate":1421122635944},"DxChar.tonyu":{"lastUpdate":1421383049524},"MediaPlayer.tonyu":{"lastUpdate":1421383070767},"PlainChar.tonyu":{"lastUpdate":1421383084999},"SecretChar.tonyu":{"lastUpdate":1421383101403},"SpriteChar.tonyu":{"lastUpdate":1421383110209},"T1Line.tonyu":{"lastUpdate":1421383126796},"T1Map.tonyu":{"lastUpdate":1421383136414},"T1Page.tonyu":{"lastUpdate":1421383148587},"T1Text.tonyu":{"lastUpdate":1421383157722},"TextChar.tonyu":{"lastUpdate":1421383188873}}',
+      '.': '{".desktop":{"lastUpdate":1421820642248},"Actor.tonyu":{"lastUpdate":1414288839000},"BaseActor.tonyu":{"lastUpdate":1421824925337},"Boot.tonyu":{"lastUpdate":1421122943487},"DxChar.tonyu":{"lastUpdate":1421384204610},"InputDevice.tonyu":{"lastUpdate":1416890086000},"Keys.tonyu":{"lastUpdate":1412697666000},"Map.tonyu":{"lastUpdate":1421122943495},"MapEditor.tonyu":{"lastUpdate":1421122943503},"MathMod.tonyu":{"lastUpdate":1421824925347},"MediaPlayer.tonyu":{"lastUpdate":1421384204625},"MML.tonyu":{"lastUpdate":1421824925342},"NoviceActor.tonyu":{"lastUpdate":1412697666000},"Pad.tonyu":{"lastUpdate":1421122943510},"Panel.tonyu":{"lastUpdate":1421820642285},"PlainChar.tonyu":{"lastUpdate":1421384204651},"ScaledCanvas.tonyu":{"lastUpdate":1421122943524},"SecretChar.tonyu":{"lastUpdate":1421384204695},"SpriteChar.tonyu":{"lastUpdate":1421384204710},"Sprites.tonyu":{"lastUpdate":1421122943538},"T1Line.tonyu":{"lastUpdate":1421384204718},"T1Map.tonyu":{"lastUpdate":1421384204728},"T1Page.tonyu":{"lastUpdate":1421384204737},"T1Text.tonyu":{"lastUpdate":1421384204745},"TextChar.tonyu":{"lastUpdate":1421384204762},"TObject.tonyu":{"lastUpdate":1421122943543},"TQuery.tonyu":{"lastUpdate":1412697666000},"WaveTable.tonyu":{"lastUpdate":1412697666000}}',
       '.desktop': '{"runMenuOrd":["Main0121","Main1023","TouchedTestMain","Main2","MapLoad","Main","AcTestM","NObjTest","NObjTest2","AcTest","AltBoot","Ball","Bar","Bounce","MapTest","MapTest2nd","SetBGCTest","Label","PanelTest","BaseActor","Panel","MathMod"]}',
       'Actor.tonyu': 
         'extends BaseActor;\n'+
@@ -2839,10 +2852,11 @@ requireSimulator.setName('fs/ROMk');
       
     }
   };
-  if (WebSite.devMode || WebSite.disableROM['ROM_k.js']) {
+  if (WebSite.devMode || WebSite.disableROM['ROM_k.js'] || WebSite.isNW) {
     rom.base='/ROM'+rom.base;
+  } else {
+    FS.mountROM(rom);
   }
-  FS.mountROM(rom);
 })();
 requireSimulator.setName('Tonyu');
 Tonyu=function () {
@@ -5307,7 +5321,7 @@ function initClassDecls(klass, env ) {
                     //console.log("head.ftype:",stmt);
                 }
                 methods[head.name.text]={
-                        nowait: !!head.nowait,
+                        nowait: (!!head.nowait),
                         ftype:  ftype,
                         name:  head.name.text,
                         head:  head,
@@ -5339,7 +5353,32 @@ function annotation3(aobjs, node, aobj) {
     }
     return res;
 }
-
+function getMethod2(klass,name) {
+    var res=null;
+    getDependingClasses(klass).forEach(function (k) {
+        if (res) return;
+        res=k.decls.methods[name];
+    });
+    return res;
+}
+function getDependingClasses(klass) {
+    var visited={};
+    var incls=[];
+    var res=[];
+    for (var k=klass ; k ; k=k.superClass) {
+        incls=incls.concat(k.includes);
+        visited[k.fullName]=true;
+        res.push(k);
+    }
+    while (incls.length>0) {
+        var k=incls.shift();
+        if (visited[k.fullName]) continue;
+        visited[k.fullName]=true;
+        res.push(k);
+        incls=incls.concat(k.includes);
+    }
+    return res;
+}
 function genJS(klass, env,pass) {
     var srcFile=klass.src.tonyu; //file object
     var srcCont=srcFile.text();
@@ -5429,24 +5468,6 @@ function genJS(klass, env,pass) {
         if (klass.builtin) return klass.fullName;// CFN klass.fullName
         return CLASS_HEAD+klass.fullName;// CFN  klass.fullName
     }
-    function getDependingClasses(klass) {
-        var visited={};
-        var incls=[];
-        var res=[];
-        for (var k=klass ; k ; k=k.superClass) {
-        	incls=incls.concat(k.includes);
-        	visited[getClassName(k)]=true;
-        	res.push(k);
-        }
-        while (incls.length>0) {
-        	var k=incls.shift();
-        	if (visited[getClassName(k)]) continue;
-        	visited[getClassName(k)]=true;
-        	res.push(k);
-            incls=incls.concat(k.includes);
-        }
-    	return res;
-    }
     function initTopLevelScope2(klass) {
     	if (klass.builtin) return;
         var s=topLevelScope;
@@ -5469,18 +5490,32 @@ function genJS(klass, env,pass) {
             s[i]=genSt(ST.CLASS,{name:i});
         }
     }
+    function inheritSuperMethod() {
+        var d=getDependingClasses(klass);
+        for (var n in klass.decls.methods) {
+            var m2=klass.decls.methods[n];
+            d.forEach(function (k) {
+                var m=k.decls.methods[n];
+                if (m && m.nowait) {
+                    m2.nowait=true;
+                }
+            });
+        }
+    }
+
     function newScope(s) {
         var f=function (){};
         f.prototype=s;
         return new f();
     }
     function getMethod(name) {
-    	var res=null;
+    	/*var res=null;
     	getDependingClasses(klass).forEach(function (k) {
     		if (res) return;
             res=k.decls.methods[name];
     	});
-    	return res;
+    	return res;*/
+        return getMethod2(klass,name);
     }
 
     function nc(o, mesg) {
@@ -6226,7 +6261,7 @@ function genJS(klass, env,pass) {
             this.def(node);
         },
         exprstmt: function (node) {
-            var t;
+            var t,m;
             if (!ctx.noWait &&
                     (t=OM.match(node,noRetFiberCallTmpl)) &&
                     stype(ctx.scope[t.N])==ST.METHOD &&
@@ -6244,17 +6279,25 @@ function genJS(klass, env,pass) {
             } else if (!ctx.noWait &&
                     (t=OM.match(node,noRetSuperFiberCallTmpl)) &&
                     t.S.name) {
-                t.type="noRetSuper";
-                t.superClass=klass.superClass;
-                annotation(node, {fiberCall:t});
-                fiberCallRequired(this.path);
+                m=getMethod(t.S.name.text);
+                if (!m) throw new Error("メソッド"+t.S.name.text+" はありません。");
+                if (!m.nowait) {
+                    t.type="noRetSuper";
+                    t.superClass=klass.superClass;
+                    annotation(node, {fiberCall:t});
+                    fiberCallRequired(this.path);
+                }
             } else if (!ctx.noWait &&
                     (t=OM.match(node,retSuperFiberCallTmpl)) &&
                     t.S.name) {
-                t.type="retSuper";
-                t.superClass=klass.superClass;
-                annotation(node, {fiberCall:t});
-                fiberCallRequired(this.path);
+                m=getMethod(t.S.name.text);
+                if (!m) throw new Error("メソッド"+t.S.name.text+" はありません。");
+                if (!m.nowait) {
+                    t.type="retSuper";
+                    t.superClass=klass.superClass;
+                    annotation(node, {fiberCall:t});
+                    fiberCallRequired(this.path);
+                }
             }
             this.visit(node.expr);
         }
@@ -6340,6 +6383,7 @@ function genJS(klass, env,pass) {
                 }
                 if (debug) console.log("method3", name);
             }
+            printf("__dummy: false%n");
             printf("%}});");
         });
     }
@@ -6524,6 +6568,7 @@ function genJS(klass, env,pass) {
         return OM.match(f, {ftype:"constructor"}) || OM.match(f, {name:"new"});
     }
     initTopLevelScope();
+    inheritSuperMethod();
     genSource();
     klass.src.js=buf.buf;
     if (debug) {
@@ -6828,13 +6873,14 @@ define(["PatternParser","Util","WebSite"], function (PP,Util,WebSite) {
         return res;
     };
 	IL.convURL=function (url, baseDir) {
+	    if (url==null) url="";
 	    url=url.replace(/\$\{([a-zA-Z0-9_]+)\}/g, function (t,name) {
 	        return WebSite[name];
 	    });
         if (WebSite.urlAliases[url]) url=WebSite.urlAliases[url];
 	    if (Util.startsWith(url,"ls:")) {
 	        var rel=url.substring("ls:".length);
-	        if (!baseDir) throw "Baesdir not specified";
+	        if (!baseDir) throw new Error("Basedir not specified");
 	        var f=baseDir.rel(rel);
 	        if (!f.exists()) throw "ImageList file not found: "+f;
 	        url=f.text();
@@ -6870,7 +6916,7 @@ define([],function (){
         return false;
     };
     trc.get=function (e,ttb) {
-        s=e.stack;
+        var s=e.stack;
         if (typeof s!="string") return false;
         var lines=s.split(/\n/);
         var res=[];
@@ -6885,18 +6931,18 @@ define([],function (){
                 var str=tri.klass.src.js;
                 var slines=str.split(/\n/);
                 var sid=null;
-                for (var i=0 ; i<slines.length && i+1<row ; i++) {
-                    var lp=/\$LASTPOS=([0-9]+)/.exec(slines[i]);
+                for (var j=0 ; j<slines.length && j+1<row ; j++) {
+                    var lp=/\$LASTPOS=([0-9]+)/.exec(slines[j]);
                     if (lp) sid=parseInt(lp[1]);
                 }
-                console.log("slines,row,sid",slines,row,sid);
+                //console.log("slines,row,sid",slines,row,sid);
                 if (sid) {
                     var stri=ttb.decode(sid);
                     if (stri) res.push(stri);
                 }
             }
         }
-        console.log("ttc.get",lines,res);
+       // console.log("StackTrace.get",lines,res);
         return res;
     };
     return trc;
@@ -7129,12 +7175,13 @@ define(["ImageRect"],function (IR) {
 });
 requireSimulator.setName('Tonyu.Project');
 define(["Tonyu", "Tonyu.Compiler", "TError", "FS", "Tonyu.TraceTbl","ImageList","StackTrace",
-        "typeCheck","Blob","thumbnail"],
+        "typeCheck","Blob","thumbnail","WebSite"],
         function (Tonyu, Tonyu_Compiler, TError, FS, Tonyu_TraceTbl, ImageList,StackTrace,
-                tc,Blob,thumbnail) {
+                tc,Blob,thumbnail,WebSite) {
 return Tonyu.Project=function (dir, kernelDir) {
     var TPR={};
-    if (!kernelDir) kernelDir=FS.get("/Tonyu/Kernel/");
+    var home=FS.get(WebSite.tonyuHome);
+    if (!kernelDir) kernelDir=home.rel("Kernel/");
     var traceTbl=Tonyu.TraceTbl();
     var env={classes:{}, traceTbl:traceTbl, options:{compiler:{}} };
     TPR.EXT=".tonyu";
@@ -7180,7 +7227,7 @@ return Tonyu.Project=function (dir, kernelDir) {
         }
     };
     TPR.stop=function () {
-        var cur=TPR.runningThread; //Tonyu.getGlobal("$currentThreadGroup");
+        var cur=TPR.runningThread; // Tonyu.getGlobal("$currentThreadGroup");
         if (cur) cur.kill();
         var main=TPR.runningObj;
         if (main && main.stop) main.stop();
@@ -7388,7 +7435,7 @@ return Tonyu.Project=function (dir, kernelDir) {
         //var thg=Tonyu.threadGroup();
         var mainClass=Tonyu.getClass(mainClassName);
         if (!mainClass) throw TError( mainClassName+" というクラスはありません", "不明" ,0);
-        //Tonyu.runMode=true;
+        // Tonyu.runMode=true;
         var main=new mainClass();
         var th=Tonyu.thread();
         th.apply(main,"main");
@@ -7459,7 +7506,7 @@ if (typeof getReq=="function") getReq.exports("Tonyu.Project");
 });
 
 requireSimulator.setName('Shell');
-define(["FS","Util"],function (FS,Util) {
+define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
     var Shell={cwd:FS.get("/")};
     Shell.cd=function (dir) {
         Shell.cwd=resolve(dir,true);
@@ -7607,6 +7654,9 @@ define(["FS","Util"],function (FS,Util) {
         }
     };
     sh=Shell;
+    if (WebSite.isNW) {
+        sh.devtool=function () { require('nw.gui').Window.get().showDevTools();}
+    }
     return Shell;
 });
 
@@ -7745,9 +7795,10 @@ requirejs(["ImageList","TextRect","fukidashi"], function () {
 
 });
 requireSimulator.setName('runScript');
-requirejs(["fs/ROMk","FS","Tonyu.Project","Shell","KeyEventChecker","ScriptTagFS","runtime"],
-        function (romk,   FS,  Tonyu_Project, sh,      KeyEventChecker, ScriptTagFS,   rt) {
+requirejs(["FS","Tonyu.Project","Shell","KeyEventChecker","ScriptTagFS","runtime","WebSite"],
+        function (FS,  Tonyu_Project, sh,      KeyEventChecker, ScriptTagFS,   rt,WebSite) {
     $(function () {
+        var home=FS.get(WebSite.tonyuHome);
         Tonyu.defaultResource={
                 images:[
                         {name:"$pat_base", url: "images/base.png", pwidth:32, pheight:32},
@@ -7772,7 +7823,7 @@ requirejs(["fs/ROMk","FS","Tonyu.Project","Shell","KeyEventChecker","ScriptTagFS
         var locs=location.href.replace(/\?.*/,"").split(/\//);
         var loc=locs.pop();
         if (loc.length<0) locs="runscript";
-        var curProjectDir=FS.get("/Tonyu/"+loc+"/");
+        var curProjectDir=home.rel(loc+"/");
         //if (curProjectDir.exists()) sh.rm(curProjectDir,{r:1});
         var fo=ScriptTagFS.toObj();
         for (var fn in fo) {
@@ -7801,7 +7852,7 @@ requirejs(["fs/ROMk","FS","Tonyu.Project","Shell","KeyEventChecker","ScriptTagFS
                 run: {mainClass: main, bootClass: "Boot"},
                 kernelEditable: false
         };
-        var kernelDir=FS.get("/Tonyu/Kernel/");
+        var kernelDir=home.rel("Kernel/");
         var curPrj=Tonyu_Project(curProjectDir, kernelDir);
         var o=curPrj.getOptions();
         if (o.compiler && o.compiler.diagnose) {

@@ -249,7 +249,8 @@ return Wiki=function (placeHolder, home, options, plugins) {
                 on:{dragover: s, dragenter: s, drop:dropAdd}},
                     "ここに画像ファイル(png/gif/jpg)をドラッグ＆ドロップして追加"
             );
-            imfile=FS.get("/Tonyu/doc/images/").rel(name);
+            var thome=FS.get(WebSite.tonyuHome);
+            imfile=thome.rel("doc/images/").rel(name);
             if (imfile.exists()) {
                 res.empty().append(UI("img",{src:imfile.text() }));
             }

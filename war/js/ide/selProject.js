@@ -1,17 +1,34 @@
-requirejs(["fs/ROMk","fs/ROMd","fs/ROMs", "FS","Wiki","Shell","Shell2",
-           "copySample","NewProjectDialog","UI","Sync","Auth","zip","requestFragment"],
-  function (romk, romd, roms,               FS, Wiki,   sh,sh2,
-            copySample,  NPD,           UI, Sync, Auth,zip,requestFragment) {
+requirejs(["FS","Wiki","Shell","Shell2",
+           "copySample","NewProjectDialog","UI","Sync","Auth","zip","requestFragment","WebSite"],
+  function (FS, Wiki,   sh,sh2,
+            copySample,  NPD,           UI, Sync, Auth,zip,requestFragment,WebSite) {
 $(function () {
+
     copySample();
-    var home=FS.get("/Tonyu/");
+    var home=FS.get(WebSite.tonyuHome);
     var projects=home.rel("Projects/");
     sh.cd(projects);
     var curDir=projects;
     function ls() {
         $("#prjItemList").empty();
-        curDir.ls(FS.orderByNewest).forEach(function (name) {
-            var f=curDir.rel(name);
+        var d=[];
+        curDir.each(function (f) {
+            if (!f.isDir()) return;
+            var l=f.lastUpdate();
+            var r=f.rel("options.json");
+            if (r.exists()) {
+                l=r.lastUpdate();
+            }
+            d.push([f,l]);
+        });
+        d=d.sort(function (a,b) {
+            return b[1]-a[1];
+        });
+        d.forEach(function (e) {
+            var f=e[0];
+            var name=f.name();
+
+            if (!f.isDir()) return;
             var u=UI("div", {"class":"project"},
                     ["a", {href:"project.html?dir="+f.path()},
                      ["img",{$var:"t",src:"../../images/nowprint.png"}],
@@ -36,15 +53,15 @@ $(function () {
             $(".while-logged-in").hide();
         }
     });
-    var w=Wiki($("#wikiViewArea"), FS.get("/Tonyu/doc/"));
+    var w=Wiki($("#wikiViewArea"), home.rel("doc/"));
     var syncDoc=false;
     if (WebSite.devMode) {
-        Sync.sync(FS.get("/Tonyu/"),{v:1});
+        Sync.sync(home,{v:1});
     } else if (WebSite.disableROM["ROM_d.js"]) {
         syncDoc=true;
-        Sync.sync(FS.get("/Tonyu/doc/"),{v:1, excludes:["/Tonyu/doc/html/"],
+        Sync.sync(home.rel("doc/"),{v:1, excludes:[home.rel("doc/html/").path()],
             onend:function () {
-            if (FS.get("/Tonyu/doc/index.txt").exists()) {
+            if (home.rel("doc/index.txt").exists()) {
                 w.show("index");
             }
         }});

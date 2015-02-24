@@ -1,21 +1,34 @@
-define(["genROM","dumpScript","Util","FS","Sync","Shell"], function (genROM,dumpScript,Util,FS,Sync,sh) {
+define(["genROM","dumpScript","Util","FS","Sync","Shell","WebSite"],
+        function (genROM,dumpScript,Util,FS,Sync,sh,WebSite) {
     var build=Util.getQueryString("build",0);
     if (build) {
         $(doBuild);
     }
-    sh.build=doBuild;
+    sh.build=WebSite.isNW?doBuildNW:doBuild;
     sh.build.description="Build files before commit.";
+    function doBuildNW() {
+        var home=FS.get(WebSite.tonyuHome);
+        genROM(home.rel("Kernel/"),     home.rel("js/gen/ROM_k.js"));
+        genROM(home.rel("doc/"),        home.rel("js/gen/ROM_d.js"));
+        genROM(home.rel("SampleROM/"),  home.rel("js/gen/ROM_s.js"));
+        var ds=require("dumpScript");
+        var reqConf=ds.genShim();
+        ds.concat({names:["fs/ROMk","fs/ROMd","fs/ROMs","ide/selProject"], outFile:"index",reqConf:reqConf});
+        ds.concat({names: ["fs/ROMk","fs/ROMd","fs/ROMs","ide/editor"], outFile:"project",reqConf:reqConf});
+        ds.concat({names: ["fs/ROMk","runScript"], outFile:"runScript",reqConf:reqConf});
+    }
     function doBuild() {
-        genROM(FS.get("/Tonyu/Kernel/"), FS.get("/Tonyu/js/gen/ROM_k.js"));
-        genROM(FS.get("/Tonyu/doc/"), FS.get("/Tonyu/js/gen/ROM_d.js"));
-        genROM(FS.get("/Tonyu/SampleROM/"), FS.get("/Tonyu/js/gen/ROM_s.js"));
-        sync("/Tonyu/", function () {
+        var home=FS.get(WebSite.tonyuHome);
+        genROM(home.rel("Kernel/"),     home.rel("js/gen/ROM_k.js"));
+        genROM(home.rel("doc/"),        home.rel("js/gen/ROM_d.js"));
+        genROM(home.rel("SampleROM/"),  home.rel("js/gen/ROM_s.js"));
+        sync(home, function () {
             //next(".");
-            concat({name: "ide/selProject", outfile:"index"},function (res) {
+            concat({names:["fs/ROMk","fs/ROMd","fs/ROMs","ide/selProject"], outfile:"index"},function (res) {
                 sh.echo(res.mesg);
-                concat({name: "ide/editor", outfile:"project"},function (res) {
+                concat({names: ["fs/ROMk","fs/ROMd","fs/ROMs","ide/editor"], outfile:"project"},function (res) {
                     sh.echo(res.mesg);
-                    concat({name: "runScript", outfile:"runScript"},function (res) {
+                    concat({names: ["fs/ROMk","runScript"], outfile:"runScript"},function (res) {
                         sh.echo(res.mesg);
                         sh.prompt();
                     });
@@ -39,8 +52,8 @@ define(["genROM","dumpScript","Util","FS","Sync","Shell"], function (genROM,dump
         });
     }
     function sync(dir, onend) {
-    	console.log("Syncing "+dir);
-        Sync.sync(FS.get(dir),onend);
+    	console.log("Syncing "+dir.path());
+        Sync.sync(dir,onend);
     }
     function upload(dir, onend) {
     	console.log("Uploading "+dir);

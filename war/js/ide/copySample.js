@@ -1,7 +1,9 @@
-define(["Shell","FS"],function (sh,fs) {
-    var samples=FS.get("/Tonyu/SampleROM/");
-    var projects=FS.get("/Tonyu/Projects/");
+define(["Shell","FS","WebSite"],function (sh,fs,WebSite) {
+    var home=FS.get(WebSite.tonyuHome);
+    var samples=home.rel("SampleROM/");
+    var projects=home.rel("Projects/");
     function all() {
+        if (!samples.exists()) return;
         samples.ls().forEach(cs);
     }
     function available(dir) {
@@ -14,7 +16,7 @@ define(["Shell","FS"],function (sh,fs) {
         var src=samples.rel(n);
         var dst=projects.rel(n);
         //console.log(n,src,dst,dst.exists());
-        if (!dst.exists()) {
+        if (src.exists() && !dst.exists()) {
             sh.cp(src,dst);//,{v:1});
         }
     }
