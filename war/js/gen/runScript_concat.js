@@ -1,4 +1,4 @@
-// Created at Tue Feb 24 2015 17:18:56 GMT+0900 (東京 (標準時))
+// Created at Fri Feb 27 2015 16:35:45 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -177,10 +177,12 @@ define(["WebSite"],function (WebSite) {
     FS.ramDisk=ramDisk;
     FS.ramDiskUsage=ramDiskUsage;
 
-    var roms={};
+    var roms={},romParents={};
     var SEP="/";
     FS.roms=roms;
+    FS.romParents=romParents;
     function extend(dst,src) {
+        if (!src) return;
         for (var i in src) dst[i]=src[i];
     }
     function endsWith(str,postfix) {
@@ -285,6 +287,7 @@ define(["WebSite"],function (WebSite) {
             }
         }
         extend(dinfo, r);
+        extend(dinfo, romParents[path]);
         for (var i in dinfo) {
             if (typeof dinfo[i]=="number") {
                 dinfo[i]={lastUpdate:dinfo[i]};
@@ -389,6 +392,12 @@ define(["WebSite"],function (WebSite) {
     FS.mountROM=function (exported) {
     	console.log("ROM mouted on ",exported.base);
         roms[exported.base]=exported.data;
+
+        var ps=splitPath(exported.base);
+        var n=ps.pop();
+        var p=ps.join(SEP)+SEP;
+        if (!romParents[p]) romParents[p]={};
+        romParents[p][n]={lastUpdate:new Date().getTime()};
     };
     var DONOTEXPORT="DONOTEXPORT";
     FS.exportDir=function (dir,options) {
@@ -670,21 +679,6 @@ define(["WebSite"],function (WebSite) {
         var s=splitPath(path);  //  s=["","a","b","c/"]     ["","a","b","c"]
         s[s.length-1]=""; //        s=["","a","b",""]       ["","a","b",""]
         return  s.join(SEP) ;  //     /a/b/                 /a/b/
-
-        /*var name=s[s.length-1];
-        var isDir=endsWith(name, SEP);
-        if (!isDir) {
-        	// path=/a/b/c
-        	// s=["a", "b", "c"]
-            s[s.length-1]=""; // s=["a","b",""]
-            return  s.join(SEP) ;  // /a/b/
-        } else {
-        	// path=/a/b/c/
-        	// s=["a", "b", "c/"]
-        	//s.pop();
-            s[s.length-1]="";     // s=["a", "b", ""]
-            return  s.join(SEP) ;  // /a/b/
-        }*/
     }
     function isPath(path) {
         return startsWith(path,SEP);
@@ -729,10 +723,11 @@ requireSimulator.setName('fs/ROMk');
   var rom={
     base: '/Tonyu/Kernel/',
     data: {
-      '': '{".desktop":{"lastUpdate":1421820642248},"Actor.tonyu":{"lastUpdate":1414288839000},"BaseActor.tonyu":{"lastUpdate":1421824925337},"Boot.tonyu":{"lastUpdate":1421122943487},"DxChar.tonyu":{"lastUpdate":1421384204610},"InputDevice.tonyu":{"lastUpdate":1416890086000},"Keys.tonyu":{"lastUpdate":1412697666000},"Map.tonyu":{"lastUpdate":1421122943495},"MapEditor.tonyu":{"lastUpdate":1421122943503},"MathMod.tonyu":{"lastUpdate":1421824925347},"MediaPlayer.tonyu":{"lastUpdate":1421384204625},"MML.tonyu":{"lastUpdate":1421824925342},"NoviceActor.tonyu":{"lastUpdate":1412697666000},"Pad.tonyu":{"lastUpdate":1421122943510},"Panel.tonyu":{"lastUpdate":1421820642285},"PlainChar.tonyu":{"lastUpdate":1421384204651},"ScaledCanvas.tonyu":{"lastUpdate":1421122943524},"SecretChar.tonyu":{"lastUpdate":1421384204695},"SpriteChar.tonyu":{"lastUpdate":1421384204710},"Sprites.tonyu":{"lastUpdate":1421122943538},"T1Line.tonyu":{"lastUpdate":1421384204718},"T1Map.tonyu":{"lastUpdate":1421384204728},"T1Page.tonyu":{"lastUpdate":1421384204737},"T1Text.tonyu":{"lastUpdate":1421384204745},"TextChar.tonyu":{"lastUpdate":1421384204762},"TObject.tonyu":{"lastUpdate":1421122943543},"TQuery.tonyu":{"lastUpdate":1412697666000},"WaveTable.tonyu":{"lastUpdate":1412697666000}}',
+      '': '{".desktop":{"lastUpdate":1424849946377},"Actor.tonyu":{"lastUpdate":1425004177938},"BaseActor.tonyu":{"lastUpdate":1425018531557},"Boot.tonyu":{"lastUpdate":1425019818961},"DxChar.tonyu":{"lastUpdate":1421384204610},"EventMod.tonyu":{"lastUpdate":1425010352383},"InputDevice.tonyu":{"lastUpdate":1416890086000},"Keys.tonyu":{"lastUpdate":1412697666000},"Map.tonyu":{"lastUpdate":1421122943495},"MapEditor.tonyu":{"lastUpdate":1421122943503},"MathMod.tonyu":{"lastUpdate":1424849946395},"MediaPlayer.tonyu":{"lastUpdate":1421384204625},"MML.tonyu":{"lastUpdate":1424849946399},"NoviceActor.tonyu":{"lastUpdate":1412697666000},"Pad.tonyu":{"lastUpdate":1421122943510},"Panel.tonyu":{"lastUpdate":1424849946404},"PlainChar.tonyu":{"lastUpdate":1421384204651},"PlayMod.tonyu":{"lastUpdate":1425018365373},"ScaledCanvas.tonyu":{"lastUpdate":1421122943524},"SecretChar.tonyu":{"lastUpdate":1421384204695},"SpriteChar.tonyu":{"lastUpdate":1421384204710},"Sprites.tonyu":{"lastUpdate":1421122943538},"T1Line.tonyu":{"lastUpdate":1421384204718},"T1Map.tonyu":{"lastUpdate":1421384204728},"T1Page.tonyu":{"lastUpdate":1421384204737},"T1Text.tonyu":{"lastUpdate":1421384204745},"T2Body.tonyu":{"lastUpdate":1425020138253},"T2Mod.tonyu":{"lastUpdate":1425020004839},"T2World.tonyu":{"lastUpdate":1425020265686},"TextChar.tonyu":{"lastUpdate":1421384204762},"TObject.tonyu":{"lastUpdate":1421122943543},"TQuery.tonyu":{"lastUpdate":1412697666000},"WaveTable.tonyu":{"lastUpdate":1412697666000}}',
       '.desktop': '{"runMenuOrd":["Main0121","Main1023","TouchedTestMain","Main2","MapLoad","Main","AcTestM","NObjTest","NObjTest2","AcTest","AltBoot","Ball","Bar","Bounce","MapTest","MapTest2nd","SetBGCTest","Label","PanelTest","BaseActor","Panel","MathMod"]}',
       'Actor.tonyu': 
         'extends BaseActor;\n'+
+        'includes PlayMod;\n'+
         'native Sprites;\n'+
         'native Tonyu;\n'+
         '\n'+
@@ -753,7 +748,7 @@ requireSimulator.setName('fs/ROMk');
       ,
       'BaseActor.tonyu': 
         'extends null;\n'+
-        'includes MathMod;\n'+
+        'includes MathMod,EventMod;\n'+
         'native Tonyu;\n'+
         'native Key;\n'+
         'native console;\n'+
@@ -914,7 +909,7 @@ requireSimulator.setName('fs/ROMk');
         '        _th.kill();\n'+
         '    }\n'+
         '    hide();\n'+
-        '    play().stop();\n'+
+        '    fireEvent("die");\n'+
         '    _isDead=true;\n'+
         '}\n'+
         'nowait \\hide() {\n'+
@@ -1057,28 +1052,7 @@ requireSimulator.setName('fs/ROMk');
         '    $Sprites.draw($Screen.buf[0]);\n'+
         '    $Screen.draw();\n'+
         '}\n'+
-        '\\play() {\n'+
-        '    if (!_mml) _mml=new MML;\n'+
-        '    if (isDead() || arguments.length==0) return _mml;\n'+
-        '    var mmls=[];\n'+
-        '    for (var i=0; i<arguments.length; i++) {\n'+
-        '        mmls.push(arguments[i]);\n'+
-        '    }\n'+
-        '    _mml.play(mmls);\n'+
-        '    while (_mml.bufferCount()>2) {\n'+
-        '        update();\n'+
-        '    }\n'+
-        '    return _mml;\n'+
-        '}\n'+
-        'nowait \\playSE() {\n'+
-        '    var mml=new MML;\n'+
-        '    var mmls=[];\n'+
-        '    for (var i=0; i<arguments.length; i++) {\n'+
-        '        mmls.push(arguments[i]);\n'+
-        '    }\n'+
-        '    mml.play(mmls);\n'+
-        '    return mml;\n'+
-        '}\n'+
+        '\n'+
         '// from PlainChar\n'+
         '\\color(r,g,b) {\n'+
         '    return "rgb("+[r,g,b].join(",")+")";\n'+
@@ -1128,9 +1102,13 @@ requireSimulator.setName('fs/ROMk');
         '\\initSprites() {\n'+
         '    $Sprites=new Sprites();\n'+
         '    $FrontSprites=new Sprites();\n'+
+        '    print ("Loading plugins..");\n'+
+        '    var a=asyncResult();\n'+
+        '    $currentProject.loadPlugins(a.receiver);\n'+
+        '    waitFor(a);\n'+
         '    print ("Loading pats..");\n'+
         '    var rs=$currentProject.getResource();\n'+
-        '    var a=asyncResult();\n'+
+        '    a=asyncResult();\n'+
         '    ImageList.load( rs.images, a.receiver)\n'+
         '    {baseDir:$currentProject.getDir()};\n'+
         '    waitFor(a);\n'+
@@ -1164,11 +1142,7 @@ requireSimulator.setName('fs/ROMk');
         '    new mainClass();\n'+
         '}\n'+
         '\\stop() {\n'+
-        '    \n'+
-        '    for (var k,v in $MMLS) {\n'+
-        '        v.stop();\n'+
-        '    }\n'+
-        '    $WaveTable.stop();\n'+
+        '    fireEvent("stop");\n'+
         '}\n'+
         'initSprites();\n'+
         '$InputDevice=new InputDevice;\n'+
@@ -1177,9 +1151,7 @@ requireSimulator.setName('fs/ROMk');
         '\n'+
         '$pat_fruits=30;\n'+
         '$Keys=new Keys;\n'+
-        '$MMLS={};\n'+
         '$Math=Math;\n'+
-        '$WaveTable=new WaveTable;\n'+
         '$consolePanel=new Panel{align:"center",x:465/2,y:465/2,width:465,height:465,zOrder:-10,layer:$FrontSprites};\n'+
         '$consolePrintY=465-15;\n'+
         '$panel=new Panel{align:"center",x:$screenWidth/2,y:$screenHeight/2,width:$screenWidth,height:$screenHeight,zOrder:-1,layer:$FrontSprites};\n'+
@@ -1187,132 +1159,97 @@ requireSimulator.setName('fs/ROMk');
         'initFPSParams();\n'+
         '\n'+
         'while (true) {\n'+
-        '    ti=new Date().getTime();\n'+
         '    thg.steps();\n'+
         '    $Keys.update();\n'+
         '    $InputDevice.update();\n'+
         '    $screenWidth=$Screen.width;\n'+
         '    $screenHeight=$Screen.height;\n'+
-        '    if (doDraw == 1) { // フレームスキップの時は描画しない\n'+
+        '    \n'+
+        '    doDraw=now()<deadLine;\n'+
+        '    if (!doDraw && frameSkipped>=maxFrameSkip) {\n'+
+        '        doDraw=true;\n'+
+        '        resetDeadLine();\n'+
+        '    }\n'+
+        '    if (doDraw) { // フレームスキップの時は描画しない\n'+
         '        $Screen.fillCanvas($Screen.buf[0]);\n'+
         '        $Sprites.draw($Screen.buf[0]);\n'+
         '        $FrontSprites.draw($Screen.buf[0]);\n'+
         '        $Screen.draw();\n'+
-        '        measureFps(); // FPS計測\n'+
+        '        fps_fpsCnt ++;\n'+
+        '        frameSkipped=0;\n'+
+        '    } else {\n'+
+        '        frameSkipped++;\n'+
         '    }\n'+
         '    $Sprites.checkHit();\n'+
-        '    \n'+
         '    fps_rpsCnt ++;\n'+
-        '    waitFrame(_fps, _frameSkip); // FPS制御\n'+
+        '    measureFps();\n'+
+        '    waitFrame(); // FPS制御\n'+
+        '    while(paused) {\n'+
+        '        waitFor(Tonyu.timeout(1)); \n'+
+        '        if (!paused) resetDeadLine();\n'+
+        '    }\n'+
         '}\n'+
         '\n'+
         'nowait \\initFPSParams() {\n'+
         '    // フレームレートの設定\n'+
         '    _fps = 30;\n'+
-        '    _frameSkip = 4;\n'+
-        '    \n'+
+        '    maxframeSkip = 5;\n'+
         '    // フレームレート制御でつかう変数 //\n'+
         '    frameCnt = 0;\n'+
-        '    wtFrac = 0;\n'+
-        '    frameDelay = 0;\n'+
-        '    frameSkipCount = 0;\n'+
-        '    frameSkipSW = 0;\n'+
-        '    doDraw = 1;\n'+
-        '    // フレームレート計測でつかう変数 //\n'+
-        '    fps_fpsStartTime = 0;\n'+
-        '    fps_fpsTimeCnt = 1;\n'+
-        '    fps_fpsCnt = -1;\n'+
-        '    fps_fps = 0;\n'+
-        '    fps_rpsCnt = 0;\n'+
-        '    fps_rps = 0;\n'+
-        '    fps_oldTime = 0;\n'+
-        '    \n'+
-        '    $Boot = this; // アクセスできるようにした\n'+
+        '    resetDeadLine();\n'+
+        '    $Boot = this;\n'+
+        '    lastMeasured=now();\n'+
+        '    fps_fps=fps_rps=fps_fpsCnt=fps_rpsCnt=0;\n'+
+        '}\n'+
+        'nowait \\now() {\n'+
+        '    return new Date().getTime();\n'+
+        '}\n'+
+        'nowait \\resetDeadLine() {\n'+
+        '    deadLine=now()+1000/_fps;\n'+
+        '    frameSkipped = 0;\n'+
+        '}\n'+
+        '\n'+
+        '\\waitFrame() {\n'+
+        '    var wt=deadLine-now();\n'+
+        '    if (wt<1) {\n'+
+        '        if (wt<-1000) resetDeadLine();\n'+
+        '        wt=1;\n'+
+        '    }\n'+
+        '    wt=floor(wt);\n'+
+        '    waitFor(Tonyu.timeout(wt));\n'+
+        '    deadLine+=1000/_fps;\n'+
+        '}\n'+
+        '\n'+
+        'nowait \\getFrameRate() {\n'+
+        '    return _fps;\n'+
         '}\n'+
         '\n'+
         '// Tonyu1の$System.setFrameRate() //\n'+
-        'nowait \\setFrameRate(fps, frameSkipMax) {\n'+
+        'nowait \\setFrameRate(fps, maxFrameSkip) {\n'+
         '    _fps = fps;\n'+
-        '    if (!frameSkipMax) frameSkipMax=5;\n'+
-        '    _frameSkip = frameSkipMax - 1; // Tonyu1では最小が1なので-1\n'+
+        '    if (typeof maxFrameSkip!="number") maxFrameSkip=5;\n'+
+        '    this.maxFrameSkip = maxFrameSkip;\n'+
+        '    resetDeadLine();\n'+
         '}\n'+
         '\n'+
         '// FPS（計測したフレームレート）を返す //\n'+
-        'nowait \\getMeasureFps() {\n'+
+        'nowait \\getMeasuredFps() {\n'+
         '    return fps_fps;\n'+
         '}\n'+
         '\n'+
         '// RPS（計測した実行レート）を返す //\n'+
-        'nowait \\getMeasureRps() {\n'+
+        'nowait \\getMeasuredRps() {\n'+
         '    return fps_rps;\n'+
         '}\n'+
         '\n'+
-        '\n'+
-        '// フレームレートの制御 //\n'+
-        '\\waitFrame(fps, frameSkipMax) {\n'+
-        '    var wt, nowWt, waitDo;\n'+
-        '    frameCnt++;\n'+
-        '    \n'+
-        '    \n'+
-        '    wt = 1000/fps; // 待機時間設定\n'+
-        '    wtFrac += wt - floor(wt);\n'+
-        '    if (wtFrac >= 1) {\n'+
-        '        wt += floor(wtFrac); // 端数を待機時間に追加\n'+
-        '        wtFrac -= floor(wtFrac);\n'+
-        '    }\n'+
-        '    wt = floor(wt);\n'+
-        '    //print(wt+" "+floor(wtFrac));\n'+
-        '    \n'+
-        '    /*\n'+
-        '    if (frameCnt % 3 == 0) wt = 16; // 待機時間設定\n'+
-        '    else                   wt = 17; // 待機時間設定\n'+
-        '    */\n'+
-        '    \n'+
-        '    wt -= frameDelay;\n'+
-        '    waitFor(Tonyu.timeout(1));\n'+
-        '    nowWt = (new Date().getTime()-ti);\n'+
-        '    if (frameSkipSW == 0) waitDo = 0;\n'+
-        '    while (wt > nowWt) {\n'+
-        '        waitFor(Tonyu.timeout(1));\n'+
-        '        nowWt = (new Date().getTime()-ti);\n'+
-        '        waitDo = 1;\n'+
-        '    }\n'+
-        '    frameDelay = nowWt - wt; // 処理落ち計算\n'+
-        '    // 待機したか？\n'+
-        '    if (waitDo == 0) {\n'+
-        '        frameSkipCount ++; // スキップ回数にカウント\n'+
-        '        doDraw = 0;\n'+
-        '    } else {\n'+
-        '        doDraw = 1;\n'+
-        '    }\n'+
-        '    // フレームスキップ最大か //\n'+
-        '    frameSkipSW = 0;\n'+
-        '    if (frameSkipCount >= frameSkipMax) {\n'+
-        '        frameDelay = 0;\n'+
-        '        frameSkipCount = 0;\n'+
-        '        frameSkipSW = 1;\n'+
-        '    }\n'+
-        '    \n'+
-        '}\n'+
-        '\n'+
-        '\n'+
-        '// FPS計測 //\n'+
         'nowait \\measureFps() {\n'+
-        '    var fps_nowTime;\n'+
-        '    fps_nowTime = new Date().getTime();\n'+
-        '    if (fps_oldTime == 0) fps_oldTime = new Date().getTime();\n'+
-        '    fps_fpsCnt ++;\n'+
-        '    fps_fpsTimeCnt += fps_nowTime - fps_oldTime;\n'+
-        '    if (fps_nowTime - fps_fpsStartTime >= 1000) {\n'+
-        '        fps_fps = ((1000 / fps_fpsTimeCnt) * fps_fpsCnt);\n'+
-        '        //fps_fpsStr = trunc(fps_fps)+"."+(floor(fps_fps*10)%10);\n'+
-        '        fps_fpsCnt = 0;\n'+
-        '        fps_fpsTimeCnt = 0;\n'+
-        '        fps_fpsStartTime = fps_nowTime;\n'+
-        '        fps_rps = fps_rpsCnt;\n'+
-        '        fps_rpsCnt = 0;\n'+
+        '    if (now()>lastMeasured+1000) {\n'+
+        '        fps_fps=fps_fpsCnt;\n'+
+        '        fps_rps=fps_rpsCnt;\n'+
+        '        fps_fpsCnt=0;\n'+
+        '        fps_rpsCnt=0;\n'+
+        '        lastMeasured=now();\n'+
         '    }\n'+
-        '    fps_oldTime = fps_nowTime;\n'+
         '}\n'+
         '\n'
       ,
@@ -1331,6 +1268,25 @@ requireSimulator.setName('fs/ROMk');
         '\\draw(c) {\n'+
         '    rotation=angle;\n'+
         '    super.draw(c);\n'+
+        '}\n'
+      ,
+      'EventMod.tonyu': 
+        'extends null;\n'+
+        '\n'+
+        '\\getEventHandlers(type) {\n'+
+        '    if (!_handlers) _handlers={};\n'+
+        '    if (!_handlers[type]) _handlers[type]=[];\n'+
+        '    return _handlers[type];\n'+
+        '}\n'+
+        '\\on(type, handler) {\n'+
+        '    getEventHandlers(type).push(handler);\n'+
+        '}\n'+
+        '\n'+
+        '\\fireEvent(type,args) {\n'+
+        '    if (!args) args=[];\n'+
+        '    for (var h in getEventHandlers(type)) {\n'+
+        '        h.apply(this,args);\n'+
+        '    }\n'+
         '}\n'
       ,
       'InputDevice.tonyu': 
@@ -2268,6 +2224,56 @@ requireSimulator.setName('fs/ROMk');
         '    die();\n'+
         '}'
       ,
+      'PlayMod.tonyu': 
+        'extends BaseActor;\n'+
+        'nowait \\initMML() {\n'+
+        '    if (mmlInited) return;\n'+
+        '    mmlInited=true;\n'+
+        '    $currentProject.requestPlugin("timbre");\n'+
+        '    if (!$MMLS) {\n'+
+        '       $MMLS={};\n'+
+        '       $WaveTable=new WaveTable;\n'+
+        '       $Boot.on("stop", releaseMML);\n'+
+        '    }\n'+
+        '    on("die") \\() { play().stop(); };\n'+
+        '}\n'+
+        'nowait \\releaseMML() {\n'+
+        '    if ($MMLS) {\n'+
+        '       for (var k,v in $MMLS) {\n'+
+        '          v.stop();\n'+
+        '       }\n'+
+        '       $MMLS=null;\n'+
+        '    } \n'+
+        '    if ($WaveTable) {\n'+
+        '       $WaveTable.stop();\n'+
+        '       $WaveTable=null;\n'+
+        '    }\n'+
+        '}\n'+
+        '\\play() {\n'+
+        '    initMML();\n'+
+        '    if (!_mml) _mml=new MML;\n'+
+        '    if (isDead() || arguments.length==0) return _mml;\n'+
+        '    var mmls=[];\n'+
+        '    for (var i=0; i<arguments.length; i++) {\n'+
+        '        mmls.push(arguments[i]);\n'+
+        '    }\n'+
+        '    _mml.play(mmls);\n'+
+        '    while (_mml.bufferCount()>2) {\n'+
+        '        update();\n'+
+        '    }\n'+
+        '    return _mml;\n'+
+        '}\n'+
+        'nowait \\playSE() {\n'+
+        '    initMML();\n'+
+        '    var mml=new MML;\n'+
+        '    var mmls=[];\n'+
+        '    for (var i=0; i<arguments.length; i++) {\n'+
+        '        mmls.push(arguments[i]);\n'+
+        '    }\n'+
+        '    mml.play(mmls);\n'+
+        '    return mml;\n'+
+        '}\n'
+      ,
       'ScaledCanvas.tonyu': 
         'extends Actor;\n'+
         'native $;\n'+
@@ -2608,6 +2614,174 @@ requireSimulator.setName('fs/ROMk');
         '    super.draw(c);\n'+
         '    hidden=true;\n'+
         '}'
+      ,
+      'T2Body.tonyu': 
+        'includes T2Mod;\n'+
+        'native Box2D;\n'+
+        '\n'+
+        '\\getWorld() {\n'+
+        '    if ($t2World) return $t2World;\n'+
+        '    $t2World=new T2World;\n'+
+        '    return $t2World;\n'+
+        '}\n'+
+        '\\onAppear() {\n'+
+        '    world=getWorld().world;\n'+
+        '    scale=getWorld().scale;\n'+
+        '    var b2Vec2 = Box2D.Common.Math.b2Vec2;\n'+
+        '    var b2BodyDef = Box2D.Dynamics.b2BodyDef;\n'+
+        '    var b2Body = Box2D.Dynamics.b2Body;\n'+
+        '    var b2FixtureDef = Box2D.Dynamics.b2FixtureDef;\n'+
+        '    var b2Fixture = Box2D.Dynamics.b2Fixture;\n'+
+        '    var b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape;\n'+
+        '    var b2CircleShape = Box2D.Collision.Shapes.b2CircleShape;\n'+
+        '    \n'+
+        '    var fixDef = new b2FixtureDef;\n'+
+        '    fixDef.density = density || 1.0;\n'+
+        '    fixDef.friction = friction || 0.5;\n'+
+        '    fixDef.restitution = restitution || 0.2;\n'+
+        '    \n'+
+        '    var bodyDef = new b2BodyDef;\n'+
+        '    bodyDef.type = isStatic ? b2Body.b2_staticBody :\n'+
+        '    b2Body.b2_dynamicBody;\n'+
+        '    \n'+
+        '    bodyDef.position.x = x /scale;\n'+
+        '    bodyDef.position.y = y /scale;\n'+
+        '    shape=shape || (radius ? "circle" : "box");\n'+
+        '    var w=width,h=height;\n'+
+        '    if (!w) {\n'+
+        '        detectShape();\n'+
+        '        w=width*(scaleX||1);\n'+
+        '        h=height*(scaleY||scaleX||1);\n'+
+        '    }\n'+
+        '    if (shape=="box") {\n'+
+        '        if (!h) h=w;\n'+
+        '        fixDef.shape = new b2PolygonShape;\n'+
+        '        fixDef.shape.SetAsOrientedBox(w/2/scale, h/2/scale,\n'+
+        '        new b2Vec2(0,0),0);\n'+
+        '    } else {\n'+
+        '        radius=radius || w/2 || 16;\n'+
+        '        fixDef.shape = new b2CircleShape(\n'+
+        '        radius/scale\n'+
+        '        );\n'+
+        '        width=height=radius*2;\n'+
+        '    } \n'+
+        '    body=world.CreateBody(bodyDef);\n'+
+        '    body.CreateFixture(fixDef);\n'+
+        '    body.SetUserData(this);\n'+
+        '    body.SetAngle(rad(rotation));\n'+
+        '}\n'+
+        '\\allContact(klass) {\n'+
+        '    var res=[];\n'+
+        '    for (var c=world.GetContactList();c;c=c.GetNext()) {\n'+
+        '        if (c.IsTouching()) {\n'+
+        '            var a=c.GetFixtureA().GetBody().GetUserData();\n'+
+        '            var b=c.GetFixtureB().GetBody().GetUserData();\n'+
+        '            if (a===this) {\n'+
+        '                if (!klass || b===klass || b instanceof klass) {\n'+
+        '                    res.push(b);\n'+
+        '                }\n'+
+        '            } else if (b===this) {\n'+
+        '                if (!klass || a===klass || a instanceof klass) {\n'+
+        '                    res.push(a);\n'+
+        '                }\n'+
+        '            }\n'+
+        '        }\n'+
+        '    }\n'+
+        '    return res;\n'+
+        '}\n'+
+        '\\applyForce(fx,fy,px,py) {\n'+
+        '    var b2Vec2 = Box2D.Common.Math.b2Vec2;\n'+
+        '    var scale=getWorld().scale;\n'+
+        '    var fps=60;\n'+
+        '    body.ApplyForce(bvec(fx*fps ,fy*fps),body.GetPosition());\n'+
+        '}\n'+
+        '\\applyImpulse(fx,fy,px,py) {\n'+
+        '    var b2Vec2 = Box2D.Common.Math.b2Vec2;\n'+
+        '    var scale=getWorld().scale;\n'+
+        '    var fps=60;\n'+
+        '    body.ApplyImpulse(bvec(fx*fps,fy*fps),body.GetPosition());\n'+
+        '}\n'+
+        '\n'+
+        '\\applyTorque(a) {\n'+
+        '    body.ApplyTorque(a);\n'+
+        '}\n'+
+        '\\moveBy(dx,dy) {\n'+
+        '    var pos=body.GetPosition();\n'+
+        '    pos.x+=dx/scale;\n'+
+        '    pos.y+=dy/scale;\n'+
+        '    body.SetPosition(pos);\n'+
+        '}\n'+
+        '\\contactTo(t) {\n'+
+        '    return allContact(t)[0];\n'+
+        '}\n'+
+        '\\die() {\n'+
+        '    super.die();\n'+
+        '    world.DestroyBody(body);\n'+
+        '}\n'+
+        '\\updatePos() {\n'+
+        '    if (!body) return;\n'+
+        '    var scale=getWorld().scale;\n'+
+        '    var pos=body.GetPosition();\n'+
+        '    x=pos.x*scale;\n'+
+        '    y=pos.y*scale;\n'+
+        '    rotation=deg(body.GetAngle());\n'+
+        '}'
+      ,
+      'T2Mod.tonyu': 
+        'native Box2D;\n'+
+        '\n'+
+        '\\bvec(tx,ty) {\n'+
+        '    var b2Vec2 = Box2D.Common.Math.b2Vec2;\n'+
+        '    return new b2Vec2(tx/scale,ty/scale);  \n'+
+        '}'
+      ,
+      'T2World.tonyu': 
+        'includes T2Mod;\n'+
+        '\n'+
+        'native Box2D;\n'+
+        'native Tonyu;\n'+
+        '\\onAppear() {\n'+
+        '    $currentProject.requestPlugin("box2d");  \n'+
+        '    initWorld();\n'+
+        '}\n'+
+        'loop();\n'+
+        '\n'+
+        '\n'+
+        '\\initWorld() {\n'+
+        '    gravity=gravity || 9.8;\n'+
+        '    gravityX=gravityX || 0;\n'+
+        '    var b2World = Box2D.Dynamics.b2World;\n'+
+        '    var b2Vec2 = Box2D.Common.Math.b2Vec2;\n'+
+        '    scale=scale || 30;\n'+
+        '    world = new b2World(\n'+
+        '    new b2Vec2(gravityX, gravity)    //gravity\n'+
+        '    ,  true                 //allow sleep\n'+
+        '    );\n'+
+        '    $t2World=this;\n'+
+        '    $Boot.on("stop") \\() {\n'+
+        '        $t2World=null;\n'+
+        '    };\n'+
+        '}\n'+
+        '\n'+
+        '\\loop() {\n'+
+        '    while(true) {\n'+
+        '        world.Step(\n'+
+        '        1 / $Boot.getFrameRate()  //frame-rate\n'+
+        '        ,  10       //velocity iterations\n'+
+        '        ,  10       //position iterations\n'+
+        '        );\n'+
+        '        world.DrawDebugData();\n'+
+        '        world.ClearForces();\n'+
+        '        updatePos();\n'+
+        '        update();\n'+
+        '    }\n'+
+        '}\n'+
+        '\\updatePos() {\n'+
+        '    for (var b=world.GetBodyList();b;b=b.GetNext()) {\n'+
+        '        var d=b.GetUserData();\n'+
+        '        if(d) d.updatePos();\n'+
+        '    }\n'+
+        '}\n'
       ,
       'TObject.tonyu': 
         'extends null;\n'+
@@ -3118,8 +3292,13 @@ Tonyu=function () {
     	delete prot.initialize;
     	//A includes B  B includes C  B extends D
     	//A extends E   E includes F
-    	//A has methods in B,C,E,F. A does not have methods in D
-    	//(B shoule be treated as modules. Modules should not extend)
+    	//A has methods in B,C,E,F. [Mod] A should extend D.(Thus, E should extend D(or E==D))
+    	//( B shoule be treated as modules.
+    	//  Module's extension indicates that includer class should also exetend the module's parent )
+    	// 2015-02-27 this check is not implemented.
+    	// Known examples:
+    	// Actor extends BaseActor, includes PlayMod.
+    	// PlayMod extends BaseActor(because use update() in play())
     	includes.forEach(function (m) {
     		if (!m.methods) throw m+" Does not have methods";
     		for (var n in m.methods) {
@@ -5309,7 +5488,9 @@ function initClassDecls(klass, env ) {
             klass.superClass={name:"Array",fullName:"Array",builtin:true};
         } else if (spcn) {
             var spc=env.classes[env.aliases[spcn] || spcn];/*ENVC*/  //CFN env.classes[env.aliases[spcn]]
-            if (!spc) throw TError ( "親クラス "+spcn+"は定義されていません", s, pos);
+            if (!spc) {
+                throw TError ( "親クラス "+spcn+"は定義されていません", s, pos);
+            }
             klass.superClass=spc;
         }
         program.stmts.forEach(function (stmt) {
@@ -7173,11 +7354,66 @@ define(["ImageRect"],function (IR) {
     };
     return TN;
 });
+requireSimulator.setName('plugins');
+define(["WebSite"],function (WebSite){
+    var plugins={};
+    var installed= {
+        box2d:{src: "Box2dWeb-2.1.a.3.min.js",detection:/T2Body/,symbol:"Box2D" },
+        timbre: {src:"timbre.js",detection:/\bplay(SE)?\b/,symbol:"T" }
+    };
+    plugins.detectNeeded=function (src,res) {
+        for (var name in installed) {
+            var r=installed[name].detection.exec(src);
+            if (r) res[name]=1;
+        }
+        return res;
+    };
+    plugins.loaded=function (name) {
+        var i=installed[name];
+        if (!i) throw new Error("plugin not found: "+name);
+        return window[i.symbol];
+    };
+    plugins.loadAll=function (names,options) {
+        options=convOpt(options);
+        var namea=[];
+        for (var name in names) {
+            if (installed[name] && !plugins.loaded(name)) {
+                namea.push(name);
+            }
+        }
+        var i=0;
+        console.log("loading plugins",namea);
+        loadNext();
+        function loadNext() {
+            if (i>=namea.length) options.onload();
+            else plugins.load(namea[i++],loadNext);
+        }
+    };
+    function convOpt(options) {
+        if (typeof options=="function") options={onload:options};
+        if (!options) options={};
+        if (!options.onload) options.onload=function (){};
+        return options;
+    }
+    plugins.load=function (name,options) {
+        var i=installed[name];
+        if (!i) throw new Error("plugin not found: "+name);
+        options=convOpt(options);
+        var src=WebSite.top+"/js/plugins/"+i.src;
+        $.getScript(src, options.onload);
+    };
+    plugins.request=function (name) {
+        if (plugins.loaded(name)) return;
+        var req=new Error("Plugin "+name+" required");
+        req.pluginName=name;
+    };
+    return plugins;
+});
 requireSimulator.setName('Tonyu.Project');
 define(["Tonyu", "Tonyu.Compiler", "TError", "FS", "Tonyu.TraceTbl","ImageList","StackTrace",
-        "typeCheck","Blob","thumbnail","WebSite"],
+        "typeCheck","Blob","thumbnail","WebSite","plugins"],
         function (Tonyu, Tonyu_Compiler, TError, FS, Tonyu_TraceTbl, ImageList,StackTrace,
-                tc,Blob,thumbnail,WebSite) {
+                tc,Blob,thumbnail,WebSite,plugins) {
 return Tonyu.Project=function (dir, kernelDir) {
     var TPR={};
     var home=FS.get(WebSite.tonyuHome);
@@ -7395,6 +7631,27 @@ return Tonyu.Project=function (dir, kernelDir) {
         opt.compiler.commentLastPos=TPR.runScriptMode || StackTrace.isAvailable();
         opt.run.mainClass=TPR.fixClassName(opt.run.mainClass);
         opt.run.bootClass=TPR.fixClassName(opt.run.bootClass);
+        if (!opt.plugins) {
+            opt.plugins={};
+            dir.each(function (f) {
+                if (f.endsWith(TPR.EXT)) {
+                    plugins.detectNeeded(  f.text(), opt.plugins);
+                }
+            });
+        }
+    };
+    TPR.requestPlugin=function (name) {
+        if (plugins.loaded(name)) return;
+        var opt=TPR.getOptions();
+        opt.plugins[name]=1;
+        TPR.setOptions(opt);
+        var req=new Error("必要なプラグイン"+name+"を追加しました。もう一度実行してください");
+        req.pluginName=name;
+        throw req;
+    };
+    TPR.loadPlugins=function (onload) {
+        var opt=TPR.getOptions();
+        plugins.loadAll(opt.plugins,onload);
     };
     TPR.fixClassName=function (cn) {
         if (TPR.classExists(cn)) return cn;
