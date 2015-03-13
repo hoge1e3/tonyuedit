@@ -1,4 +1,8 @@
-IndentBuffer=function () {
+if (typeof define!=="function") {
+   define=require("requirejs").define;
+}
+define([],function () {
+return IndentBuffer=function () {
 	var $=function () {
 		var args=arguments;
 		var fmt=args[0];
@@ -149,3 +153,4 @@ IndentBuffer=function () {
 	$.indentStr="  ";
 	return $;
 };
+});

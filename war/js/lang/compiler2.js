@@ -1,4 +1,9 @@
-Tonyu.Compiler=(function () {
+if (typeof define!=="function") {
+   define=require("requirejs").define;
+}
+define(["Tonyu", "Tonyu.Iterator", "TonyuLang", "ObjectMatcher", "TError", "IndentBuffer", "context", "Visitor"],
+function(Tonyu, Tonyu_iterator, TonyuLang, ObjectMatcher, TError, IndentBuffer, context, Visitor) {
+return Tonyu.Compiler=(function () {
 // TonyuソースファイルをJavascriptに変換する
 var TH="_thread",THIZ="_this", ARGS="_arguments",FIBPRE="fiber$", FRMPC="__pc", LASTPOS="$LASTPOS",CNTV="__cnt",CNTC=100;
 var BINDF="Tonyu.bindFunc";
@@ -1335,4 +1340,5 @@ function genJS(klass, env,pass) {
 }
 return {initClassDecls:initClassDecls, genJS:genJS};
 })();
-if (typeof getReq=="function") getReq.exports("Tonyu.Compiler");
+//if (typeof getReq=="function") getReq.exports("Tonyu.Compiler");
+});

@@ -1,22 +1,17 @@
+if (typeof define!=="function") {
+   define=require("requirejs").define;
+}
+
 /*
  * Tonyu2 の構文解析を行う．
  * TonyuLang.parse(src);
  *   - srcを解析して構文木を返す．構文エラーがあれば例外を投げる．
  */
-/*sys.load("js/parser.js");
-sys.load("js/ExpressionParser2Tonyu.js");
-sys.load("js/GrammarTonyu.js");
-sys.load("js/TError.js");
-sys.load("js/XMLBuffer.js");
-sys.load("js/IndentBuffer.js");
-sys.load("js/disp.js");
-sys.load("js/profiler.js");
-Parser.options.traceTap=false;
-sys.load("js/parser/tonyu2_token.js");
-//Parser.options.traceTap=true;
-*/
-
-TonyuLang=function () {
+define(["Grammar", "XMLBuffer", "IndentBuffer", "TT",
+        "disp", "Parser", "ExpressionParser", "TError"],
+function (Grammar, XMLBuffer, IndentBuffer, TT,
+        disp, Parser, ExpressionParser, TError) {
+return TonyuLang=function () {
 	var p=Parser;
 	var $={};
 	var g=Grammar();
@@ -286,3 +281,5 @@ TonyuLang=function () {
 	$.extension="tonyu";
 	return $;
 }();
+
+});

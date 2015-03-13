@@ -1,4 +1,8 @@
-Parser=function () {
+if (typeof define!=="function") {
+   define=require("requirejs").define;
+}
+define(["disp"],function(disp) {
+return Parser=function () {
     function extend(dst, src) {
         var i;
         for(i in src){
@@ -594,3 +598,5 @@ Parser=function () {
 	};
     return $;
 }();
+
+});

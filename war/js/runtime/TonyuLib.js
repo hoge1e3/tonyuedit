@@ -1,4 +1,8 @@
-Tonyu=function () {
+if (typeof define!=="function") {
+   define=require("requirejs").define;
+}
+define([],function () {
+return Tonyu=function () {
     var preemptionTime=60;
     function thread() {
 	//var stpd=0;
@@ -357,3 +361,5 @@ Tonyu=function () {
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             A:A};
 }();
+
+});

@@ -29,62 +29,62 @@ var reqConf={
             "TextUtil": {
                 "exports": "TextUtil"
             },
-            "ObjectMatcher": {
+            /*"ObjectMatcher": {
                 "exports": "ObjectMatcher"
-            },
+            },*/
             "Arrow": {
                 "exports": "Arrow"
             },
-            "context": {
+            /*"context": {
                 "exports": "context"
-            },
-            "IndentBuffer": {
+            },*/
+            /*"IndentBuffer": {
                 "exports": "IndentBuffer"
-            },
-            "ExpressionParser": {
+            },*/
+            /*"ExpressionParser": {
                 "deps": ["Parser"],
                 "exports": "ExpressionParser"
-            },
-            "Grammar": {
+            },*/
+            /*"Grammar": {
                 "deps": ["Parser"],
                 "exports": "Grammar"
-            },
-            "Parser": {
+            },*/
+            /*"Parser": {
                 "deps": ["disp"],
                 "exports": "Parser"
-            },
-            "TonyuLang": {
+            },*/
+            /*"TonyuLang": {
                 "deps": ["Grammar", "XMLBuffer", "IndentBuffer", "TT",
 			 "disp", "Parser", "ExpressionParser", "TError"],
                 "exports": "TonyuLang"
-            },
-	    "TT": {
+            },*/
+	    /*"TT": {
                 "deps": ["Grammar", "XMLBuffer", "IndentBuffer",
 			 "disp", "Parser","TError"],
 		"exports": "TT"
-	    },
-            "Visitor": {
+	    },*/
+            /*"Visitor": {
                 "exports": "Visitor"
-            },
-            "XMLBuffer": {
+            },*/
+            /*"XMLBuffer": {
                 "deps": ["Parser"],
                 "exports": "XMLBuffer"
-            },
-            "Tonyu": {
+            },*/
+            /*"Tonyu": {
                 "exports": "Tonyu"
-            },
-            "Tonyu.Compiler": {
+            },*/
+            /*"Tonyu.Compiler": {
                 "deps": ["Tonyu", "Tonyu.Iterator", "TonyuLang", "ObjectMatcher", "TError", "IndentBuffer", "context", "Visitor"],
                 "exports": "Tonyu.Compiler"
-            },
+            },*/
             "fixIndent": {
                 "deps": ["TonyuLang", "Visitor", "Grammar"],
                 "exports": "fixIndent"
             },
-            "Tonyu.TraceTbl": {
+            /*"Tonyu.TraceTbl": {
                 "deps": ["Tonyu", "FS", "TError"],
                 "exports": "Tonyu.TraceTbl"
-            },
+            },*/
             /*"Sprites": {
                 "deps": ["fukidashi", "Tonyu"],
                 "exports": "Sprites"
@@ -212,7 +212,7 @@ var reqConf={
             "Tonyu.Project": "ide/TonyuProject",
             "thumbnail": "ide/thumbnail",
             "showErrorPos": "ide/ErrorPos",
-            "TError": "ide/TError",
+            "TError": "runtime/TError",
             "ide/editor": "ide/editor",
             "fs/ROMk": "../fs/Tonyu/js/gen/ROM_k",
             "fs/ROMd": "../fs/Tonyu/js/gen/ROM_d",

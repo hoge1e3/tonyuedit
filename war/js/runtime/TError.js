@@ -1,4 +1,8 @@
-function TError(mesg, src, pos) {
+if (typeof define!=="function") {
+   define=require("requirejs").define;
+}
+define([],function () {
+return TError=function (mesg, src, pos) {
     if (typeof src=="string") {
         return {
             isTError:true,
@@ -34,4 +38,5 @@ function TError(mesg, src, pos) {
             throw this;
         }
     };
-}
+};
+});
