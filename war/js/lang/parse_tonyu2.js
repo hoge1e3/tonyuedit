@@ -209,17 +209,19 @@ return TonyuLang=function () {
     var catchs=g("catch").ands(tk("catch"), tk("("), symbol, tk(")"), "stmt" ).ret(null,null,"name",null, "stmt");
     var catches=g("catches").ors("catch","finally");
     var trys=g("try").ands(tk("try"),"stmt",catches.rep1() ).ret(null, "stmt","catches");
+    var throwSt=g("throw").ands(tk("throw"),expr,tk(";")).ret(null,"ex");
     var varDecl=g("varDecl").ands(symbol, tk("=").and(expr).ret(retF(1)).opt() ).ret("name","value");
     var varsDecl= g("varsDecl").ands(tk("var"), varDecl.sep1(tk(","),true), tk(";") ).ret(null ,"decls");
     g("funcDeclHead").ands(
             tk("nowait").opt(),
             tk("function").or(tk("fiber")).or(tk("tk_constructor")).or(tk("\\")).opt(),
-            symbol.or(tk("new")) ,"paramDecls").ret("nowait","ftype","name","params");
+            symbol.or(tk("new")) , "paramDecls"
+    ).ret("nowait","ftype","name","params");
     var funcDecl=g("funcDecl").ands("funcDeclHead","compound").ret("head","body");
     var nativeDecl=g("nativeDecl").ands(tk("native"),symbol,tk(";")).ret(null, "name");
     var ifwait=g("ifWait").ands(tk("ifwait"),"stmt",elseP.opt()).ret(null, "then","_else");
     //var useThread=g("useThread").ands(tk("usethread"),symbol,"stmt").ret(null, "threadVarName","stmt");
-    stmt=g("stmt").ors("return", "if", "for", "while", "break", "ifWait","try", "nativeDecl", "funcDecl", "compound", "exprstmt", "varsDecl");
+    stmt=g("stmt").ors("return", "if", "for", "while", "break", "ifWait","try", "throw","nativeDecl", "funcDecl", "compound", "exprstmt", "varsDecl");
     // ------- end of stmts
     var paramDecl= g("paramDecl").ands(symbol ).ret("name");
     var paramDecls=g("paramDecls").ands(tk("("), paramDecl.sep0(tk(","),true), tk(")")  ).ret(null, "params");

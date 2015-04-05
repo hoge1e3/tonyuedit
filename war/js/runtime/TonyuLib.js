@@ -8,8 +8,9 @@ return Tonyu=function () {
 	//var stpd=0;
         var fb={enter:enter, apply:apply,
                 exit:exit, steps:steps, step:step, isAlive:isAlive, isWaiting:isWaiting,
-                suspend:suspend,retVal:0/*retVal*/,
-                kill:kill, waitFor: waitFor,setGroup:setGroup};
+                suspend:suspend,retVal:0/*retVal*/,tryStack:[],
+                kill:kill, waitFor: waitFor,setGroup:setGroup,
+                enterTry:enterTry,exitTry:exitTry,startCatch:startCatch};
         var frame=null;
         var _isAlive=true;
         var cnt=0;
@@ -43,12 +44,42 @@ return Tonyu=function () {
             });
         }
         function step() {
-            if (frame) frame.func(fb);
+            if (frame) {
+                try {
+                    frame.func(fb);
+                } catch(e) {
+                    gotoCatch(e);
+                }
+            }
+        }
+        function gotoCatch(e) {
+            if (fb.tryStack.length==0) throw e;
+            fb.lastEx=e;
+            var s=fb.tryStack.pop();
+            while (frame) {
+                if (s.frame===frame) {
+                    fb.catchPC=s.catchPC;
+                    break;
+                } else {
+                    frame=frame.prev;
+                }
+            }
+        }
+        function startCatch() {
+            var e=fb.lastEx;
+            fb.lastEx=null;
+            return e;
         }
         function exit(res) {
             frame=frame.prev;
             //if (frame) frame.res=res;
             fb.retVal=res;
+        }
+        function enterTry(catchPC) {
+            fb.tryStack.push({frame:frame,catchPC:catchPC});
+        }
+        function exitTry() {
+            fb.tryStack.pop();
         }
         function waitFor(j) {
             _isWaiting=true;
@@ -184,26 +215,6 @@ return Tonyu=function () {
             _isAlive=false;
         }
         var _interval=0, _onStepsEnd;
-        /*function run(interval, onStepsEnd) {
-            if (interval!=null) _interval=interval;
-            if (onStepsEnd!=null) _onStepsEnd=onStepsEnd;
-            if (!_isAlive) return;
-            try {
-                steps();
-                if (_onStepsEnd) _onStepsEnd();
-                if (!_isWaiting) {
-                    setTimeout(run,_interval);
-                } else {
-                    //console.log("all wait!");
-                }
-            } catch (e) {
-                if (Tonyu.onRuntimeError) {
-                    Tonyu.onRuntimeError(e);
-                } else {
-                    alert ("エラー! at "+$LASTPOS+" メッセージ  : "+e);
-                }
-            }
-        }*/
         function notifyResume() {
             if (_isWaiting) {
                 //console.log("resume!");
@@ -279,8 +290,30 @@ return Tonyu=function () {
     	res.methods=prot;
     	res.prototype=bless(parent, prot);
     	res.prototype.isTonyuObject=true;
+    	addMeta(res,{
+    	    superClass:parent ? parent.meta : null,
+    	    includes:includes.map(function(c){return c.meta;})
+    	});
     	return res;
     }
+    klass.addMeta=addMeta;
+    function addMeta(k,m) {
+        k.meta=k.meta||{};
+        extend(k.meta, m);
+    }
+    klass.getMeta=function (k) {
+        return k.meta;
+    };
+    klass.ensureNamespace=function (top,nsp) {
+        var keys=nsp.split(".");
+        var o=top;
+        var i;
+        for (i=0; i<keys.length; i++) {
+            var k=keys[i];
+            if (!o[k]) o[k]={};
+            o=o[k];
+        }
+    };
     function bless( klass, val) {
         if (!klass) return val;
         return extend( new klass() , val);

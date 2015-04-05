@@ -256,6 +256,10 @@ define(["WebSite"],function (WebSite) {
             }
         }
     };
+    FS.resolve=function (path, base) {
+        if (base) return FS.get(FS.get(base).rel(path));
+        return FS.get(path);
+    };
     FS.get=function (path, securityDomain) {
     	if (!securityDomain) securityDomain={};
         if (path==null) throw  new Error("FS.get: Null path");
@@ -432,7 +436,7 @@ define(["WebSite"],function (WebSite) {
             };
             file.useRAMDisk=function () {
                 // currently file only
-                if (ramDiskUsage=="ALL") return
+                if (ramDiskUsage=="ALL") return file;
                 ramDiskUsage=ramDiskUsage||{};
                 ramDiskUsage[path]=true;
                 return file;
