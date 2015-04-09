@@ -1,0 +1,25 @@
+extends TObject;
+
+listeners=[];
+
+\addListener(f) {
+    listeners.push(f);
+    return {
+        remove: \{
+           removeListener(f);
+        }
+    };
+}
+\removeListener(f) {
+    var i=listeners.indexOf(f);
+    listeners.splice(i,1);
+}
+\fire(args) {
+    if (released) return;
+    for (var h in listeners) {
+        h.apply(this,args);
+    }
+}
+\release() {
+    released=true;
+}
