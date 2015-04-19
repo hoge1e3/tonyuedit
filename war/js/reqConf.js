@@ -71,6 +71,9 @@ var reqConf={
             "fs/export": {
                 deps: ["Shell","FS"]
             },
+            T2MediaLib: {
+                exports: "T2MediaLib"
+            },
             JSZip: {
                 exports:"JSZip"
             },
@@ -92,6 +95,7 @@ var reqConf={
             difflib: "lib/difflib",
             diffview: "lib/diffview",
             timbre: "lib/timbre",
+            T2MediaLib: "lib/T2MediaLib",
             KernelDiffDialog: "ide/KernelDiffDialog",
             searchDialog: "ide/searchDialog",
             DiffDialog: "ide/DiffDialog",
@@ -140,15 +144,18 @@ var reqConf={
             "TextRect": "graphics/TextRect",
             "fukidashi": "graphics/fukidashi",
             "FS": "fs/fs",
-            "SFileNW": "server/SFileNW",
+            "SFileNW": "fs/SFileNW",
             "Tonyu.Project": "ide/TonyuProject",
             "thumbnail": "ide/thumbnail",
             "showErrorPos": "ide/ErrorPos",
             "TError": "runtime/TError",
             "ide/editor": "ide/editor",
-            "fs/ROMk": "../fs/Tonyu/js/gen/ROM_k",
-            "fs/ROMd": "../fs/Tonyu/js/gen/ROM_d",
-            "fs/ROMs": "../fs/Tonyu/js/gen/ROM_s",
+            //"fs/ROMk": "../fs/Tonyu/js/gen/ROM_k",
+            //"fs/ROMd": "../fs/Tonyu/js/gen/ROM_d",
+            //"fs/ROMs": "../fs/Tonyu/js/gen/ROM_s",
+            "fs/ROMk": "gen/ROM_k",
+            "fs/ROMd": "gen/ROM_d",
+            "fs/ROMs": "gen/ROM_s",
             "ProjectOptionsEditor": "ide/ProjectOptionsEditor",
             "FileList": "fsui/FileList",
             "HttpHelper": "help/HttpHelper",

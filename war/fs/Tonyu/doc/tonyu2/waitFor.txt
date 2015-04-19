@@ -1,5 +1,0 @@
-[[asyncResult]]
-
-*waitForメソッド
-
-使い方は[[asyncResult]]を参照してください．

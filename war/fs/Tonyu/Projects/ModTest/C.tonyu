@@ -1,7 +1,0 @@
-includes B;
-
-a();
-b();
-//a   
-
-print(getClassInfo().fullName);

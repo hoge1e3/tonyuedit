@@ -8,7 +8,7 @@ return Tonyu.Project=function (dir, kernelDir) {
     var _super=Tonyu.extend({},TPR);
     var home=FS.get(WebSite.tonyuHome);
     if (!kernelDir) kernelDir=home.rel("Kernel/");
-    var traceTbl=Tonyu.TraceTbl();
+    var traceTbl=Tonyu.TraceTbl;//();
     var env={classes:{}, traceTbl:traceTbl, options:{compiler:{}} };
     TPR.EXT=".tonyu";
     TPR.NSP_KER="kernel";
@@ -333,7 +333,7 @@ return Tonyu.Project=function (dir, kernelDir) {
         var cls=TPR.env.classes;/*ENVC*/
         for (var cln in cls) {/*ENVC*/
             var klass=cls[cln];/*ENVC*/
-            var f=klass.src.tonyu;
+            var f=klass.src ? klass.src.tonyu : null;
             var a=klass.annotation;
             var changes=[];
             if (a && f) {

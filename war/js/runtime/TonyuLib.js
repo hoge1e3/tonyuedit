@@ -1,16 +1,16 @@
 if (typeof define!=="function") {
-   define=require("requirejs").define;
+    define=require("requirejs").define;
 }
 define([],function () {
 return Tonyu=function () {
     var preemptionTime=60;
     function thread() {
-	//var stpd=0;
+        //var stpd=0;
         var fb={enter:enter, apply:apply,
                 exit:exit, steps:steps, step:step, isAlive:isAlive, isWaiting:isWaiting,
                 suspend:suspend,retVal:0/*retVal*/,tryStack:[],
                 kill:kill, waitFor: waitFor,setGroup:setGroup,
-                enterTry:enterTry,exitTry:exitTry,startCatch:startCatch};
+                enterTry:enterTry,exitTry:exitTry,startCatch:startCatch,waitEvent:waitEvent};
         var frame=null;
         var _isAlive=true;
         var cnt=0;
@@ -23,6 +23,7 @@ return Tonyu=function () {
             return _isWaiting;
         }
         function suspend() {
+            //throw new Error("Suspend call");
             cnt=0;
         }
         function enter(frameFunc) {
@@ -53,7 +54,12 @@ return Tonyu=function () {
             }
         }
         function gotoCatch(e) {
-            if (fb.tryStack.length==0) throw e;
+            if (fb.tryStack.length==0) {
+                kill();
+                frame=null;
+                handleEx(e);
+                return;
+            }
             fb.lastEx=e;
             var s=fb.tryStack.pop();
             while (frame) {
@@ -81,8 +87,19 @@ return Tonyu=function () {
         function exitTry() {
             fb.tryStack.pop();
         }
+        function waitEvent(obj,eventSpec) { // eventSpec=[EventType, arg1, arg2....]
+            suspend();
+            if (!obj.on) return;
+            var h;
+            eventSpec=eventSpec.concat(function () {
+                h.remove();
+                steps();
+            });
+            h=obj.on.apply(obj, eventSpec);
+        }
         function waitFor(j) {
             _isWaiting=true;
+            suspend();
             if (j && j.addTerminatedListener) j.addTerminatedListener(function () {
                 _isWaiting=false;
                 if (fb.group) fb.group.notifyResume();
@@ -96,17 +113,17 @@ return Tonyu=function () {
                 //fb.group.add(fb);
             });
         }
-	function setGroup(g) {
-	    fb.group=g;
-	    if (g) g.add(fb);
-	}
+        function setGroup(g) {
+            fb.group=g;
+            if (g) g.add(fb);
+        }
         /*function retVal() {
             return retVal;
         }*/
         function steps() {
             //stpd++;
-	    //if (stpd>5) throw new Error("Depth too much");
-	    var sv=Tonyu.currentThread;
+            //if (stpd>5) throw new Error("Depth too much");
+            var sv=Tonyu.currentThread;
             Tonyu.currentThread=fb;
             //var lim=new Date().getTime()+preemptionTime;
             cnt=preemptionTime;
@@ -114,7 +131,7 @@ return Tonyu=function () {
             while (cnt-->0) {
                 step();
             }
-	    //stpd--;
+            //stpd--;
             Tonyu.currentThread=sv;
         }
         function kill() {
@@ -181,15 +198,15 @@ return Tonyu=function () {
             return th;
         }
         function steps() {
-	    try {
-		stepsNoEx();
-	    } catch(e) {
-		handleEx(e);
-	    }
-	}
+            try {
+                stepsNoEx();
+            } catch(e) {
+                handleEx(e);
+            }
+        }
         function stepsNoEx() {
             for (var i=threads.length-1; i>=0 ;i--) {
-		var thr=threads[i];
+                var thr=threads[i];
                 if (thr.isAlive() && thr.group===thg) continue;
                 threads.splice(i,1);
             }
@@ -245,64 +262,64 @@ return Tonyu=function () {
         return f;
     }
     function klass() {
-    	var parent, prot, includes=[];
-    	if (arguments.length==1) {
-    		prot=arguments[0];
-    	} else if (arguments.length==2 && typeof arguments[0]=="function") {
-    		parent=arguments[0];
-    		prot=arguments[1];
-    	} else if (arguments.length==2 && arguments[0] instanceof Array) {
-    		includes=arguments[0];
-    		prot=arguments[1];
-    	} else if (arguments.length==3) {
-    		parent=arguments[0];
-    		if (!parent) throw "No parent class";
-    		includes=arguments[1];
-    		prot=arguments[2];
-    	} else {
-    		console.log(arguments);
-    		throw "Invalid argument spec";
-    	}
-    	prot=defunct(prot);
-    	var res=(prot.initialize? prot.initialize:
-    		(parent? function () {
-    			parent.apply(this,arguments);
-    		}:function (){})
-    	);
-    	delete prot.initialize;
-    	//A includes B  B includes C  B extends D
-    	//A extends E   E includes F
-    	//A has methods in B,C,E,F. [Mod] A extends D.
-    	// Known examples:
-    	// Actor extends BaseActor, includes PlayMod.
-    	// PlayMod extends BaseActor(because use update() in play())
+        var parent, prot, includes=[];
+        if (arguments.length==1) {
+            prot=arguments[0];
+        } else if (arguments.length==2 && typeof arguments[0]=="function") {
+            parent=arguments[0];
+            prot=arguments[1];
+        } else if (arguments.length==2 && arguments[0] instanceof Array) {
+            includes=arguments[0];
+            prot=arguments[1];
+        } else if (arguments.length==3) {
+            parent=arguments[0];
+            if (!parent) throw "No parent class";
+            includes=arguments[1];
+            prot=arguments[2];
+        } else {
+            console.log(arguments);
+            throw "Invalid argument spec";
+        }
+        prot=defunct(prot);
+        var res=(prot.initialize? prot.initialize:
+            (parent? function () {
+                parent.apply(this,arguments);
+            }:function (){})
+        );
+        delete prot.initialize;
+        //A includes B  B includes C  B extends D
+        //A extends E   E includes F
+        //A has methods in B,C,E,F. [Mod] A extends D.
+        // Known examples:
+        // Actor extends BaseActor, includes PlayMod.
+        // PlayMod extends BaseActor(because use update() in play())
         res.methods=prot;
-    	//prot=bless(parent, prot);
-    	includes.forEach(function (m) {
-    	    if (!m.methods) throw m+" Does not have methods";
+        //prot=bless(parent, prot);
+        includes.forEach(function (m) {
+            if (!m.methods) throw m+" Does not have methods";
             for (var n in m.methods) {
                 if (!(n in prot)) {
                     prot[n]=m.methods[n];
                 }
             }
-    	    /*for (var n in m.prototype) {
+            /*for (var n in m.prototype) {
                 if (!(n in prot)) {  //-> cannot override color in ColorMod(MetaClicker/FlickEdit)
                 //if ((typeof m.prototype[n])=="function") { //-> BodyActor::onAppear is overriden by Actor::onAppear(nop)
                     prot[n]=m.prototype[n];
                 }
             }*/
-    	});
-    	res.prototype=bless(parent, prot);
-    	res.prototype.isTonyuObject=true;
-    	addMeta(res,{
-    	    superClass:parent ? parent.meta : null,
-    	    includes:includes.map(function(c){return c.meta;})
-    	});
-    	var m=klass.getMeta(res);
-    	res.prototype.getClassInfo=function () {
-    	    return m;
-    	};
-    	return res;
+        });
+        res.prototype=bless(parent, prot);
+        res.prototype.isTonyuObject=true;
+        addMeta(res,{
+            superClass:parent ? parent.meta : null,
+                    includes:includes.map(function(c){return c.meta;})
+        });
+        var m=klass.getMeta(res);
+        res.prototype.getClassInfo=function () {
+            return m;
+        };
+        return res;
     }
     klass.addMeta=addMeta;
     function addMeta(k,m) {
@@ -367,9 +384,9 @@ return Tonyu=function () {
         return res;//classes[n];
     }
     function bindFunc(t,meth) {
-    	return function () {
-    		return meth.apply(t,arguments);
-    	};
+        return function () {
+            return meth.apply(t,arguments);
+        };
     }
     function invokeMethod(t, name, args, objName) {
         if (!t) throw new Error(objName+"(="+t+")のメソッド "+name+"を呼び出せません");
@@ -405,5 +422,4 @@ return Tonyu=function () {
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             A:A};
 }();
-
 });
