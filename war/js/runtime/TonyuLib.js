@@ -10,7 +10,7 @@ return Tonyu=function () {
                 exit:exit, steps:steps, step:step, isAlive:isAlive, isWaiting:isWaiting,
                 suspend:suspend,retVal:0/*retVal*/,tryStack:[],
                 kill:kill, waitFor: waitFor,setGroup:setGroup,
-                enterTry:enterTry,exitTry:exitTry,startCatch:startCatch,waitEvent:waitEvent};
+                enterTry:enterTry,exitTry:exitTry,startCatch:startCatch,waitEvent:waitEvent,runAsync:runAsync};
         var frame=null;
         var _isAlive=true;
         var cnt=0;
@@ -56,7 +56,6 @@ return Tonyu=function () {
         function gotoCatch(e) {
             if (fb.tryStack.length==0) {
                 kill();
-                frame=null;
                 handleEx(e);
                 return;
             }
@@ -77,7 +76,7 @@ return Tonyu=function () {
             return e;
         }
         function exit(res) {
-            frame=frame.prev;
+            frame=(frame ? frame.prev:null);
             //if (frame) frame.res=res;
             fb.retVal=res;
         }
@@ -92,10 +91,26 @@ return Tonyu=function () {
             if (!obj.on) return;
             var h;
             eventSpec=eventSpec.concat(function () {
+                fb.lastEvent=arguments;
+                fb.retVal=arguments[0];
                 h.remove();
                 steps();
             });
             h=obj.on.apply(obj, eventSpec);
+        }
+        function runAsync(f) {
+            var succ=function () {
+                fb.retVal=arguments;
+                steps();
+            };
+            var err=function () {
+                var e=new Error("Async fail");
+                e.args=arguments;
+                gotoCatch(e);
+                steps();
+            };
+            f(succ,err);
+            suspend();
         }
         function waitFor(j) {
             _isWaiting=true;
@@ -136,6 +151,7 @@ return Tonyu=function () {
         }
         function kill() {
             _isAlive=false;
+            frame=null;
         }
         return fb;
     }
@@ -174,7 +190,7 @@ return Tonyu=function () {
         };
         return res;
     }
-    function threadGroup() {
+    function threadGroup() {//@deprecated
         var threads=[];
         var waits=[];
         var _isAlive=true;
@@ -273,7 +289,10 @@ return Tonyu=function () {
             prot=arguments[1];
         } else if (arguments.length==3) {
             parent=arguments[0];
-            if (!parent) throw "No parent class";
+            if (!parent) {
+                console.log(arguments[2]);
+                throw new Error("No parent class ");
+            }
             includes=arguments[1];
             prot=arguments[2];
         } else {
