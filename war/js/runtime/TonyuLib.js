@@ -31,12 +31,19 @@ return Tonyu=function () {
         }
         function apply(obj, methodName, args) {
             if (!args) args=[];
+            var method;
+            if (typeof methodName=="string") {
+                method=obj["fiber$"+methodName];
+            }
+            if (typeof methodName=="function") {
+                method=methodName.fiber;
+            }
             args=[fb].concat(args);
             var pc=0;
             enter(function () {
                 switch (pc){
                 case 0:
-                    obj["fiber$"+methodName].apply(obj,args);
+                    method.apply(obj,args);
                     pc=1;break;
                 case 1:
                     exit();
@@ -331,7 +338,7 @@ return Tonyu=function () {
         res.prototype=bless(parent, prot);
         res.prototype.isTonyuObject=true;
         addMeta(res,{
-            superClass:parent ? parent.meta : null,
+            superclass:parent ? parent.meta : null,
                     includes:includes.map(function(c){return c.meta;})
         });
         var m=klass.getMeta(res);
@@ -357,9 +364,55 @@ return Tonyu=function () {
             if (!o[k]) o[k]={};
             o=o[k];
         }
+        return o;
     };
     klass.define=function (params) {
-        // name, superClass, includes, methods, methodMeta
+        // fullName, shortName,namspace, superclass, includes, methods:{name/fiber$name: func}, decls
+        var parent=params.superclass;
+        var includes=params.includes;
+        var fullName=params.fullName;
+        var shortName=params.shortName;
+        var namespace=params.namespace;
+        var methods=params.methods;
+        var decls=params.decls;
+        var nso=klass.ensureNamespace(Tonyu.classes, namespace);
+        var prot=defunct(methods);
+        var res=(prot.initialize? prot.initialize:
+            (parent? function () {
+                parent.apply(this,arguments);
+            }:function (){})
+        );
+        nso[shortName]=res;
+        delete prot.initialize;
+        res.methods=prot;
+        includes.forEach(function (m) {
+            if (!m.methods) throw m+" Does not have methods";
+            for (var n in m.methods) {
+                if (!(n in prot)) {
+                    prot[n]=m.methods[n];
+                }
+            }
+        });
+        for (var k in prot) {
+            if (k.match(/^fiber\$/)) continue;
+            if (prot["fiber$"+k]) {
+                prot[k].fiber=prot["fiber$"+k];
+                prot[k].fiber.methodInfo={name:k,klass:res,fiber:true};
+            }
+            prot[k].methodInfo={name:k,klass:res};
+        }
+        res.prototype=bless(parent, prot);
+        res.prototype.isTonyuObject=true;
+        addMeta(res,{
+            fullName:fullName,shortName:shortName,namepsace:namespace,decls:decls,
+            superclass:parent ? parent.meta : null,
+            includes:includes.map(function(c){return c.meta;})
+        });
+        var m=klass.getMeta(res);
+        res.prototype.getClassInfo=function () {
+            return m;
+        };
+        return res;
     };
     function bless( klass, val) {
         if (!klass) return val;
@@ -403,9 +456,17 @@ return Tonyu=function () {
         return res;//classes[n];
     }
     function bindFunc(t,meth) {
-        return function () {
+        var res=function () {
             return meth.apply(t,arguments);
         };
+        res.methodInfo=Tonyu.extend({thiz:t},meth.methodInfo||{});
+        if (meth.fiber) {
+            res.fiber=function fiber_func() {
+                return meth.fiber.apply(t,arguments);
+            };
+            res.fiber.methodInfo=Tonyu.extend({thiz:t},meth.fiber.methodInfo||{});
+        }
+        return res;
     }
     function invokeMethod(t, name, args, objName) {
         if (!t) throw new Error(objName+"(="+t+")のメソッド "+name+"を呼び出せません");
@@ -439,6 +500,7 @@ return Tonyu=function () {
             globals:globals, classes:classes, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
             timeout:timeout,asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
+            VERSION:1430188772935,//EMBED_VERSION
             A:A};
 }();
 });

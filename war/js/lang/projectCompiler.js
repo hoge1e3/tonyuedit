@@ -46,6 +46,10 @@ var TPRC=function (dir) {
          }
          if (outF.isReadOnly()) return false;
          var outLast=outF.lastUpdate();
+         if (outLast<Tonyu.VERSION) {
+             console.log("Should compile: ", outF.name()+" last="+new Date(outLast)+" < Tonyu.ver="+new Date(Tonyu.VERSION));
+             return true;
+         }
          //console.log("Outf last="+new Date(outLast));
          var sf=TPR.sourceFiles();
          for (var i in sf) {
@@ -259,7 +263,7 @@ var TPRC=function (dir) {
             }
         }
         function dep1(c) {
-            var spc=c.superClass;
+            var spc=c.superclass;
             var deps=spc ? [spc]:[] ;
             if (c.includes) deps=deps.concat(c.includes);
             deps=deps.filter(function (cl) {
