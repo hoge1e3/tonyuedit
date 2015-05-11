@@ -834,12 +834,16 @@ function genJS(klass, env) {//B
     }
     function genSubFunc(node) {//G
         var finfo=annotation(node);// annotateSubFuncExpr(node);
-        buf.printf("function %s(%j) {%{"+
-                      "%f%n"+
+        buf.printf("TFunction %s=new TFunction() {%{"+
+                    "Object %j;"+
+                    "public Object apply() {%{"
+                     "%f%n"+
                       "%f"+
                    "%}}"
                  ,
-                     finfo.name,[",", finfo.params],
+                     finfo.name,
+                     [",", finfo.params],
+                     genParamsF(finfo),
                   	genLocalsF(finfo),
                        fbody
         );
@@ -857,7 +861,7 @@ function genJS(klass, env) {//B
         function f() {
             ctx.enter({/*scope:finfo.scope*/}, function (){
                 for (var i in finfo.locals.varDecls) {
-                    buf.printf("var %s;%n",i);
+                    buf.printf("Object %s;%n",i);
                 }
                 for (var i in finfo.locals.subFuncDecls) {
                     genSubFunc(finfo.locals.subFuncDecls[i]);
@@ -876,7 +880,7 @@ function genJS(klass, env) {//B
     }
     return buf.buf;
 }//B
-return {genJS:genJS};
+return {genJava:genJava};
 })();
 //if (typeof getReq=="function") getReq.exports("Tonyu.Compiler");
 });

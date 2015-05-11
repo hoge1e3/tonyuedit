@@ -69,10 +69,14 @@ function initClassDecls(klass, env ) {//S
                     ftype=head.ftype.text;
                     //console.log("head.ftype:",stmt);
                 }
-                methods[head.name.text]={
-                        nowait: (!!head.nowait),
+                var name=head.name.text;
+                var propHead=(head.params ? "" : head.setter ? "__setter__" : "__getter__");
+                name=propHead+name;
+
+                methods[name]={
+                        nowait: (!!head.nowait || propHead!=""),
                         ftype:  ftype,
-                        name:  head.name.text,
+                        name:  name,
                         head:  head,
                         pos: head.pos,
                         stmts: stmt.body.stmts
@@ -475,10 +479,10 @@ function annotateSource2(klass, env) {//B
             }
         });
     }
-    function annotateSubFuncExpr(node) {//S
+    function annotateSubFuncExpr(node) {// annotateSubFunc or FuncExpr
         var m,ps;
         var body=node.body;
-        var name=(node.head.name ? node.head.name.text : "anonymous" );
+        var name=(node.head.name ? node.head.name.text : "anonymous_"+node.pos );
         if (m=OM.match( node, {head:{params:{params:OM.P}}})) {
             ps=m.P;
         } else {

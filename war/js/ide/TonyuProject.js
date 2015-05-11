@@ -59,6 +59,9 @@ return Tonyu.Project=function (dir, kernelDir) {
         if (main && main.stop) main.stop();
     };
     TPR.rawRun=function (mainClassName) {
+        if (WebSite.removeJSOutput) {
+            TPR.getOutputFile().rm();
+        }
         TPR.loadClasses();
         //TPR.compile();
         if (!TPR.runScriptMode) thumbnail.set(TPR, 2000);
@@ -144,7 +147,21 @@ return Tonyu.Project=function (dir, kernelDir) {
     };*/
     TPR.getResource=function () {
         var resFile=dir.rel("res.json");
-        if (resFile.exists()) return resFile.obj();
+        if (resFile.exists()) {
+            var res=resFile.obj();
+            var chg=false;
+            for (var imgSnd in res) {
+                var ary=res[imgSnd];
+                for (var i=ary.length-1; i>=0 ;i--) {
+                    if (!ary[i].url) {
+                        ary.splice(i,1);
+                        chg=true;
+                    }
+                }
+            }
+            if (chg) TPR.setResource(res);
+            return res;
+        }
         return Tonyu.defaultResource;
     };
     TPR.setResource=function (rsrc) {
