@@ -26,6 +26,7 @@ import jp.tonyu.fs.LSEmulator;
 import jp.tonyu.fs.MemCache;
 import jp.tonyu.fs.UserLSEmulator;
 import jp.tonyu.servlet.MultiServletCartridge;
+import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.util.Html;
 import jp.tonyu.util.MD5;
@@ -213,7 +214,7 @@ public class LoginCartridge implements ServletCartridge{
                                                "万が一問題が発生した場合には，当該投稿者の自己責任で解決するものとし，" +
                                                "運営者に何ら迷惑を及ぼさないものとします．")
                                   ),
-                                  t("a").a("href", "../doc/terms.html").a("target", "terms").e("利用規約全文を読む...")
+                                  t("a").a("href", ServerInfo.editURL(req)+"/doc/terms.html").a("target", "terms").e("利用規約全文を読む...")
                             ),
                             t("form").a("action", VERIFY_OAUTHED_USER).a("method","POST").e(
                                     mesg,

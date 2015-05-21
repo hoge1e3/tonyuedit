@@ -11,6 +11,7 @@ import org.mozilla.javascript.ScriptableObject;
 
 import jp.tonyu.js.BlankScriptableObject;
 import jp.tonyu.js.ContextHolder;
+import jp.tonyu.js.JSRun;
 import jp.tonyu.js.SafeJSSession;
 import jp.tonyu.servlet.NodeJSRequest;
 import jp.tonyu.servlet.NodeJSResponse;

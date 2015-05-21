@@ -13,12 +13,13 @@ import org.mozilla.javascript.ScriptableObject;
 
 import net.arnx.jsonic.JSON;
 
+import jp.tonyu.js.JSRun;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.util.Resource;
 
-public class Shell implements ServletCartridge {
+public class ShellCartridge implements ServletCartridge {
     final JSRun jsRun;
-    public Shell(JSRun jsRun) {
+    public ShellCartridge(JSRun jsRun) {
         this.jsRun = jsRun;
     }
 

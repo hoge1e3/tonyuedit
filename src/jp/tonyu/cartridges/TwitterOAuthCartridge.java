@@ -53,17 +53,6 @@ public class TwitterOAuthCartridge implements OAuthCartridge {
 	public TwitterOAuthCartridge(Auth a, OAuthKeyDB okdb) {
 		auth=a;
 		okb=okdb;
-        /*EQ k = okdb.get("twitter", false);
-        if (CONSUMER_KEY.equals( k.attr(OAuthKeyDB.KEY_KEY))) {
-            System.out.println("Twitter client_id verified");
-        } else {
-            System.out.println("Twitter client_id NOT verified");
-        }
-        if (CONSUMER_SECRET.equals( k.attr(OAuthKeyDB.KEY_SECRET))) {
-            System.out.println("Twitter client_secret verified");
-        } else {
-            System.out.println("Twitter client_secret NOT verified");
-        }*/
 	}
 
 	public String getRedirectURL(HttpServletRequest req) {

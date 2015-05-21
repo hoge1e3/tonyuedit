@@ -15,17 +15,17 @@ import jp.tonyu.auth.Auth;
 import jp.tonyu.auth.OAuthKeyDB;
 import jp.tonyu.auth.RequestSigner;
 import jp.tonyu.cartridges.BlobCartridge;
-import jp.tonyu.cartridges.DocumentCartridge;
 import jp.tonyu.cartridges.GLSFileSync;
 import jp.tonyu.cartridges.GoogleOAuthCartridge;
-import jp.tonyu.cartridges.JSRun;
+import jp.tonyu.cartridges.JSRunCartridge;
 import jp.tonyu.cartridges.LoginCartridge;
-import jp.tonyu.cartridges.Shell;
+import jp.tonyu.cartridges.ShellCartridge;
 import jp.tonyu.cartridges.TwitterOAuthCartridge;
 import jp.tonyu.cartridges.UDBCartridge;
 import jp.tonyu.cartridges.UploadClient;
 import jp.tonyu.debug.Log;
 import jp.tonyu.fs.MemCache;
+import jp.tonyu.js.JSRun;
 import jp.tonyu.servlet.MultiServletCartridge;
 import jp.tonyu.servlet.RequestFragmentReceiver;
 import jp.tonyu.servlet.ServletCartridge;
@@ -51,9 +51,9 @@ public class TonyueditServlet extends HttpServlet {
 		lc.insert(gc);
 		lc.insert(tc);
 		GLSFileSync syn=new GLSFileSync(r);
-		Shell sh=new Shell(r);
+		ShellCartridge sh=new ShellCartridge(r);
 		MultiServletCartridge msc = new MultiServletCartridge(
-		        r,syn,lc,sh,new DocumentCartridge(r.getFs()),
+		        new JSRunCartridge(r),syn,lc,sh,
 		        new UDBCartridge(dss, a, false),
 		        new UploadClient(a,sgn),
 		        new BlobCartridge(a, dss, sgn, false));
