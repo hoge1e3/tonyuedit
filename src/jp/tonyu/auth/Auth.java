@@ -39,7 +39,7 @@ public class Auth {
     public String currentUserId() {
         EQ e = EQ.$(currentUser());
         String res = (String)e.attr(UserDB.KEY_LOCAL_USER_ID);//+"";
-        System.out.println(this+": curUser "+res);
+        //System.out.println(this+": curUser "+res);
         return res;
     }
     public void setOAuthInfo(String oauthProvider, String oauthedUserId, String recommendedUserId) {
