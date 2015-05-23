@@ -151,7 +151,7 @@ public class TwitterOAuthCartridge implements OAuthCartridge {
 
 	@Override
 	public String getOAuthStartURL(HttpServletRequest req) {
-		return START_OAUTH_TWITTER;
+		return ServerInfo.appURL(req)+"/"+START_OAUTH_TWITTER;
 	}
 
 }

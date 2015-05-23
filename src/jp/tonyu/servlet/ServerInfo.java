@@ -17,7 +17,13 @@ public class ServerInfo {
     public static String exeURL(HttpServletRequest req) {
         return isLocal(req) ? tonyuexe_local : tonyuexe_server;
     }
-    public static Object editURL(HttpServletRequest req) {
+    public static String editURL(HttpServletRequest req) {
         return isLocal(req) ? tonyuedit_local : tonyuedit_server;
+    }
+    public static String top(HttpServletRequest req) {
+        return isExe(req) ? exeURL(req): editURL(req);
+    }
+    public static String appURL(HttpServletRequest req) {
+        return top(req)+"/"+(isExe(req)?"exe":"edit");
     }
 }

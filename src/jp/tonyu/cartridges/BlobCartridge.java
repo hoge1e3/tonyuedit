@@ -39,6 +39,8 @@ import com.google.appengine.api.datastore.DatastoreService;
 
 public class BlobCartridge implements ServletCartridge {
     private static final String BLOB_URL = "blobURL";
+    private static final String SERVE_BLOB = "/serveBlob/";
+
     BlobstoreService bs=BlobstoreServiceFactory.getBlobstoreService();
     //DatastoreService dss;
     BlobStore bst;
@@ -59,13 +61,10 @@ public class BlobCartridge implements ServletCartridge {
         // TODO 自動生成されたメソッド・スタブ
         String u=req.getPathInfo();
         if (u.startsWith("/"+BLOB_URL)) {
-            resp.getWriter().print(bs.createUploadUrl(
-                    (ServerInfo.isExe(req)? "/exe":"/edit")+ "/blobUploadDone"));
-            return true;
+            return blobURL(req, resp);
         }
-        String sb = "/serveBlob/";
-        if (u.startsWith(sb)) {
-            String path=u.substring(sb.length());
+        if (u.startsWith(SERVE_BLOB)) {
+            String path=u.substring(SERVE_BLOB.length());
             return serveBlob(resp, path);
         }
         if (u.startsWith("/deleteBlob/")) {
@@ -83,16 +82,35 @@ public class BlobCartridge implements ServletCartridge {
             return true;
         }
         if (u.startsWith("/blobMD5sOfProject")) {
-            String user=req.getParameter("user");
-            String project=req.getParameter("project");
-            Map<String, String> res = bst.md5sOfProject(user,project);
-            resp.getWriter().print(JSON.encode(res));
-            return true;
+            return md5sOfProject(req, resp);
         }
         if (u.startsWith("/forkBlobs")) {
             return forkBlobs(req,resp);
         }
         return false;
+    }
+    @Override
+    public boolean post(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        String u=req.getPathInfo();
+        if (u.startsWith("/blobUploadDone")) {
+            return blobUploadDone(req, resp);
+        }
+        return false;
+    }
+    public boolean md5sOfProject(HttpServletRequest req,
+            HttpServletResponse resp) throws IOException {
+        String user=req.getParameter("user");
+        String project=req.getParameter("project");
+        Map<String, String> res = bst.md5sOfProject(user,project);
+        resp.getWriter().print(JSON.encode(res));
+        return true;
+    }
+    public boolean blobURL(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        resp.getWriter().print(bs.createUploadUrl(
+                (ServerInfo.isExe(req)? "/exe":"/edit")+ "/blobUploadDone"));
+        return true;
     }
     private boolean forkBlobs(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (ServerInfo.isExe(req)) return false;
@@ -116,15 +134,6 @@ public class BlobCartridge implements ServletCartridge {
         bst.forkBlob(md5s, dstUser, dstProject);
         resp.getWriter().print("Forked");
         return true;
-    }
-    @Override
-    public boolean post(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
-        String u=req.getPathInfo();
-        if (u.startsWith("/blobUploadDone")) {
-            return blobUploadDone(req, resp);
-        }
-        return false;
     }
     public boolean blobUploadDone(HttpServletRequest req,
             HttpServletResponse resp) throws IOException {

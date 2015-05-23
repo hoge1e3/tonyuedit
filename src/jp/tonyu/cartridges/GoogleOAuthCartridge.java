@@ -85,7 +85,7 @@ public class GoogleOAuthCartridge implements OAuthCartridge {
 	}
 	@Override
 	public String getOAuthStartURL(HttpServletRequest req) {
-		return START_OAUTH_GOOGLE;
+		return ServerInfo.appURL(req)+"/"+START_OAUTH_GOOGLE;
 	}
 
 }
