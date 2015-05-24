@@ -90,7 +90,7 @@ public class JSRunCartridge implements ServletCartridge{
                 ""
                 ,
 
-                ServerInfo.appURL(req)+"/"+PATH_DIRECT_MODE,
+                ServerInfo.appTop(req)+"/"+PATH_DIRECT_MODE,
                 KEY_LS,ls,
 
                 KEY_PROG,prog,

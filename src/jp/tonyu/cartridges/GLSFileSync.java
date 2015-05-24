@@ -70,7 +70,7 @@ public class GLSFileSync implements ServletCartridge {
         		"</body></html>"+
         		""
         		,
-        		ServerInfo.appURL(req)+"/LS2FileSync",
+        		ServerInfo.appTop(req)+"/LS2FileSync",
         		"base","/",
         		"data",""
         ));

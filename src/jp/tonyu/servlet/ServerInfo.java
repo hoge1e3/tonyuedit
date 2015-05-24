@@ -14,16 +14,23 @@ public class ServerInfo {
     public static boolean isLocal(HttpServletRequest req) {
         return req.getServerName().indexOf("localhost")>=0;
     }
-    public static String exeURL(HttpServletRequest req) {
+    public static String exeTop(HttpServletRequest req) {
         return isLocal(req) ? tonyuexe_local : tonyuexe_server;
     }
-    public static String editURL(HttpServletRequest req) {
+    public static String editTop(HttpServletRequest req) {
         return isLocal(req) ? tonyuedit_local : tonyuedit_server;
     }
     public static String top(HttpServletRequest req) {
-        return isExe(req) ? exeURL(req): editURL(req);
+        return isExe(req) ? exeTop(req): editTop(req);
     }
-    public static String appURL(HttpServletRequest req) {
+    public static String appTop(HttpServletRequest req) {
         return top(req)+"/"+(isExe(req)?"exe":"edit");
     }
+    public static String editAppTop(HttpServletRequest req) {
+        return editTop(req)+"/"+"edit";
+    }
+    public static String exeAppTop(HttpServletRequest req) {
+        return exeTop(req)+"/"+"exe";
+    }
+
 }

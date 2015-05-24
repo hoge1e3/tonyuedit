@@ -75,7 +75,7 @@ public class UploadClient implements ServletCartridge {
     UnsupportedEncodingException{
         String prj=req.getParameter(PARAM_PRJ);
 
-        String urlString=getExeServerURL(req, URL_PRJ_INFO);
+        String urlString=ServerInfo.exeAppTop(req)+"/"+URL_PRJ_INFO;
         String user = auth.currentUserId()+"";
         String postStr =
                 PARAM_PRJ+"="+URLEncoder.encode(prj, "utf8")+"&"+
@@ -98,11 +98,11 @@ public class UploadClient implements ServletCartridge {
     }
 
 
-    public static String getExeServerURL(HttpServletRequest req, String cmd) {
+    /*public static String getExeServerURL(HttpServletRequest req, String cmd) {
         return req.getServerName().indexOf("localhost")>=0 ?
                 ServerInfo.tonyuexe_local+"/exe/"+cmd:
                 ServerInfo.tonyuexe_server+"/exe/"+cmd;
-    }
+    }*/
 
     public boolean upload(HttpServletRequest req, HttpServletResponse resp)
             throws MalformedURLException, IOException,
@@ -117,7 +117,7 @@ public class UploadClient implements ServletCartridge {
         String license=req.getParameter(KEY_LICENSE);
         boolean allowFork="true".equals(req.getParameter(KEY_ALLOW_FORK));
         boolean pubList="true".equals(req.getParameter(KEY_PUBLIST));
-        String urlString=getExeServerURL(req, URL_UPLOAD_PRJ);
+        String urlString=ServerInfo.exeAppTop(req)+"/"+URL_UPLOAD_PRJ;
         URL url = new URL(urlString);
         URLConnection uc = url.openConnection();
         uc.setDoOutput(true);

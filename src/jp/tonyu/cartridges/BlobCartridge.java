@@ -38,6 +38,7 @@ import com.google.appengine.api.blobstore.BlobstoreServiceFactory;
 import com.google.appengine.api.datastore.DatastoreService;
 
 public class BlobCartridge implements ServletCartridge {
+    private static final String BLOB_UPLOAD_DONE = "blobUploadDone";
     private static final String BLOB_URL = "blobURL";
     private static final String SERVE_BLOB = "/serveBlob/";
 
@@ -93,7 +94,7 @@ public class BlobCartridge implements ServletCartridge {
     public boolean post(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         String u=req.getPathInfo();
-        if (u.startsWith("/blobUploadDone")) {
+        if (u.startsWith("/"+BLOB_UPLOAD_DONE)) {
             return blobUploadDone(req, resp);
         }
         return false;
@@ -109,7 +110,7 @@ public class BlobCartridge implements ServletCartridge {
     public boolean blobURL(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         resp.getWriter().print(bs.createUploadUrl(
-                (ServerInfo.isExe(req)? "/exe":"/edit")+ "/blobUploadDone"));
+                ServerInfo.appTop(req)+"/"+BLOB_UPLOAD_DONE));
         return true;
     }
     private boolean forkBlobs(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -122,7 +123,7 @@ public class BlobCartridge implements ServletCartridge {
         String srcUser=req.getParameter("srcUser");
         String srcProject=req.getParameter("srcProject");
         String dstProject=req.getParameter("dstProject");
-        String urlString=ServerInfo.exeURL(req)+"/exe/blobMD5sOfProject"+
+        String urlString=ServerInfo.exeTop(req)+"/exe/blobMD5sOfProject"+
         "?user="+HTMLDecoder.encode(srcUser)+
         "&project="+HTMLDecoder.encode(srcProject)
         ;
@@ -255,7 +256,7 @@ public class BlobCartridge implements ServletCartridge {
         String project=req.getParameter(BlobStore.KEY_PRJ);
         String fileName=req.getParameter(BlobStore.KEY_FN);
         System.out.print("Upload blob "+project+"/"+fileName+"...");
-        String burls = UploadClient.getExeServerURL(req, BLOB_URL);
+        String burls = ServerInfo.exeAppTop(req)+"/"+BLOB_URL;
         BlobKey blobKey = bst.getKey(user, project, fileName);
         if (blobKey==null) {
             //resp.setStatus(404);

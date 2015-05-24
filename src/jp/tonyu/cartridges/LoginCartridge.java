@@ -208,9 +208,9 @@ public class LoginCartridge implements ServletCartridge{
                                                "万が一問題が発生した場合には，当該投稿者の自己責任で解決するものとし，" +
                                                "運営者に何ら迷惑を及ぼさないものとします．")
                                   ),
-                                  t("a").a("href", ServerInfo.editURL(req)+"/doc/terms.html").a("target", "terms").e("利用規約全文を読む...")
+                                  t("a").a("href", ServerInfo.editTop(req)+"/doc/terms.html").a("target", "terms").e("利用規約全文を読む...")
                             ),
-                            t("form").a("action", ServerInfo.appURL(req)+"/"+VERIFY_OAUTHED_USER).a("method","POST").e(
+                            t("form").a("action", ServerInfo.appTop(req)+"/"+VERIFY_OAUTHED_USER).a("method","POST").e(
                                     mesg,
                                  t("span").e("ユーザ名を設定"),
                                  t("input").a("name",PARAM_UID).a("value", lUserId),
@@ -238,7 +238,7 @@ public class LoginCartridge implements ServletCartridge{
 	                "<input type=submit value='Login'/>"+
 	                "</form>",
 	                msg,
-	                ServerInfo.appURL(req)+"/"+LOGIN,
+	                ServerInfo.appTop(req)+"/"+LOGIN,
 	                PARAM_UID,
 	                PARAM_PASS
 	        ));

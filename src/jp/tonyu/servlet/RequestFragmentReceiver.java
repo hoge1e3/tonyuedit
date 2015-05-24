@@ -51,23 +51,33 @@ public class RequestFragmentReceiver implements ServletCartridge {
             throws IOException {
         String u=req.getPathInfo();
         if (u.startsWith(SEND_FRAGMENT)) {
-            String redirectTo=req.getParameter("redirectTo");
-            String id=req.getParameter("id");
-            long seq=Long.parseLong(req.getParameter("seq"));
-            long len=Long.parseLong(req.getParameter("len"));
-            String content=req.getParameter("content");
-            System.out.println("sendfrag Rediect to "+redirectTo);
-            if (redirectTo!=null) {
-                return sendFragmentRemote(req, resp, id, seq, len, content, redirectTo);
-            } else {
-                return sendFragmentLocal(resp, id, seq, len, content);
-            }
+            return sendFramgment(req, resp);
         }
         if (u.startsWith(RUN_FRAGMENTS)) {
-            String id=req.getParameter("id");
-            return runFragmentsLocal(req, resp, id/*, user,chk*/);
+            return runFragments(req, resp);
         }
         return c.post(req, resp);
+    }
+
+    public boolean runFragments(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        String id=req.getParameter("id");
+        return runFragmentsLocal(req, resp, id/*, user,chk*/);
+    }
+
+    public boolean sendFramgment(HttpServletRequest req,
+            HttpServletResponse resp) throws IOException {
+        String redirectTo=req.getParameter("redirectTo");
+        String id=req.getParameter("id");
+        long seq=Long.parseLong(req.getParameter("seq"));
+        long len=Long.parseLong(req.getParameter("len"));
+        String content=req.getParameter("content");
+        System.out.println("sendfrag Rediect to "+redirectTo);
+        if (redirectTo!=null) {
+            return sendFragmentRemote(req, resp, id, seq, len, content, redirectTo);
+        } else {
+            return sendFragmentLocal(resp, id, seq, len, content);
+        }
     }
 
 

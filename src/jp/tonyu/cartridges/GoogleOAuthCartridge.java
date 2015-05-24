@@ -50,7 +50,7 @@ public class GoogleOAuthCartridge implements OAuthCartridge {
     	if (ServerInfo.isExe(req)) throw new RuntimeException("Login not allowed in tonyuexe");
     	//if (req.getServerPort()!=80) url+=":"+req.getServerPort();
     	//url+="/edit/"+OAUTH_GOOGLE;
-    	String url=ServerInfo.appURL(req)+"/"+OAUTH_GOOGLE;
+    	String url=ServerInfo.appTop(req)+"/"+OAUTH_GOOGLE;
     	return url;
 	}
 	public boolean start(HttpServletRequest req, HttpServletResponse resp)
@@ -71,7 +71,7 @@ public class GoogleOAuthCartridge implements OAuthCartridge {
         String userId=user.get("id")+"";
         String recUserName=user.get("name")+"";
         auth.setOAuthInfo(getOAuthProviderName(), userId, recUserName);
-        resp.sendRedirect(ServerInfo.appURL(req)+"/"+LoginCartridge.VERIFY_OAUTHED_USER);
+        resp.sendRedirect(ServerInfo.appTop(req)+"/"+LoginCartridge.VERIFY_OAUTHED_USER);
         return true;
     }
     @Override
@@ -80,7 +80,7 @@ public class GoogleOAuthCartridge implements OAuthCartridge {
 	}
 	@Override
 	public String getOAuthStartURL(HttpServletRequest req) {
-		return ServerInfo.appURL(req)+"/"+START_OAUTH_GOOGLE;
+		return ServerInfo.appTop(req)+"/"+START_OAUTH_GOOGLE;
 	}
 
 }
