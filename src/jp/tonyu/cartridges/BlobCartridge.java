@@ -109,8 +109,10 @@ public class BlobCartridge implements ServletCartridge {
     }
     public boolean blobURL(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        resp.getWriter().print(bs.createUploadUrl(
-                ServerInfo.appTop(req)+"/"+BLOB_UPLOAD_DONE));
+        // absolute url (http://....) is not allowed!
+        String successPath = ServerInfo.appPath(req)+"/"+BLOB_UPLOAD_DONE;
+        //System.out.println("Succ path "+successPath);
+        resp.getWriter().print(bs.createUploadUrl(successPath));
         return true;
     }
     private boolean forkBlobs(HttpServletRequest req, HttpServletResponse resp) throws IOException {

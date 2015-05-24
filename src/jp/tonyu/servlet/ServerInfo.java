@@ -23,8 +23,11 @@ public class ServerInfo {
     public static String top(HttpServletRequest req) {
         return isExe(req) ? exeTop(req): editTop(req);
     }
+    public static String appPath(HttpServletRequest req) {
+        return "/"+(isExe(req)?"exe":"edit");
+    }
     public static String appTop(HttpServletRequest req) {
-        return top(req)+"/"+(isExe(req)?"exe":"edit");
+        return top(req)+appPath(req);
     }
     public static String editAppTop(HttpServletRequest req) {
         return editTop(req)+"/"+"edit";
