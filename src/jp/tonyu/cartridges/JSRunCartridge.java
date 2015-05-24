@@ -16,6 +16,7 @@ import jp.tonyu.js.BlankScriptableObject;
 import jp.tonyu.js.ContextHolder;
 import jp.tonyu.js.JSRun;
 import jp.tonyu.js.SafeJSSession;
+import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.util.Html;
 
@@ -89,7 +90,7 @@ public class JSRunCartridge implements ServletCartridge{
                 ""
                 ,
 
-                PATH_DIRECT_MODE,
+                ServerInfo.appURL(req)+"/"+PATH_DIRECT_MODE,
                 KEY_LS,ls,
 
                 KEY_PROG,prog,

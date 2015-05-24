@@ -15,6 +15,7 @@ import jp.tonyu.js.JSRun;
 import jp.tonyu.js.SafeJSSession;
 import jp.tonyu.servlet.NodeJSRequest;
 import jp.tonyu.servlet.NodeJSResponse;
+import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.util.Html;
 import jp.tonyu.util.Resource;
@@ -31,12 +32,10 @@ public class GLSFileSync implements ServletCartridge {
         if (u==null) u="/";
         if (u.startsWith("/getDirInfo")) {
             return getDirInfo(req, resp);
-        }
-        if (u.startsWith("/File2LSSync")) {
+        } else if (u.startsWith("/File2LSSync")) {
             return file2LSSync(req, resp);
-        }
-        if (u.startsWith("/LS2FileSyncForm")) {
-        	return lS2FileSyncForm(resp);
+        } else if (u.startsWith("/LS2FileSyncForm")) {
+        	return lS2FileSyncForm(req, resp);
         }
     	return false;
     }
@@ -46,11 +45,9 @@ public class GLSFileSync implements ServletCartridge {
     		throws IOException {
     	String u = req.getPathInfo();
         if (u==null) u="/";
-    	System.out.println("GLSFileSync POST - "+u);
         if (u.startsWith("/LS2FileSync")) {
             return ls2FileSync(req, resp);
-        }
-        if (u.startsWith("/File2LSSync")) {
+        } else if (u.startsWith("/File2LSSync")) {
             return file2LSSync(req, resp);
         }
     	return false;
@@ -62,7 +59,7 @@ public class GLSFileSync implements ServletCartridge {
         return true;
     }
 
-    public boolean lS2FileSyncForm(HttpServletResponse resp) throws IOException {
+    public boolean lS2FileSyncForm(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("text/html; charset=utf8");
         resp.getWriter().print(Html.p("<html><body>"+
         		"<form action=%a method=POST>" +
@@ -73,7 +70,7 @@ public class GLSFileSync implements ServletCartridge {
         		"</body></html>"+
         		""
         		,
-        		"LS2FileSync",
+        		ServerInfo.appURL(req)+"/LS2FileSync",
         		"base","/",
         		"data",""
         ));

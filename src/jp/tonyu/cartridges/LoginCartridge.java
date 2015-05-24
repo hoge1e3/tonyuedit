@@ -62,24 +62,16 @@ public class LoginCartridge implements ServletCartridge{
 			throws IOException {
 		String u=req.getPathInfo();
 		if (u.startsWith("/"+LOGIN)) {
-			loginForm(req, resp,"");
-			return true;
-		}
-		if (u.startsWith("/logout")) {
-		    auth.logout();
-		    resp.sendRedirect("/");
-		    return true;
-		}
-		if (u.startsWith("/"+VERIFY_OAUTHED_USER)) {
+			return loginForm(req, resp,"");
+		} else if (u.startsWith("/logout")) {
+		    return logout(req, resp);
+		} else if (u.startsWith("/"+VERIFY_OAUTHED_USER)) {
             return verifyOAuthedUser(req,resp);
-        }
-		if (u.startsWith("/currentUser")) {
+        } else if (u.startsWith("/currentUser")) {
 		    return currentUser(req, resp);
-		}
-	    if (u.startsWith("/adduser")) {
+		} else if (u.startsWith("/adduser")) {
 	        return addUser(req,resp);
-	    }
-		if (cs.get(req, resp)) return true;
+	    } else if (cs.get(req, resp)) return true;
 		return false;
 	}
     @Override
@@ -88,17 +80,13 @@ public class LoginCartridge implements ServletCartridge{
     	String u=req.getPathInfo();
     	if (u.startsWith("/"+LOGIN)) {
     		return login(req, resp);
-    	}
-    	if (u.startsWith("/"+VERIFY_OAUTHED_USER)) {
+    	} else if (u.startsWith("/"+VERIFY_OAUTHED_USER)) {
     	    return verifyOAuthedUser(req,resp);
-    	}
-        if (u.startsWith("/passwd")) {
+    	} else if (u.startsWith("/passwd")) {
             return passwd(req,resp);
-        }
-        if (u.startsWith("/oauthKey")) {
+        } else if (u.startsWith("/oauthKey")) {
             return oauthKey(req,resp);
-        }
-    	if (cs.post(req, resp)) return true;
+        } else if (cs.post(req, resp)) return true;
     	return false;
     }
     private boolean oauthKey(HttpServletRequest req, HttpServletResponse resp) {
@@ -108,6 +96,12 @@ public class LoginCartridge implements ServletCartridge{
         if (!auth.isRoot()) throw new RuntimeException("Notroot");
         oauthDB.put(service, key, secret);
         System.out.println("Put data "+service);
+        return true;
+    }
+    public boolean logout(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        auth.logout();
+        resp.sendRedirect(ServerInfo.top(req)+"/");
         return true;
     }
     public boolean currentUser(HttpServletRequest req, HttpServletResponse resp)
@@ -216,7 +210,7 @@ public class LoginCartridge implements ServletCartridge{
                                   ),
                                   t("a").a("href", ServerInfo.editURL(req)+"/doc/terms.html").a("target", "terms").e("利用規約全文を読む...")
                             ),
-                            t("form").a("action", VERIFY_OAUTHED_USER).a("method","POST").e(
+                            t("form").a("action", ServerInfo.appURL(req)+"/"+VERIFY_OAUTHED_USER).a("method","POST").e(
                                     mesg,
                                  t("span").e("ユーザ名を設定"),
                                  t("input").a("name",PARAM_UID).a("value", lUserId),
@@ -228,7 +222,7 @@ public class LoginCartridge implements ServletCartridge{
     public void responseUTF8(HttpServletResponse resp) {
         resp.setContentType("text/html; charset=utf8");
     }
-    public void loginForm(HttpServletRequest req, HttpServletResponse resp,String msg)
+    public boolean loginForm(HttpServletRequest req, HttpServletResponse resp,String msg)
 			throws IOException {
 		responseUTF8(resp);
 		PrintWriter w = resp.getWriter();
@@ -244,7 +238,7 @@ public class LoginCartridge implements ServletCartridge{
 	                "<input type=submit value='Login'/>"+
 	                "</form>",
 	                msg,
-	                LOGIN,
+	                ServerInfo.appURL(req)+"/"+LOGIN,
 	                PARAM_UID,
 	                PARAM_PASS
 	        ));
@@ -260,6 +254,7 @@ public class LoginCartridge implements ServletCartridge{
 		}
 		w.print("</ul>");
 		w.print("</body></html>");
+		return true;
 	}
 
 	public boolean login(HttpServletRequest req, HttpServletResponse resp)

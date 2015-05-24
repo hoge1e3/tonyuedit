@@ -46,11 +46,9 @@ public class TwitterOAuthCartridge implements OAuthCartridge {
     	if (u==null) u="/";
     	if (u.startsWith("/"+START_OAUTH_TWITTER)) {
     		return start(req, resp);
-    	}
-    	if (u.startsWith("/"+OAUTH_TWITTER)) {
-    		return doOauth(req, resp);
-    	}
-    	return false;
+    	} else if (u.startsWith("/"+OAUTH_TWITTER)) {
+    		return done(req, resp);
+    	} else return false;
     }
     @Override
     public boolean post(HttpServletRequest req, HttpServletResponse resp)
@@ -89,7 +87,7 @@ public class TwitterOAuthCartridge implements OAuthCartridge {
         }
         return true;
     }
-    public boolean doOauth(HttpServletRequest req, HttpServletResponse resp)
+    public boolean done(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         ConsumerProvider cp=(ConsumerProvider)req.getSession().getAttribute(CONSUMER_PROVIDER);
 
@@ -106,7 +104,7 @@ public class TwitterOAuthCartridge implements OAuthCartridge {
             // 11450582/hoge1e3
 
             auth.setOAuthInfo(getOAuthProviderName(), user_id, screen_name);
-            resp.sendRedirect(LoginCartridge.VERIFY_OAUTHED_USER);//TODO: urlchange!
+            resp.sendRedirect(ServerInfo.appURL(req)+"/"+LoginCartridge.VERIFY_OAUTHED_USER);//TODO: urlchange!
             //resp.getWriter().print(user_id+"/"+screen_name);
         } catch (OAuthMessageSignerException e) {
         	e.printStackTrace();
@@ -141,7 +139,7 @@ public class TwitterOAuthCartridge implements OAuthCartridge {
     	//String url="http://"+req.getServerName();
         if (ServerInfo.isExe(req)) throw new RuntimeException("Login not allowed in tonyuexe");
     	//if (req.getServerPort()!=80) url+=":"+req.getServerPort();
-    	String url=ServerInfo.editURL(req)+"/edit/"+OAUTH_TWITTER;
+    	String url=ServerInfo.appURL(req)+"/"+OAUTH_TWITTER;
     	return url;
 	}
 	@Override

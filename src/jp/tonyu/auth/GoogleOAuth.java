@@ -70,27 +70,7 @@ public class GoogleOAuth implements Wrappable {
     	Map res=(Map)JSON.decode(resStr);
     	//System.out.println(resStr);
     	return res.get("access_token").toString();
-/*
-        HttpClient httpclient = new DefaultHttpClient();
-		HttpPost httppost = new HttpPost(token_uri);
-        final List <NameValuePair> params = new Vector <NameValuePair>();
-        params.add(new BasicNameValuePair("code", code   ));
-        params.add(new BasicNameValuePair("client_id",  client_id   ));
-        params.add(new BasicNameValuePair("client_secret",  client_secret   ));
-        params.add(new BasicNameValuePair("redirect_uri",  redirect_uri   ));
-        params.add(new BasicNameValuePair("grant_type",  "authorization_code"   ));
-        httppost.setEntity(new UrlEncodedFormEntity(params, Consts.UTF_8));
-        HttpResponse response=httpclient.execute(httppost);
 
-        HttpEntity resEntity = response.getEntity();
-        String resStr=EntityUtils.toString(resEntity);
-        EntityUtils.consume(resEntity);
-
-        Map res=(Map)JSON.decode(resStr);
-
-        //System.out.println(resStr);
-        return res.get("access_token").toString();
-        */
     }
     public Map getUserInfo(String accessToken) throws IOException {
     	URL u=new URL("https://www.googleapis.com/oauth2/v1/userinfo?access_token="+encode(accessToken));
@@ -99,16 +79,7 @@ public class GoogleOAuth implements Wrappable {
     	InputStream in = con.getInputStream();
     	String resStr= Streams.stream2str(in);
         return (Map)JSON.decode(resStr);
-    	/*
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpGet httpget = new HttpGet("https://www.googleapis.com/oauth2/v1/userinfo?access_token="+encode(accessToken));
-        HttpResponse response=httpclient.execute(httpget);
 
-        HttpEntity resEntity = response.getEntity();
-        String resStr=EntityUtils.toString(resEntity);
-        EntityUtils.consume(resEntity);
-
-        return (Map)JSON.decode(resStr);*/
     }
     public String authURI(String redirect_uri){
     	String scope="https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";

@@ -28,6 +28,7 @@ import jp.tonyu.fs.MemCache;
 import jp.tonyu.js.JSRun;
 import jp.tonyu.servlet.MultiServletCartridge;
 import jp.tonyu.servlet.RequestFragmentReceiver;
+import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
 
 @SuppressWarnings("serial")
@@ -47,7 +48,8 @@ public class TonyueditServlet extends HttpServlet {
         RequestSigner sgn= new RequestSigner(okb);
         GoogleOAuthCartridge gc=new GoogleOAuthCartridge(a,okb);
 		TwitterOAuthCartridge tc=new TwitterOAuthCartridge(a,okb);
-		LoginCartridge lc=new LoginCartridge(dss, a,okb, r.getFs(), "../html/build/notifyLoggedIn.html?user=%u&csrfToken="+a.csrfToken());
+		LoginCartridge lc=new LoginCartridge(dss, a,okb, r.getFs(),
+		        ServerInfo.top(req)+ "/html/build/notifyLoggedIn.html?user=%u&csrfToken="+a.csrfToken());
 		lc.insert(gc);
 		lc.insert(tc);
 		GLSFileSync syn=new GLSFileSync(r);
