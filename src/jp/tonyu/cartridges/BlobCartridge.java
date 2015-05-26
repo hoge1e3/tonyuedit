@@ -66,7 +66,7 @@ public class BlobCartridge implements ServletCartridge {
         }
         if (u.startsWith(SERVE_BLOB)) {
             String path=u.substring(SERVE_BLOB.length());
-            return serveBlob(resp, path);
+            return serve(resp, path);
         }
         if (u.startsWith("/deleteBlob/")) {
             return deleteBlob(req, resp);
@@ -183,26 +183,31 @@ public class BlobCartridge implements ServletCartridge {
         System.out.println("Done Receiving blob "+user+"/"+project+"/"+fileName);
         return true;
     }
-    public boolean serveBlob(HttpServletResponse resp, String path)
+    public boolean serve(HttpServletResponse resp, String path)
             throws IOException {
         String []paths=path.split("/");
         String user=paths[0];
         String project=paths[1];
         String fileName=paths[2];
         if (user==null || project==null || fileName==null) {
-            resp.setStatus(500);
+            resp.setStatus(400);
             resp.getWriter().print("user project fileName is not specified");
             return true;
         }
         if (!user.equals(auth.currentUserId()) && !readFree) {
-            resp.setStatus(500);
+            resp.setStatus(403);
             resp.getWriter().print("read permission denied");
+            return true;
+        }
+        //String bk=req.getParameter("key");
+        BlobKey blobKey = bst.getKey(user, project, fileName);//  new BlobKey(bk);
+        if (blobKey==null) {
+            resp.setStatus(404);
+            resp.getWriter().print("Blob not found: "+path);
             return true;
         }
         String ct= detectContentType(fileName);
         resp.setContentType(ct);
-        //String bk=req.getParameter("key");
-        BlobKey blobKey = bst.getKey(user, project, fileName);//  new BlobKey(bk);
         BlobstoreInputStream in = new BlobstoreInputStream(blobKey);
         ServletOutputStream out = resp.getOutputStream();
         Streams.redirect(in, out);
