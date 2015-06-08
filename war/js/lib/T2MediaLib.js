@@ -198,8 +198,10 @@ var T2MediaLib = {
         }
         var xhr = new XMLHttpRequest();
         xhr.onload = function() {
+            console.log("LOAD1");
             if (xhr.status === 200 || xhr.status=== 0 /*@hoge1e3 for node-webkit base64url */) {
                 var arrayBuffer = xhr.response;
+                console.log("LOAD2",arrayBuffer);
                 if (arrayBuffer instanceof ArrayBuffer) {
                     var successCallback = function(audioBuffer) {
                         /*
