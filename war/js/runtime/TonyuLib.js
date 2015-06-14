@@ -387,13 +387,21 @@ return Tonyu=function () {
         var decls=params.decls;
         var nso=klass.ensureNamespace(Tonyu.classes, namespace);
         var prot=defunct(methods);
-        var res=(prot.initialize? prot.initialize:
+        var init=prot.initialize;
+        delete prot.initialize;
+        var res=(init?
+            (parent? function () {
+                if (Tonyu.runMode) init.apply(this,arguments);
+                else parent.apply(this,arguments);
+            }:function () {
+                if (Tonyu.runMode) init.apply(this,arguments);
+            }):
             (parent? function () {
                 parent.apply(this,arguments);
-            }:function (){})
+            }:function (){
+            })
         );
         nso[shortName]=res;
-        delete prot.initialize;
         res.methods=prot;
         includes.forEach(function (m) {
             if (!m.methods) throw m+" Does not have methods";
@@ -520,7 +528,7 @@ return Tonyu=function () {
             globals:globals, classes:classes, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
             timeout:timeout,asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
-            VERSION:1432966551964,//EMBED_VERSION
+            VERSION:1434267662434,//EMBED_VERSION
             A:A};
 }();
 });
