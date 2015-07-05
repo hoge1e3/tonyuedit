@@ -34,16 +34,17 @@ public class JSRun  {
 	private SafeJSSession jsSession;
 	private JSONWrapper json;
 	ServletContext sctx;
-	DatastoreService dss;
-	FS fs;
-	Auth auth;
-	public JSRun(MemCache cache, Auth a, ServletContext sctx) {
-		auth=a;
+	//DatastoreService dss;
+	final FS fs;
+	//Auth auth;
+	public JSRun(FS fs,/*MemCache cache, Auth a*/ ServletContext sctx) {
+		//auth=a;
+	    this.fs=fs;
 		setJSSession(new SafeJSSession());
-		dss=DatastoreServiceFactory.getDatastoreService();
-		LSEmulator localStorage=new UserLSEmulator(dss,cache,a);
+		//dss=DatastoreServiceFactory.getDatastoreService();
+		//LSEmulator localStorage=new UserLSEmulator(dss,cache,a);
 		//getSession().putToRoot("localStorage", localStorage);
-		fs = new FS(localStorage);
+		//fs = new FS(localStorage);
 		//getJSSession().putToRoot("Auth", auth); //Auth.userName("root");
 		getJSSession().putToRoot("FS", fs);
 		getJSSession().putToRoot("JSON", json=new JSONWrapper(getJSSession()));
@@ -56,9 +57,9 @@ public class JSRun  {
     public Scriptable getRoot() {
 		return getJSSession().root;
 	}
-	public DatastoreService getDataStoreService() {
+	/*public DatastoreService getDataStoreService() {
         return dss;
-    }
+    }*/
 
 
 
