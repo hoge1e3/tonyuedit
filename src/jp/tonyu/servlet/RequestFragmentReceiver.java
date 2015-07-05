@@ -107,6 +107,7 @@ public class RequestFragmentReceiver implements ServletCartridge {
         attr("seq",seq).attr("len",len).attr("content",content)
         .putTo(dss);
         resp.getWriter().print("sent");
+        System.out.println("Fragment recv "+id+" "+seq+"/"+len);
         return true;
     }
 
@@ -141,6 +142,7 @@ public class RequestFragmentReceiver implements ServletCartridge {
             len=((Number) EQ.$(e).attr("len")).intValue();
             got++;
         }
+        System.out.println("Run frag id="+id+" "+got+"/"+len);
         if (len==got) {
             String []conts=new String[len];
             for (Entity e: it) {
