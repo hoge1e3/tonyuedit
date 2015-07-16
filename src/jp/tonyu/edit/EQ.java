@@ -156,8 +156,14 @@ public class EQ  {
     }
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public EQ putTo(Map dst, String... keys) {
-        for (String key:keys) {
-            dst.put(key, attr(key));
+        if (keys.length==0 && t!=null) {
+            for (String key: t.getProperties().keySet()) {
+                dst.put(key, attr(key));
+            }
+        } else {
+            for (String key:keys) {
+                dst.put(key, attr(key));
+            }
         }
         return this;
     }
