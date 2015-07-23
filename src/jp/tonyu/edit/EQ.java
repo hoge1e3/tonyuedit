@@ -133,6 +133,10 @@ public class EQ  {
             return value;
         }
     }
+    public EQ order(String key,boolean desc) {
+        query.addSort(key, desc?SortDirection.DESCENDING:SortDirection.ASCENDING );
+        return this;
+    }
     public Iterable<Entity> asIterable(DatastoreService datastoreService) {
         if (filters.size()>0) {
             Filter filter= filters.size()==1? filters.get(0) : CompositeFilterOperator.and(filters.toArray(new Query.FilterPredicate[0]));
