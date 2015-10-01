@@ -3,13 +3,14 @@ requirejs(["Util", "Tonyu", "FS", "FileList", "FileMenu",
            "copySample","Shell","Shell2","ProjectOptionsEditor","copyToKernel","KeyEventChecker",
            "WikiDialog","runtime", "KernelDiffDialog","Sync","searchDialog","StackTrace","syncWithKernel",
            "UI","ResEditor","WebSite","exceptionCatcher","Tonyu.TraceTbl",
-           "SoundDiag"
+           "SoundDiag","Log","MainClassDialog"
           ],
 function (Util, Tonyu, FS, FileList, FileMenu,
           showErrorPos, fixIndent, Wiki, Tonyu_Project,
           copySample,sh,sh2, ProjectOptionsEditor, ctk, KeyEventChecker,
           WikiDialog, rt , KDD,Sync,searchDialog,StackTrace,swk,
-          UI,ResEditor,WebSite,EC,TTB
+          UI,ResEditor,WebSite,EC,TTB,
+          sd,Log,MainClassDialog
           ) {
 $(function () {
     var F=EC.f;
@@ -180,6 +181,7 @@ $(function () {
         runMenuOrd.forEach(function(n) {
             var ii=i;
             if (typeof n!="string") {console.log(n); alert("not a string: "+n);}
+            if (ii>=15) return;
             $("#runMenu").append(
                     $("<li>").append(
                             $("<a>").attr("href","#").text(n+"を実行"+(i==0?"(F9)":"")).click(F(function () {
@@ -199,6 +201,25 @@ $(function () {
                         $("<a>").attr("href","#").text("停止(F2)").click(F(function () {
                             stop();
                         }))));
+        $("#runMenu").append(
+                $("<li>").append(
+                        $("<a>").attr("href","#").text("実行するファイルを選択...").click(F(function () {
+                            var diag=MainClassDialog.show(curPrj,{on:{done:function (n,dorun) {
+                                var ii=runMenuOrd.indexOf(n);
+                                if (ii>0) {
+                                    runMenuOrd.splice(ii, 1);
+                                    runMenuOrd.unshift(n);
+                                    refreshRunMenu();
+                                    saveDesktopEnv();
+                                }
+                                if (dorun) run(n);
+                            }}});
+                            diag.$vars.mainClass.empty();
+                            runMenuOrd.forEach(function (m) {
+                                diag.$vars.mainClass.append(UI("option",{value:m},m));
+                            });
+                        }))));
+
         //saveDesktopEnv();
         $("#exportToJsdoit").attr("href", "exportToJsdoit.html?dir="+curProjectDir.path());//+"&main="+runMenuOrd[0]);
         $("#exportToExe").attr("href", "exportToExe.html?dir="+curProjectDir.path());//+"&main="+runMenuOrd[0]);
@@ -295,6 +316,7 @@ $(function () {
         if (typeof name!="string") {console.log(name); alert("not a string3: "+name);}
         save();
         displayMode("run");
+        Log.dumpProject(curProjectDir);
         if (typeof SplashScreen!="undefined") SplashScreen.show();
         setTimeout(function () {
             try {

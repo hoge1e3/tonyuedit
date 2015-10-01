@@ -190,6 +190,7 @@ var reqConf={
             plugins:"plugins/plugins",
             exceptionCatcher:"lib/exceptionCatcher",
             Assets:"fs/Assets",
+            MainClassDialog:"ide/MainClassDialog",
             "assert":"fs2/assert",
             "Contents":"fs2/Contents",
             "DataURL":"fs2/DataURL",
@@ -202,6 +203,7 @@ var reqConf={
             "SandBoxFile":"fs2/SandBoxFile",
             "SFile":"fs2/SFile",
             "Env":"fs2/Env",
+            "compiledProject":"lang/compiledProject",
 
             "foo":"bar"
         },
