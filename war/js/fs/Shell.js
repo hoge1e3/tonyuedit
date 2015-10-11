@@ -74,7 +74,7 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
                 if (f.exists()) {
                     sum+=Shell.rm(f, options);
                 }
-            }, {includeDirInfo:true});
+            });
             dir.rm();
             return sum+1;
         } else {
