@@ -10,7 +10,7 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         // mounting
         fstab: function () {
-            return this._fstab=this._fstab||[{fs:this, path:P.SEP}];
+            return this._fstab=this._fstab||[];//[{fs:this, path:P.SEP}];
         },
         resolveFS:function (path, options) {
             assert.is(path,P.Absolute);
@@ -21,7 +21,7 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
                     res=tb.fs;
                 }
             });
-            if (!res) this.err(path,"Cannot resolve");
+            if (!res) res=this; //this.err(path,"Cannot resolve");
             return assert.is(res,FS);
         },
         isReadOnly: function (path, options) {// mainly for check ENTIRELY read only
@@ -160,7 +160,7 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         getContentType: function (path, options) {
             var e=P.ext(path);
-            return M[e] || (options||{}).def || "application/octet-stream";
+            return M[e] || (options||{}).def || "text/plain";
         },
         isText:function (path) {
             var m=this.getContentType(path);
