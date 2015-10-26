@@ -172,7 +172,7 @@ var TPRC=function (dir) {
          });*/
          return TPR.loadDependingClasses(ctx).then(F(function () {
              var baseClasses=ctx.classes;
-             console.log("baseClasses", baseClasses);
+             //console.log("baseClasses", baseClasses);
              var ctxOpt=ctx.options;
              var env=TPR.env;
              env.aliases={};
@@ -360,6 +360,12 @@ var TPRC=function (dir) {
         }
     };
     return TPR;
+}
+if (typeof sh=="object") {
+    sh.tonyuc=function (dir) {
+        var pr=TPRC(sh.resolve(dir));
+        return pr.compile();
+    };
 }
 return TPRC;
 });
