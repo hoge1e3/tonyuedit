@@ -1,4 +1,4 @@
-// Created at Mon Oct 26 2015 14:34:15 GMT+0900 (東京 (標準時))
+// Created at Wed Oct 28 2015 10:17:31 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -1947,20 +1947,6 @@ define(["WebSite","SFileNW","Env","PathUtil","assert","SFile"],function (WebSite
     return FS;
 });
 
-requireSimulator.setName('fs/ROMk');
-(function () {
-  var rom={
-    base: '/Tonyu/Kernel/',
-    data: {
-      '': '{}'
-    }
-  };
-  if (WebSite.devMode || WebSite.disableROM['ROM_k.js'] || WebSite.isNW) {
-    rom.base='/ROM'+rom.base;
-  } else {
-    FS.mountROM(rom);
-  }
-})();
 requireSimulator.setName('Tonyu');
 if (typeof define!=="function") {
     define=require("requirejs").define;
@@ -2505,7 +2491,7 @@ return Tonyu=function () {
             globals:globals, classes:classes, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
             timeout:timeout,asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
-            VERSION:1445837644426,//EMBED_VERSION
+            VERSION:1445995044463,//EMBED_VERSION
             A:A};
 }();
 });
