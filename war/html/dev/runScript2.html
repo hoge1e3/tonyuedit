@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html><head>
 <script src="../../js/lib/jquery-1.10.1.js" type="text/javascript" data-nocat="true"></script>
-<script src="../../js/lib/jquery.hotkeys.js" type="text/javascript" data-nocat="true"></script>
 <script src="../../js/reqConf.js"></script>
 <script src="../../js/lib/require.js" data-nocat="true"></script>
-<script src="../../js/lib/timbre.js" type="text/javascript"></script>
 <script>
 requirejs.config(reqConf);
-requirejs(["runScript"],function (){});
+requirejs(["runScript2"],function (){});
 </script>
 
 <!--  jsdoit! -->
@@ -20,53 +18,6 @@ requirejs(["runScript"],function (){});
 http://tonyuedit.appspot.com/html/build/importFromJsdoit.html
 を開きます．
 -->
-<script language='text/tonyu' type='text/tonyu' data-filename='Ball.tonyu' data-lastupdate='1446425434174' >// 実行-> Main を実行
-while (true) {
-    y+=1;
-    rotation++;
-    update();
-    if (y>$screenHeight) y=0;
-}
-die();
-</script>
-
-<script language='text/tonyu' type='text/tonyu' data-filename='Main.tonyu' data-lastupdate='1446444989804' >// 実行-> Main を実行
-/* ウィンドウ → 画像リストから オブジェクトに用いるキャラクタパターン
-を追加できます．
-画像はpngまたはgifを指定してください．
-
-「パターン解析方法」は次の中から選びます
-Tonyu1フォーマット ： Tonyu1で利用されている画像をそのまま使う場合は
-こちらを選びます．※
-固定サイズ：   画像内を決められた大きさ（例えば32x32）で区切って
-描かれた画像の場合，こちらを選びます．
-「URL」欄には，URLを書くか，ローカルファイルをドラッグ＆ドロップします
-※： URL欄に他ドメインの画像ファイルを指定する場合，「Tonyu1フォーマット」
-は使えません．
-
-これらの画像は，変数pに値を代入することで使えます．
-例えば， $pat_chr という名前の画像ファイルの中の，
-4番目のキャラクタパターン（一番最初は0番目とする）を指定するには
-p=$pat_chr + 4;
-とします．
-*/
-//$Boot.useRAF(2);
-$Boot.useRAF=true;
-$Boot.setFrameRate(30,4);
-t=0;
-while(true) {
-    if (t%5==0 || getkey(32)) {
-        // 新しく作るBall オブジェクトの変数pに，
-        // $pat_balls の0 - 15番目のキャラクタパターンをランダムに設定
-        new Ball{x:rnd($screenWidth),y:0, p:$pat_balls+rnd(16)};
-    }
-    t++;
-    //print($Boot.rafCntDebug);
-    update();
-}</script>
-
-<script language='text/tonyu' type='text/tonyu' data-filename='.desktop' data-wrap='80' data-lastupdate='1446171221619' >{"runMenuOrd":["Main","Ball"]}
-</script>
 
 <script language='text/tonyu' type='text/tonyu' data-filename='images/balls.png' data-wrap='80' data-lastupdate='1446602486686' >data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAYAAACLz2ctAAAAAXNSR0IArs\
 4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAJvOSURBVHhe7Z13XFPX//9vQk\

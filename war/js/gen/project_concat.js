@@ -1,4 +1,4 @@
-// Created at Fri Oct 30 2015 10:18:01 GMT+0900 (東京 (標準時))
+// Created at Thu Nov 12 2015 09:55:38 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -14,7 +14,7 @@
 	define=function (reqs,func) {
 		R.def(reqs,func,"define");
 	};
-	require=requirejs=function (reqs,func) {
+	/*require=*/requirejs=function (reqs,func) {
 		R.def(reqs,func,"require");
 	};
 	R.setReqs=function (m, reqs) {
@@ -440,6 +440,20 @@ return Tonyu=function () {
         },t);
         return res;
     }
+    function animationFrame() {
+        var res={};
+        var ls=[];
+        res.addTerminatedListener=function (l) {
+            ls.push(l);
+        };
+        requestAnimationFrame(function () {
+            ls.forEach(function (l) {
+                l();
+            });
+        });
+        return res;
+    }
+
     function asyncResult() {
         var res=[];
         var ls=[];
@@ -787,11 +801,27 @@ return Tonyu=function () {
     function hasKey(k, obj) {
         return k in obj;
     }
+    function run(bootClassName) {
+        var bootClass=getClass(bootClassName);
+        if (!bootClass) throw new Error( bootClassName+" というクラスはありません");
+        Tonyu.runMode=true;
+        var boot=new bootClass();
+        var th=thread();
+        th.apply(boot,"main");
+        var TPR;
+        if (TPR=Tonyu.currentProject) {
+            TPR.runningThread=th;
+            TPR.runningObj=boot;
+        }
+        $LASTPOS=0;
+        th.steps();
+    }
     return Tonyu={thread:thread, threadGroup:threadGroup, klass:klass, bless:bless, extend:extend,
             globals:globals, classes:classes, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
-            timeout:timeout,asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
+            timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
-            VERSION:1446167878960,//EMBED_VERSION
+            run:run,
+            VERSION:1447289735811,//EMBED_VERSION
             A:A};
 }();
 });
@@ -1102,6 +1132,7 @@ PathUtil={
         return PathUtil.up(path);
     },
     rel: function(path,relPath) {
+        if (relPath=="") return path;
 		assert.is(arguments,[AbsDir, Relative]);
     	var paths=PathUtil.splitPath(relPath);
         var resPath=path;
@@ -1390,21 +1421,23 @@ SFile.prototype={
     _clone: function (){
         return this._resolve(this.path());
     },
-    _resolve: function (path) {
+    _resolve: function (path, options) {
         var res;
+        options=options||{};
         if (SFile.is(path)) {
             res=path;
         } else {
             A.is(path,P.Absolute);
             var topdir;
-            if (this.policy && (topdir=this.policy.topDir)) {
+            var policy=options.policy || this.policy;
+            if (policy && (topdir=policy.topDir)) {
                 if (topdir.path) topdir=topdir.path();
                 if (!P.startsWith(path, topdir)) {
                     throw new Error(path+": cannot access. Restricted to "+topdir);
                 }
             }
             res=this.fs.getRootFS().get(path);
-            res.policy=this.policy;
+            res.policy=policy;
         }
         if (res.policy) {
             return Util.privatize(res);
@@ -1503,7 +1536,7 @@ SFile.prototype={
         if (p || options.noFollowLink) {
             return p;
         } else {
-            return this.resolveLink().exists({noFollowLink:true});
+            return this.resolveLink({policy:{}}).exists({noFollowLink:true});
         }
     },
     /*copyTo: function (dst, options) {
@@ -1512,7 +1545,7 @@ SFile.prototype={
     rm: function (options) {
         options=options||{};
         if (!this.exists({noFollowLink:true})) {
-            var l=this.resolveLink();
+            var l=this.resolveLink({policy:{}});
             if (!this.equals(l)) return l.rm(options);
         }
         if (this.isDir() && (options.recursive||options.r)) {
@@ -1533,7 +1566,7 @@ SFile.prototype={
     },
     // File
     text:function () {
-        var l=this.resolveLink();
+        var l=this.resolveLink({policy:{}});
         if (!this.equals(l)) return l.text.apply(l,arguments);
         if (arguments.length>0) {
             this.setText(arguments[0]);
@@ -1548,6 +1581,16 @@ SFile.prototype={
     getText:function (t) {
         return this.fs.getContent(this.path(), {type:String});
     },
+    setBytes:function (b) {
+        A.is(t,ArrayBuffer);
+        return this.fs.setContent(b);
+    },
+    getBytes:function (t) {
+        return this.fs.getContent(this.path(), {type:ArrayBuffer});
+    },
+    getURL: function () {
+        return this.fs.getURL(this.path());
+    },
     lines:function () {
         return this.text().split("\n");
     },
@@ -1561,6 +1604,9 @@ SFile.prototype={
             file.text(JSON.stringify(A.is(arguments[0],Object) ));
         }
     },
+    copyTo: function (dst, options) {
+        return dst.copyFrom(this,options);
+    },
     copyFrom: function (src, options) {
         var dst=this;
         var options=options||{};
@@ -1568,22 +1614,22 @@ SFile.prototype={
         var dstIsDir=dst.isDir();
         if (!srcIsDir && dstIsDir) {
             dst=dst.rel(src.name());
-            assert(!dst.isDir(), dst+" exists as an directory.");
+            A(!dst.isDir(), dst+" is a directory.");
             dstIsDir=false;
         }
         if (srcIsDir && !dstIsDir) {
            this.err("Cannot move dir to file");
         } else if (!srcIsDir && !dstIsDir) {
-            //this.fs.cp(A.is(src.path(), P.Absolute), this.path(),options);
-            var srcc=src.getText(); // TODO
+            if (options.echo) options.echo(src+" -> "+dst);
+            return this.fs.cp(A.is(src.path(), P.Absolute), dst.path(),options);
+            /*var srcc=src.getText(); // TODO
             var res=dst.setText(srcc);
             if (options.a) {
                 dst.setMetaInfo(src.getMetaInfo());
             }
-            return res;
+            return res;*/
         } else {
             A(srcIsDir && dstIsDir);
-            var t=this;
             src.each(function (s) {
                 dst.rel(s.name()).copyFrom(s, options);
             });
@@ -1623,8 +1669,12 @@ SFile.prototype={
     listFiles:function (options) {
         A(options==null || typeof options=="object");
         var dir=this.assertDir();
-        var l=this.resolveLink();
-        if (!this.equals(l)) return l.listFiles.apply(l,arguments);
+        var l=this.resolveLink({policy:{}});
+        if (!this.equals(l)) {
+            return l.listFiles.apply(l,arguments).map(function (f) {
+                return dir.rel(f.name());
+            });
+        }
         var path=this.path();
         var ord;
         if (typeof options=="function") ord=options;
@@ -1674,10 +1724,10 @@ SFile.prototype={
         to=this._resolve(A(to));
         this.fs.link(this.path(),to.path(),options);
     },
-    resolveLink: function () {
+    resolveLink: function (options) {
         var l=this.fs.resolveLink(this.path());
         A.is(l,P.Absolute);
-        return this._resolve(l);
+        return this._resolve(l, options);
     },
     isLink: function () {
         return this.fs.isLink(this.path());
@@ -1786,8 +1836,8 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             var srcIsDir=this.isDir(path);
             var dstIsDir=this.resolveFS(dst).isDir(dst);
             if (!srcIsDir && !dstIsDir) {
-                var src=this.getContent(path,{type:String}); // TODO
-                var res=this.resolveFS(dst).setContent(dst,src);
+                var cont=this.getContent(path);
+                var res=this.resolveFS(dst).setContent(dst,cont);
                 if (options.a) {
                     //console.log("-a", this.getMetaInfo(path));
                     this.setMetaInfo(dst, this.getMetaInfo(path));
@@ -1892,15 +1942,16 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             // isLink      /c/d/e/f -> null
             // ln /testdir/ /ram/files/
             // resolveLink /ram/files/sub/test2.txt -> /testdir/sub/test2.txt
-            if (this.exists(path)) return path;
             // path=/ram/files/test.txt
             for (var p=path ; p ; p=P.up(p)) {
                 assert(!this.mountPoint || P.startsWith(p, this.mountPoint), p+" is out of mountPoint. path="+path);
                 var l=this.isLink(p);  // p=/ram/files/ l=/testdir/
                 if (l) {
+                    assert(l!=p,"l==p=="+l);
                     //        /testdir/    test.txt
                     var np=P.rel(l,P.relPath(path, p));  //   /testdir/test.txt
-                    return assert.is(this.resolveFS(np).resolveLink(np),P.Absolute)  ;
+                    assert(np!=path,"np==path=="+np);
+                    return assert.is(this.getRootFS().resolveFS(np).resolveLink(np),P.Absolute)  ;
                 }
                 if (this.exists(p)) return path;
             }
@@ -1962,7 +2013,7 @@ define([], function () {
         };
     } else {
         WebSite={
-           urlAliases: {}, top: "../..",devMode:devMode
+           urlAliases: {}, top: ".",devMode:devMode
         };
     }
     // from https://w3g.jp/blog/js_browser_sniffing2015
@@ -2018,7 +2069,8 @@ define([], function () {
             WebSite.tonyuHome=WebSite.cwd+"fs/Tonyu/";
         }
         WebSite.logdir="/var/log/Tonyu/";
-        WebSite.kernelDir=WebSite.cwd+"www/Kernel/";
+        WebSite.wwwDir=WebSite.cwd+"www/";
+        WebSite.kernelDir=WebSite.wwwDir+"Kernel/";
         WebSite.ffmpeg=WebSite.cwd+("ffmpeg/bin/ffmpeg.exe");
     }
     if (loc.match(/tonyuedit\.appspot\.com/) ||
@@ -2078,8 +2130,9 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
                 if (t===String) {
                     return fs.readFileSync(np, {encoding:"utf8"});
                 } else {
+                    return fs.readFileSync(np);
                     //TODOvar bin=fs.readFileSync(np);
-                    throw new Error("TODO: handling bin file "+path);
+                    //throw new Error("TODO: handling bin file "+path);
                 }
             } else {
                 if (t===String) {
@@ -2098,10 +2151,12 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
             var np=this.toNativePath(path);
             var cs=typeof content=="string";
             if (this.isText(path)) {
-                if (cs) return fs.writeFileSync(np, content);
+                fs.writeFileSync(np, content)
+                /*if (cs) return fs.writeFileSync(np, content);
                 else {
-                    throw new Error("TODO");
-                }
+                    return fs.writeFileSync(np, content);
+                    //throw new Error("TODO");
+                }*/
             } else {
 //                console.log("NatFS", cs, content);
                 if (!cs) return fs.writeFileSync(np, content);
@@ -2191,6 +2246,9 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
             } else if (this.exists(path) && !this.isDir(path) ) {
                 // TODO(setlastupdate)
             }
+        },
+        getURL:function (path) {
+            return "file:///"+path.replace(/\\/g,"/");
         }
     });
     return NativeFS;
@@ -2476,6 +2534,9 @@ define(["FS2","PathUtil","extend","assert"], function(FS,P,extend,assert) {
                     this.getRootFS().touch(parent);
                 }
             }
+        },
+        getURL: function (path) {
+            return this.getContent(path,{type:String});
         }
     });
     return LSFS;
@@ -2537,6 +2598,9 @@ define(["FS2","WebSite","NativeFS","LSFS", "PathUtil","Env","assert","SFile"],
             return FS.get(base).rel(path);
         }
         return FS.get(path);
+    };
+    FS.mount=function () {
+        return rootFS.mount.apply(rootFS,arguments);
     };
     return FS;
 });
@@ -3095,10 +3159,13 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
         if (!options) options={};
         if (options.v) {
             Shell.echo("cp", from ,to);
+            options.echo=Shell.echo.bind(Shell);
         }
         var f=resolve(from, true);
         var t=resolve(to);
-        if (f.isDir() && t.isDir()) {
+        return f.copyTo(t,options);
+
+        /*if (f.isDir() && t.isDir()) {
             var sum=0;
             f.recursive(function (src) {
                 var rel=src.relPath(f);
@@ -3120,7 +3187,7 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
             return 1;
         } else {
             throw "Cannot copy directory "+f+" to file "+t;
-        }
+        }*/
     };
     Shell.rm=function (file, options) {
         if (!options) options={};
@@ -7780,12 +7847,24 @@ define([], function () {
     return DU;
 });
 requireSimulator.setName('compiledProject');
-define([], function () {
+define(["DeferredUtil"], function (DU) {
     var CPR=function (ns, url) {
         return {
             getNamespace:function () {return ns;},
             sourceDir: function () {return null;},
-            getDependingProjects: function () {return [];},
+            getDependingProjects: function () {return [];},// virtual
+            loadDependingClasses: function (ctx) {
+                //Same as projectCompiler /TPR/this/ (XXXX)
+                var task=DU.directPromise();
+                var myNsp=this.getNamespace();
+                this.getDependingProjects().forEach(function (p) {
+                    if (p.getNamespace()==myNsp) return;
+                    task=task.then(function () {
+                        return p.loadClasses(ctx);
+                    });
+                });
+                return task;
+            },
             loadClasses: function (ctx) {
                 console.log("Load compiled classes ns=",ns,"url=",url);
                 var d=new $.Deferred;
@@ -7820,7 +7899,9 @@ define([], function () {
                         d.resolve();
                     }
                 };
-                head.insertBefore( script, head.firstChild );
+                this.loadDependingClasses(ctx).then(function () {
+                    head.insertBefore( script, head.firstChild );
+                });
                 return d.promise();
             }
         }
@@ -8350,7 +8431,7 @@ define(["WebSite","Util","Tonyu"],function (WebSite,Util,Tonyu) {
                     f=oggf;
                 }
             }
-            url=f.text();
+            url=f.getURL();
         }
         return url;
     };
@@ -8707,9 +8788,10 @@ requireSimulator.setName('plugins');
 define(["WebSite"],function (WebSite){
     var plugins={};
     var installed= {
-        box2d:{src: "Box2dWeb-2.1.a.3.min.js",detection:/T2Body/,symbol:"Box2D" },
+        box2d:{src: "Box2dWeb-2.1.a.3.min.js",detection:/BodyActor/,symbol:"Box2D" },
         timbre: {src:"timbre.js",detection:/\bplay(SE)?\b/,symbol:"T" }
     };
+    plugins.installed=installed;
     plugins.detectNeeded=function (src,res) {
         for (var name in installed) {
             var r=installed[name].detection.exec(src);
@@ -8962,7 +9044,7 @@ return Tonyu.Project=function (dir, kernelDir) {
     };
     TPR.loadPlugins=function (onload) {
         var opt=TPR.getOptions();
-        plugins.loadAll(opt.plugins,onload);
+        return plugins.loadAll(opt.plugins,onload);
     };
     TPR.fixBootRunClasses=function () {
         var opt=TPR.getOptions();
@@ -9034,19 +9116,18 @@ return Tonyu.Project=function (dir, kernelDir) {
         }
     };
     TPR.rawBoot=function (bootClassName) {
-        //var thg=Tonyu.threadGroup();
-        var bootClass=Tonyu.getClass(bootClassName);
+        Tonyu.run(bootClassName);
+        /*var bootClass=Tonyu.getClass(bootClassName);
         if (!bootClass) throw TError( bootClassName+" というクラスはありません", "不明" ,0);
         Tonyu.runMode=true;
         var boot=new bootClass();
         var th=Tonyu.thread();
         th.apply(boot,"main");
 
-        TPR.runningThread=th; //thg.addObj(main);
+        TPR.runningThread=th;
         TPR.runningObj=boot;
         $LASTPOS=0;
-        th.steps();
-        //thg.run(0);
+        th.steps();*/
     };
 
     TPR.srcExists=function (className, dir) {
@@ -9979,7 +10060,7 @@ setTimeout(function(){ T2MediaLib.stopAudio(); }, 10000);
 
 
 requireSimulator.setName('runtime');
-requirejs(["ImageList","T2MediaLib"], function () {
+requirejs(["ImageList","T2MediaLib","Tonyu","Tonyu.Iterator"], function () {
 
 });
 requireSimulator.setName('difflib');
@@ -10872,12 +10953,12 @@ define(["FS","Shell","requestFragment","WebSite"],function (FS,sh,rf,WebSite) {
             var data=info.data;
             for (var rel in data) {
                 var file=base.rel(rel);
-                var lcm=file.metaInfo();
+                var lcm=file.exists({includeTrashed:true}) && file.metaInfo();
                 var rmm=data[rel];
                 cmp(file,rel,lcm,rmm);
             }
             local.recursive(function (file) {
-                var lcm=file.metaInfo();
+                var lcm=file.exists({includeTrashed:true}) && file.metaInfo();
                 var rel=file.relPath(local);
                 var rmm=data[rel];
                 cmp(file,rel,lcm,rmm);
@@ -10936,7 +11017,7 @@ define(["FS","Shell","requestFragment","WebSite"],function (FS,sh,rf,WebSite) {
             //if (options.v) sh.echo("onend",onend);
             if (typeof onend=="function") onend(res);
         }
-        function cmp(f,rel,lcm,rmm) {
+        function cmp(f,rel,lcm,rmm) {// f:localFile
             if (visited[rel]) return ;
             visited[rel]=1;
             if (rmm && (!lcm || lcm.lastUpdate<rmm.lastUpdate)) {
@@ -10946,7 +11027,7 @@ define(["FS","Shell","requestFragment","WebSite"],function (FS,sh,rf,WebSite) {
                             "Download "+f+
                             " trash="+!!rmm.trashed);
             } else if (lcm && (!rmm || lcm.lastUpdate>rmm.lastUpdate)) {
-                var o={text:f.text()};
+                var o=lcm.trashed ? {} : {text:f.text()};
                 var m=f.metaInfo();
                 for (var i in m) o[i]=m[i];
                 uploads[rel]=o;
@@ -11493,9 +11574,11 @@ define(["FS","Tonyu","UI","ImageList","Blob","Auth","WebSite"
                 });
             })
             var cleanFile={};
-            rsrcDir.each(function (f) {
-                cleanFile["ls:"+f.relPath(prj.getDir())]=f;
-            });
+            if (rsrcDir.exists()) {
+                rsrcDir.each(function (f) {
+                    cleanFile["ls:"+f.relPath(prj.getDir())]=f;
+                });
+            }
             rsrc=prj.getResource();
             items.forEach(function (item){
                 delete cleanFile[item.url];
@@ -11715,6 +11798,145 @@ requireSimulator.setName('NWMenu');
     }
     return {};
 })();
+requireSimulator.setName('mkrun');
+define(["FS","Util","WebSite","plugins","Shell","Tonyu"],
+        function (FS,Util,WebSite,plugins,sh,Tonyu) {
+    var MkRun={};
+    sh.mkrun=function (dest) {
+        MkRun.run( Tonyu.currentProject, FS.get(dest));
+    };
+    MkRun.run=function (prj,dest) {
+        var prjDir=prj.getDir();
+        var resc=prj.getResource();
+        var opt=prj.getOptions();
+        var loadFilesBuf="function loadFiles(dir){\n";
+        var wwwDir=FS.get(WebSite.wwwDir);
+        var jsDir=wwwDir.rel("js/");
+        var sampleImgDir=wwwDir.rel("images/");
+        copySampleImages();
+        convertLSURL(resc.images);
+        convertLSURL(resc.sounds);
+        genFilesJS();
+        copyScripts();
+        copyPlugins();
+        copyLibs();
+        copyResources("images/");
+        copyResources("sounds/");
+        copyIndexHtml();
+        genReadme();
+
+        function genReadme() {
+            dest.rel("Readme.txt").text(
+                    "このフォルダは、Webサーバにアップロードしないと正常に動作しない可能性があります。\n"+
+                    "詳しくは\nhttp://hoge1e3.sakura.ne.jp/tonyu/tonyu2/runtime.html\nを御覧ください。\n"
+            );
+        }
+        function copyResources(dir) {
+            var src=prjDir.rel(dir);
+            if (src.exists()) src.copyTo(dest.rel(dir));
+        }
+        function genFilesJS(){
+            addFileToLoadFiles("res.json",resc);
+            addFileToLoadFiles("options.json",opt);
+            var mapd=prjDir.rel("maps/");
+            if (mapd.exists()) {
+                mapd.recursive(function (mf) {
+                    addFileToLoadFiles( mf.relPath(prjDir), mf.obj());
+                });
+            }
+            dest.rel("js/files.js").text(loadFilesBuf+"}");
+        }
+        function copyIndexHtml() {
+            wwwDir.rel("html/runtimes/index.html").copyTo(dest);
+        }
+        function copyScripts() {
+            var usrjs=prjDir.rel("js/concat.js");
+            var kerjs=FS.get(WebSite.kernelDir).rel("js/concat.js");
+            var runScr2=jsDir.rel("gen/runScript2_concat.js");
+            usrjs.copyTo(dest.rel("js/concat.js"));
+            kerjs.copyTo(dest.rel("js/kernel.js"));
+            runScr2.copyTo(dest.rel("js/runScript2_concat.js"));
+        }
+        function copyPlugins() {
+            var pluginDir=jsDir.rel("plugins/");
+            if (!opt.plugins) return;
+            // TODO opt.plugins is now hash, but array is preferrable....
+            for (var n in opt.plugins) {
+                // TODO if src not found, do not copy and use src directory(maybe http://....)
+                var pf=pluginDir.rel(plugins.installed[n].src);
+                pf.copyTo(dest.rel("js/plugins/"));
+            }
+        }
+        function copyLibs() {
+            jsDir.rel("lib/jquery-1.10.1.js").copyTo(dest.rel("js/lib/"));
+            jsDir.rel("lib/require.js").copyTo(dest.rel("js/lib/"));
+        }
+        function addFileToLoadFiles(name, data) {
+            loadFilesBuf+="\tdir.rel('"+name+"').obj("+JSON.stringify(data)+");\n";
+        }
+        function convertLSURL(r) {
+            for (var k in r) {
+                var url=r[k].url;
+                if (Util.startsWith(url,"ls:")) {
+                    var rel=url.substring("ls:".length);
+                    r[k].url=rel;
+                }
+            }
+        }
+        function copySampleImages() {
+            var urlAliases= {
+                "images/Ball.png":1,
+                "images/base.png":1,
+                "images/Sample.png":"../../images/Sample.png",
+                "images/neko.png":"../../images/neko.png",
+                "images/inputPad.png":"../../images/inputPad.png",
+                "images/mapchip.png":"../../images/mapchip.png",
+                "images/sound.png":"../../images/sound.png",
+                    "images/ecl.png":"../../images/ecl.png"
+            };
+            for (var k in resc.images) {
+                var u= resc.images[k].url;
+                if (urlAliases[u] && !prjDir.rel(u).exists()) {
+                    var imgf=wwwDir.rel(u);
+                    if (imgf.exists()) {
+                        imgf.copyTo(dest.rel(u));
+                    } else {
+                        sh.echo(imgf+" not exists!");
+                    }
+                }
+            }
+        }
+    };
+    return MkRun;
+});
+requireSimulator.setName('mkrunDiag');
+define(["UI","mkrun","Tonyu"], function (UI,mkrun,Tonyu) {
+    var res={};
+    res.show=function (prj,dest) {
+        var d=res.embed(prj,dest);
+        d.dialog({width:800,height:300});
+    };
+    res.embed=function (prj,dest) {
+        if (!res.d) {
+            res.d=UI("div",{title:"ランタイム作成"},
+                    ["div","出力フォルダ"],
+                    ["div",["input", {$edit:"dest",size:60}]],
+                     ["button", {$var:"OKButton", on:{click: function () {
+                         res.run();
+                     }}}, "作成"]
+            );
+        }
+        var model={dest:dest};
+        res.d.$edits.load(model);
+        res.run=function () {
+            mkrun.run(prj, FS.get(model.dest));
+            alert(model.dest+"にランタイムを作成しました。");
+            if (res.d.dialog) res.d.dialog("close");
+        };
+        return res.d;
+    };
+    return res;
+});
 requireSimulator.setName('ide/editor');
 requirejs(["Util", "Tonyu", "FS", "FileList", "FileMenu",
            "showErrorPos", "fixIndent", "Wiki", "Tonyu.Project",
@@ -11722,7 +11944,7 @@ requirejs(["Util", "Tonyu", "FS", "FileList", "FileMenu",
            "IFrameDialog",/*"WikiDialog",*/"runtime", "KernelDiffDialog","Sync","searchDialog","StackTrace","syncWithKernel",
            "UI","ResEditor","WebSite","exceptionCatcher","Tonyu.TraceTbl",
            "SoundDiag","Log","MainClassDialog","DeferredUtil","NWMenu",
-           "ProjectCompiler","compiledProject"
+           "ProjectCompiler","compiledProject","mkrunDiag"
           ],
 function (Util, Tonyu, FS, FileList, FileMenu,
           showErrorPos, fixIndent, Wiki, Tonyu_Project,
@@ -11730,7 +11952,7 @@ function (Util, Tonyu, FS, FileList, FileMenu,
           IFrameDialog,/*WikiDialog,*/ rt , KDD,Sync,searchDialog,StackTrace,swk,
           UI,ResEditor,WebSite,EC,TTB,
           sd,Log,MainClassDialog,DU,NWMenu,
-          TPRC,CPPRJ
+          TPRC,CPPRJ,mkrunDiag
           ) {
 $(function () {
     var F=EC.f;
@@ -12229,6 +12451,10 @@ $(function () {
             ls();
         }
     }*/
+    $("#mkrun").click(F(function () {
+        mkrunDiag.show(curPrj,
+                FS.get(WebSite.cwd).rel("Runtimes/").rel( curProjectDir.name()) );
+    }));
     $("#imgResEditor").click(F(function () {
         //ImgResEdit(curPrj);
         ResEditor(curPrj,"image");

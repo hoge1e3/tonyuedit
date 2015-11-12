@@ -111,6 +111,7 @@ var reqConf={
             //dumpScript: "build/dumpScript",
             buildAll: "build/buildAll",
             runScript: "runtime/runScript",
+            runScript2: "runtime/runScript2",
             copySample: "ide/copySample",
             "Shell": "fs/Shell",
             "ide/wikiEditor": "ide/wikiEditor",
@@ -203,10 +204,13 @@ var reqConf={
             "SFile":"fs2/SFile",
             "Env":"fs2/Env",
             "compiledProject":"lang/compiledProject",
+            "compiledTonyuProject":"ide/compiledTonyuProject",
             "DeferredUtil":"lib/DeferredUtil",
             "NWMenu":"ide/NWMenu",
             "IFrameDialog":"help/IFrameDialog",
             "OggConverter":"ide/OggConverter",
+            "mkrun":"mkrun/mkrun",
+            "mkrunDiag":"mkrun/mkrunDiag",
 
             "foo":"bar"
         },

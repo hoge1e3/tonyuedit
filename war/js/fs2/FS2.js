@@ -97,8 +97,8 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             var srcIsDir=this.isDir(path);
             var dstIsDir=this.resolveFS(dst).isDir(dst);
             if (!srcIsDir && !dstIsDir) {
-                var src=this.getContent(path,{type:String}); // TODO
-                var res=this.resolveFS(dst).setContent(dst,src);
+                var cont=this.getContent(path);
+                var res=this.resolveFS(dst).setContent(dst,cont);
                 if (options.a) {
                     //console.log("-a", this.getMetaInfo(path));
                     this.setMetaInfo(dst, this.getMetaInfo(path));
@@ -203,15 +203,16 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             // isLink      /c/d/e/f -> null
             // ln /testdir/ /ram/files/
             // resolveLink /ram/files/sub/test2.txt -> /testdir/sub/test2.txt
-            if (this.exists(path)) return path;
             // path=/ram/files/test.txt
             for (var p=path ; p ; p=P.up(p)) {
                 assert(!this.mountPoint || P.startsWith(p, this.mountPoint), p+" is out of mountPoint. path="+path);
                 var l=this.isLink(p);  // p=/ram/files/ l=/testdir/
                 if (l) {
+                    assert(l!=p,"l==p=="+l);
                     //        /testdir/    test.txt
                     var np=P.rel(l,P.relPath(path, p));  //   /testdir/test.txt
-                    return assert.is(this.resolveFS(np).resolveLink(np),P.Absolute)  ;
+                    assert(np!=path,"np==path=="+np);
+                    return assert.is(this.getRootFS().resolveFS(np).resolveLink(np),P.Absolute)  ;
                 }
                 if (this.exists(p)) return path;
             }

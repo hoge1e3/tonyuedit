@@ -1,4 +1,4 @@
-// Created at Fri Oct 30 2015 10:18:07 GMT+0900 (東京 (標準時))
+// Created at Thu Nov 12 2015 09:55:44 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -14,7 +14,7 @@
 	define=function (reqs,func) {
 		R.def(reqs,func,"define");
 	};
-	require=requirejs=function (reqs,func) {
+	/*require=*/requirejs=function (reqs,func) {
 		R.def(reqs,func,"require");
 	};
 	R.setReqs=function (m, reqs) {
@@ -393,6 +393,7 @@ PathUtil={
         return PathUtil.up(path);
     },
     rel: function(path,relPath) {
+        if (relPath=="") return path;
 		assert.is(arguments,[AbsDir, Relative]);
     	var paths=PathUtil.splitPath(relPath);
         var resPath=path;
@@ -842,21 +843,23 @@ SFile.prototype={
     _clone: function (){
         return this._resolve(this.path());
     },
-    _resolve: function (path) {
+    _resolve: function (path, options) {
         var res;
+        options=options||{};
         if (SFile.is(path)) {
             res=path;
         } else {
             A.is(path,P.Absolute);
             var topdir;
-            if (this.policy && (topdir=this.policy.topDir)) {
+            var policy=options.policy || this.policy;
+            if (policy && (topdir=policy.topDir)) {
                 if (topdir.path) topdir=topdir.path();
                 if (!P.startsWith(path, topdir)) {
                     throw new Error(path+": cannot access. Restricted to "+topdir);
                 }
             }
             res=this.fs.getRootFS().get(path);
-            res.policy=this.policy;
+            res.policy=policy;
         }
         if (res.policy) {
             return Util.privatize(res);
@@ -955,7 +958,7 @@ SFile.prototype={
         if (p || options.noFollowLink) {
             return p;
         } else {
-            return this.resolveLink().exists({noFollowLink:true});
+            return this.resolveLink({policy:{}}).exists({noFollowLink:true});
         }
     },
     /*copyTo: function (dst, options) {
@@ -964,7 +967,7 @@ SFile.prototype={
     rm: function (options) {
         options=options||{};
         if (!this.exists({noFollowLink:true})) {
-            var l=this.resolveLink();
+            var l=this.resolveLink({policy:{}});
             if (!this.equals(l)) return l.rm(options);
         }
         if (this.isDir() && (options.recursive||options.r)) {
@@ -985,7 +988,7 @@ SFile.prototype={
     },
     // File
     text:function () {
-        var l=this.resolveLink();
+        var l=this.resolveLink({policy:{}});
         if (!this.equals(l)) return l.text.apply(l,arguments);
         if (arguments.length>0) {
             this.setText(arguments[0]);
@@ -1000,6 +1003,16 @@ SFile.prototype={
     getText:function (t) {
         return this.fs.getContent(this.path(), {type:String});
     },
+    setBytes:function (b) {
+        A.is(t,ArrayBuffer);
+        return this.fs.setContent(b);
+    },
+    getBytes:function (t) {
+        return this.fs.getContent(this.path(), {type:ArrayBuffer});
+    },
+    getURL: function () {
+        return this.fs.getURL(this.path());
+    },
     lines:function () {
         return this.text().split("\n");
     },
@@ -1013,6 +1026,9 @@ SFile.prototype={
             file.text(JSON.stringify(A.is(arguments[0],Object) ));
         }
     },
+    copyTo: function (dst, options) {
+        return dst.copyFrom(this,options);
+    },
     copyFrom: function (src, options) {
         var dst=this;
         var options=options||{};
@@ -1020,22 +1036,22 @@ SFile.prototype={
         var dstIsDir=dst.isDir();
         if (!srcIsDir && dstIsDir) {
             dst=dst.rel(src.name());
-            assert(!dst.isDir(), dst+" exists as an directory.");
+            A(!dst.isDir(), dst+" is a directory.");
             dstIsDir=false;
         }
         if (srcIsDir && !dstIsDir) {
            this.err("Cannot move dir to file");
         } else if (!srcIsDir && !dstIsDir) {
-            //this.fs.cp(A.is(src.path(), P.Absolute), this.path(),options);
-            var srcc=src.getText(); // TODO
+            if (options.echo) options.echo(src+" -> "+dst);
+            return this.fs.cp(A.is(src.path(), P.Absolute), dst.path(),options);
+            /*var srcc=src.getText(); // TODO
             var res=dst.setText(srcc);
             if (options.a) {
                 dst.setMetaInfo(src.getMetaInfo());
             }
-            return res;
+            return res;*/
         } else {
             A(srcIsDir && dstIsDir);
-            var t=this;
             src.each(function (s) {
                 dst.rel(s.name()).copyFrom(s, options);
             });
@@ -1075,8 +1091,12 @@ SFile.prototype={
     listFiles:function (options) {
         A(options==null || typeof options=="object");
         var dir=this.assertDir();
-        var l=this.resolveLink();
-        if (!this.equals(l)) return l.listFiles.apply(l,arguments);
+        var l=this.resolveLink({policy:{}});
+        if (!this.equals(l)) {
+            return l.listFiles.apply(l,arguments).map(function (f) {
+                return dir.rel(f.name());
+            });
+        }
         var path=this.path();
         var ord;
         if (typeof options=="function") ord=options;
@@ -1126,10 +1146,10 @@ SFile.prototype={
         to=this._resolve(A(to));
         this.fs.link(this.path(),to.path(),options);
     },
-    resolveLink: function () {
+    resolveLink: function (options) {
         var l=this.fs.resolveLink(this.path());
         A.is(l,P.Absolute);
-        return this._resolve(l);
+        return this._resolve(l, options);
     },
     isLink: function () {
         return this.fs.isLink(this.path());
@@ -1238,8 +1258,8 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             var srcIsDir=this.isDir(path);
             var dstIsDir=this.resolveFS(dst).isDir(dst);
             if (!srcIsDir && !dstIsDir) {
-                var src=this.getContent(path,{type:String}); // TODO
-                var res=this.resolveFS(dst).setContent(dst,src);
+                var cont=this.getContent(path);
+                var res=this.resolveFS(dst).setContent(dst,cont);
                 if (options.a) {
                     //console.log("-a", this.getMetaInfo(path));
                     this.setMetaInfo(dst, this.getMetaInfo(path));
@@ -1344,15 +1364,16 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             // isLink      /c/d/e/f -> null
             // ln /testdir/ /ram/files/
             // resolveLink /ram/files/sub/test2.txt -> /testdir/sub/test2.txt
-            if (this.exists(path)) return path;
             // path=/ram/files/test.txt
             for (var p=path ; p ; p=P.up(p)) {
                 assert(!this.mountPoint || P.startsWith(p, this.mountPoint), p+" is out of mountPoint. path="+path);
                 var l=this.isLink(p);  // p=/ram/files/ l=/testdir/
                 if (l) {
+                    assert(l!=p,"l==p=="+l);
                     //        /testdir/    test.txt
                     var np=P.rel(l,P.relPath(path, p));  //   /testdir/test.txt
-                    return assert.is(this.resolveFS(np).resolveLink(np),P.Absolute)  ;
+                    assert(np!=path,"np==path=="+np);
+                    return assert.is(this.getRootFS().resolveFS(np).resolveLink(np),P.Absolute)  ;
                 }
                 if (this.exists(p)) return path;
             }
@@ -1414,7 +1435,7 @@ define([], function () {
         };
     } else {
         WebSite={
-           urlAliases: {}, top: "../..",devMode:devMode
+           urlAliases: {}, top: ".",devMode:devMode
         };
     }
     // from https://w3g.jp/blog/js_browser_sniffing2015
@@ -1470,7 +1491,8 @@ define([], function () {
             WebSite.tonyuHome=WebSite.cwd+"fs/Tonyu/";
         }
         WebSite.logdir="/var/log/Tonyu/";
-        WebSite.kernelDir=WebSite.cwd+"www/Kernel/";
+        WebSite.wwwDir=WebSite.cwd+"www/";
+        WebSite.kernelDir=WebSite.wwwDir+"Kernel/";
         WebSite.ffmpeg=WebSite.cwd+("ffmpeg/bin/ffmpeg.exe");
     }
     if (loc.match(/tonyuedit\.appspot\.com/) ||
@@ -1530,8 +1552,9 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
                 if (t===String) {
                     return fs.readFileSync(np, {encoding:"utf8"});
                 } else {
+                    return fs.readFileSync(np);
                     //TODOvar bin=fs.readFileSync(np);
-                    throw new Error("TODO: handling bin file "+path);
+                    //throw new Error("TODO: handling bin file "+path);
                 }
             } else {
                 if (t===String) {
@@ -1550,10 +1573,12 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
             var np=this.toNativePath(path);
             var cs=typeof content=="string";
             if (this.isText(path)) {
-                if (cs) return fs.writeFileSync(np, content);
+                fs.writeFileSync(np, content)
+                /*if (cs) return fs.writeFileSync(np, content);
                 else {
-                    throw new Error("TODO");
-                }
+                    return fs.writeFileSync(np, content);
+                    //throw new Error("TODO");
+                }*/
             } else {
 //                console.log("NatFS", cs, content);
                 if (!cs) return fs.writeFileSync(np, content);
@@ -1643,6 +1668,9 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
             } else if (this.exists(path) && !this.isDir(path) ) {
                 // TODO(setlastupdate)
             }
+        },
+        getURL:function (path) {
+            return "file:///"+path.replace(/\\/g,"/");
         }
     });
     return NativeFS;
@@ -1928,6 +1956,9 @@ define(["FS2","PathUtil","extend","assert"], function(FS,P,extend,assert) {
                     this.getRootFS().touch(parent);
                 }
             }
+        },
+        getURL: function (path) {
+            return this.getContent(path,{type:String});
         }
     });
     return LSFS;
@@ -1989,6 +2020,9 @@ define(["FS2","WebSite","NativeFS","LSFS", "PathUtil","Env","assert","SFile"],
             return FS.get(base).rel(path);
         }
         return FS.get(path);
+    };
+    FS.mount=function () {
+        return rootFS.mount.apply(rootFS,arguments);
     };
     return FS;
 });
@@ -2185,6 +2219,20 @@ return Tonyu=function () {
         },t);
         return res;
     }
+    function animationFrame() {
+        var res={};
+        var ls=[];
+        res.addTerminatedListener=function (l) {
+            ls.push(l);
+        };
+        requestAnimationFrame(function () {
+            ls.forEach(function (l) {
+                l();
+            });
+        });
+        return res;
+    }
+
     function asyncResult() {
         var res=[];
         var ls=[];
@@ -2532,11 +2580,27 @@ return Tonyu=function () {
     function hasKey(k, obj) {
         return k in obj;
     }
+    function run(bootClassName) {
+        var bootClass=getClass(bootClassName);
+        if (!bootClass) throw new Error( bootClassName+" というクラスはありません");
+        Tonyu.runMode=true;
+        var boot=new bootClass();
+        var th=thread();
+        th.apply(boot,"main");
+        var TPR;
+        if (TPR=Tonyu.currentProject) {
+            TPR.runningThread=th;
+            TPR.runningObj=boot;
+        }
+        $LASTPOS=0;
+        th.steps();
+    }
     return Tonyu={thread:thread, threadGroup:threadGroup, klass:klass, bless:bless, extend:extend,
             globals:globals, classes:classes, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
-            timeout:timeout,asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
+            timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
-            VERSION:1446167878960,//EMBED_VERSION
+            run:run,
+            VERSION:1447289735811,//EMBED_VERSION
             A:A};
 }();
 });
@@ -6338,12 +6402,24 @@ define([], function () {
     return DU;
 });
 requireSimulator.setName('compiledProject');
-define([], function () {
+define(["DeferredUtil"], function (DU) {
     var CPR=function (ns, url) {
         return {
             getNamespace:function () {return ns;},
             sourceDir: function () {return null;},
-            getDependingProjects: function () {return [];},
+            getDependingProjects: function () {return [];},// virtual
+            loadDependingClasses: function (ctx) {
+                //Same as projectCompiler /TPR/this/ (XXXX)
+                var task=DU.directPromise();
+                var myNsp=this.getNamespace();
+                this.getDependingProjects().forEach(function (p) {
+                    if (p.getNamespace()==myNsp) return;
+                    task=task.then(function () {
+                        return p.loadClasses(ctx);
+                    });
+                });
+                return task;
+            },
             loadClasses: function (ctx) {
                 console.log("Load compiled classes ns=",ns,"url=",url);
                 var d=new $.Deferred;
@@ -6378,7 +6454,9 @@ define([], function () {
                         d.resolve();
                     }
                 };
-                head.insertBefore( script, head.firstChild );
+                this.loadDependingClasses(ctx).then(function () {
+                    head.insertBefore( script, head.firstChild );
+                });
                 return d.promise();
             }
         }
@@ -6908,7 +6986,7 @@ define(["WebSite","Util","Tonyu"],function (WebSite,Util,Tonyu) {
                     f=oggf;
                 }
             }
-            url=f.text();
+            url=f.getURL();
         }
         return url;
     };
@@ -7265,9 +7343,10 @@ requireSimulator.setName('plugins');
 define(["WebSite"],function (WebSite){
     var plugins={};
     var installed= {
-        box2d:{src: "Box2dWeb-2.1.a.3.min.js",detection:/T2Body/,symbol:"Box2D" },
+        box2d:{src: "Box2dWeb-2.1.a.3.min.js",detection:/BodyActor/,symbol:"Box2D" },
         timbre: {src:"timbre.js",detection:/\bplay(SE)?\b/,symbol:"T" }
     };
+    plugins.installed=installed;
     plugins.detectNeeded=function (src,res) {
         for (var name in installed) {
             var r=installed[name].detection.exec(src);
@@ -7520,7 +7599,7 @@ return Tonyu.Project=function (dir, kernelDir) {
     };
     TPR.loadPlugins=function (onload) {
         var opt=TPR.getOptions();
-        plugins.loadAll(opt.plugins,onload);
+        return plugins.loadAll(opt.plugins,onload);
     };
     TPR.fixBootRunClasses=function () {
         var opt=TPR.getOptions();
@@ -7592,19 +7671,18 @@ return Tonyu.Project=function (dir, kernelDir) {
         }
     };
     TPR.rawBoot=function (bootClassName) {
-        //var thg=Tonyu.threadGroup();
-        var bootClass=Tonyu.getClass(bootClassName);
+        Tonyu.run(bootClassName);
+        /*var bootClass=Tonyu.getClass(bootClassName);
         if (!bootClass) throw TError( bootClassName+" というクラスはありません", "不明" ,0);
         Tonyu.runMode=true;
         var boot=new bootClass();
         var th=Tonyu.thread();
         th.apply(boot,"main");
 
-        TPR.runningThread=th; //thg.addObj(main);
+        TPR.runningThread=th;
         TPR.runningObj=boot;
         $LASTPOS=0;
-        th.steps();
-        //thg.run(0);
+        th.steps();*/
     };
 
     TPR.srcExists=function (className, dir) {
@@ -7708,10 +7786,13 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
         if (!options) options={};
         if (options.v) {
             Shell.echo("cp", from ,to);
+            options.echo=Shell.echo.bind(Shell);
         }
         var f=resolve(from, true);
         var t=resolve(to);
-        if (f.isDir() && t.isDir()) {
+        return f.copyTo(t,options);
+
+        /*if (f.isDir() && t.isDir()) {
             var sum=0;
             f.recursive(function (src) {
                 var rel=src.relPath(f);
@@ -7733,7 +7814,7 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
             return 1;
         } else {
             throw "Cannot copy directory "+f+" to file "+t;
-        }
+        }*/
     };
     Shell.rm=function (file, options) {
         if (!options) options={};
@@ -8499,61 +8580,18 @@ setTimeout(function(){ T2MediaLib.stopAudio(); }, 10000);
 
 
 requireSimulator.setName('runtime');
-requirejs(["ImageList","T2MediaLib"], function () {
+requirejs(["ImageList","T2MediaLib","Tonyu","Tonyu.Iterator"], function () {
 
-});
-requireSimulator.setName('SoundDiag');
-define(["T2MediaLib"],function (T2MediaLib) {
-    SoundDiag={};
-    SoundDiag.show=function (/*cv,*/ onSelect) {
-        var bsty={fontSize:"2em"};
-        onSelect=onSelect||function (){};
-        var d=$("<div>").css({position:"absolute", left:100,top:100}).append(
-                $("<button>").css(bsty).text("Sound on").click(soundOn)
-        ).append(
-                $("<button>").css(bsty).text("Sound off").click(soundOff)
-        ).appendTo("body");
-        function soundOn() {
-            T2MediaLib.init();
-            T2MediaLib.disabled=false;
-            T2MediaLib.activate();
-            console.log("Sound ON");
-            d.remove();
-            onSelect();
-        }
-        function soundOff() {
-            T2MediaLib.disabled=true;
-            console.log("Sound OFF");
-            d.remove();
-            onSelect();
-        }
-        /*var ctx=cv[0].getContext("2d");
-        var w=cv.width(),h=cv.height();
-        var size=30;
-        ctx.fillStyle="black";
-        ctx.font=size+"px monospace";
-        drawCenter("Sound on",h/3);
-        drawCenter("Sound off",h/3*2);
-        cv.on("click", func);
-        function func(e) {
-            if (e.originalEvent.y<h/2) {
-
-            } else {
-
-            }
-        }
-        function drawCenter(text,y) {
-            var t=ctx.measureText(text);
-            ctx.fillText(text, w/2-t.width/2, y+size/2);
-        }*/
-    };
-    return SoundDiag;
 });
 requireSimulator.setName('runScript');
-requirejs(["FS","Tonyu.Project","Shell","KeyEventChecker","ScriptTagFS","runtime","WebSite","SoundDiag"],
-        function (FS,  Tonyu_Project, sh,      KeyEventChecker, ScriptTagFS,   rt,WebSite) {
+requirejs(["FS","Tonyu.Project","Shell","KeyEventChecker","ScriptTagFS",
+           "runtime","WebSite","LSFS"],
+        function (FS,  Tonyu_Project, sh,      KeyEventChecker, ScriptTagFS,
+                rt,WebSite,LSFS) {
     $(function () {
         var home=FS.get(WebSite.tonyuHome);
+        var ramHome=FS.get("/ram/");
+        FS.mount(ramHome.path(), LSFS.ramDisk() );
         Tonyu.defaultResource={
                 images:[
                         {name:"$pat_base", url: "images/base.png", pwidth:32, pheight:32},
@@ -8568,70 +8606,39 @@ requirejs(["FS","Tonyu.Project","Shell","KeyEventChecker","ScriptTagFS","runtime
         var w=$(window).width();
         var h=$(window).height();
         $("body").css({overflow:"hidden", margin:"0px"});
-        var cv=$("<canvas>").attr({width: w, height:h}).appendTo("body");
+        var cv=$("<canvas>").attr({width: w-10, height:h-10}).appendTo("body");
         $(window).resize(onResize);
         function onResize() {
             w=$(window).width();
             h=$(window).height();
-            cv.attr({width: w, height: h});
+            cv.attr({width: w-10, height: h-10});
         }
         var locs=location.href.replace(/\?.*/,"").split(/\//);
-        var loc=locs.pop();
-        if (loc.length<0) locs="runscript";
-        var curProjectDir=home.rel(loc+"/");
+        var prj=locs.pop() || "runscript";
+        var user=locs.pop() || "nobody";
+        //if (prjloc.length<0) locs="runscript";
+        var curProjectDir=ramHome;
+        var actualFilesDir=home.rel(user+"/"+prj+"/");
+        ramHome.rel("files/").link(actualFilesDir);
         //if (curProjectDir.exists()) sh.rm(curProjectDir,{r:1});
         var fo=ScriptTagFS.toObj();
         for (var fn in fo) {
             var f=curProjectDir.rel(fn);
             if (!f.isDir()) {
                 var m=fo[fn];
-                if (fn=="js/concat.js") {
-                    if (f.exists() && f.lastUpdate()>m.lastUpdate) {
-                        continue;
-                    }
-                } else {
-                    f.useRAMDisk();
-                }
                 f.text(m.text);
                 delete m.text;
                 if (m.lastUpdate) f.metaInfo(m);
             }
         }
         sh.cd(curProjectDir);
-        var main="Main";
-        var scrs=$("script");
-        scrs.each(function (){
-            var s=this;
-            if (s.type=="text/tonyu") {
-                var fn=$(s).data("filename");
-                if (fn) {
-                    var f=curProjectDir.rel(fn);
-                    if ($(s).data("main")) {
-                        main=f.truncExt(".tonyu");
-                    }
-                }
-            }
-        });
         Tonyu.defaultOptions={
                 compiler: { defaultSuperClass: "Actor"},
-                run: {mainClass: main, bootClass: "Boot"},
+                run: {mainClass: "Main", bootClass: "Boot"},
                 kernelEditable: false
         };
-        var kernelDir=home.rel("Kernel/");
         var curPrj=Tonyu_Project(curProjectDir);//, kernelDir);
-        /*cv[0].addEventListener('touchstart', mediaIni);
-        window.addEventListener('touchstart', mediaIni);
-        function mediaIni() {
-            T2MediaLib.init();
-            T2MediaLib.activate();
-            cv[0].removeEventListener('touchstart', mediaIni);
-            window.removeEventListener('touchstart',mediaIni);
-        }*/
-        /*if (curPrj.hasSoundResource()) {
-            SoundDiag.show(start);
-        } else {*/
-            start();
-        //}
+        start();
         function start() {
             Tonyu.currentProject=Tonyu.globals.$currentProject=curPrj;
             var o=curPrj.getOptions();

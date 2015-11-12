@@ -10,6 +10,9 @@ $(function () {
     if (!projects.exists()) projects.mkdir();
     sh.cd(projects);
     var curDir=projects;
+    if (WebSite.isNW) {
+        $("#loginGrp").hide();
+    }
     function ls() {
         $("#prjItemList").empty();
         var d=[];
@@ -40,7 +43,7 @@ $(function () {
                 var tn=f.rel("images/").rel("icon_thumbnail.png");
                 //console.log(tn.path());
                 if (tn.exists()) {
-                    u.$vars.t.attr("src",tn.text());
+                    u.$vars.t.attr("src",tn.getURL());
                 }
             },10);
             //$("#fileItem").tmpl({name: name, href:"project.html?dir="+f.path()}).appendTo("#prjItemList");
