@@ -47,6 +47,8 @@ public class GoogleOAuthCartridge implements OAuthCartridge {
     }
     public String getRedirectURL(HttpServletRequest req) {
     	//String url="http://"+req.getServerName();
+        String u=req.getParameter("redirect_url");
+        if (u!=null) return u;
     	if (ServerInfo.isExe(req)) throw new RuntimeException("Login not allowed in tonyuexe");
     	//if (req.getServerPort()!=80) url+=":"+req.getServerPort();
     	//url+="/edit/"+OAUTH_GOOGLE;
