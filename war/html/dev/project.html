@@ -25,6 +25,8 @@
 <script src="../../js/lib/jquery.tmpl.js" type="text/javascript"></script>
 <script src="../../js/lib/jquery.hotkeys.js" type="text/javascript"></script>
 <script src="../../js/lib/jquery-ui.js" type="text/javascript"></script>
+<script src="../../js/lib/FileSaver.min.js" type="text/javascript"></script>
+<script src="../../js/lib/jszip.min.js" type="text/javascript"></script>
 
 <script src="../../js/lib/SplashScreen.js"></script>
 <script src="../../js/reqConf.js"></script>
@@ -84,6 +86,7 @@ requirejs(["ide/editor","buildAll"],function (){});
 					</li>
 					<li><a href="#" id="publish" class="dropdown-toggle" data-toggle="dropdown">公開</a>
 						<ul class="dropdown-menu" id="publishMenu">
+                            <li><a href="#" id="mkrun">ランタイム作成</a></li>
                             <li><a href="#" id="exportToExe">tonyuexeで公開する</a></li>
 							<li><a href="#" id="exportToJsdoit">jsdo.itで公開する</a></li>
 						</ul>

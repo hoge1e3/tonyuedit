@@ -1,4 +1,4 @@
-define(["FS2","PathUtil","extend","assert"], function(FS,P,extend,assert) {
+define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,assert,DataURL) {
     var LSFS = function(storage,options) {
     	this.storage=storage;
     	this.options=options||{};
@@ -126,6 +126,10 @@ define(["FS2","PathUtil","extend","assert"], function(FS,P,extend,assert) {
         getContent: function(path, options) {
             assert.is(arguments,[Absolute]);
             this.assertExist(path);
+            if (options && options.type==ArrayBuffer) {
+                var d=new DataURL(this.getItem(path));
+                return d.buffer;
+            }
             return this.getItem(path);
         },
         setContent: function(path, content, options) {
@@ -278,6 +282,9 @@ define(["FS2","PathUtil","extend","assert"], function(FS,P,extend,assert) {
                     this.getRootFS().touch(parent);
                 }
             }
+        },
+        getURL: function (path) {
+            return this.getContent(path,{type:String});
         }
     });
     return LSFS;

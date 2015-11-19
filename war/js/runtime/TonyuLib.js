@@ -551,11 +551,27 @@ return Tonyu=function () {
     function hasKey(k, obj) {
         return k in obj;
     }
+    function run(bootClassName) {
+        var bootClass=getClass(bootClassName);
+        if (!bootClass) throw new Error( bootClassName+" というクラスはありません");
+        Tonyu.runMode=true;
+        var boot=new bootClass();
+        var th=thread();
+        th.apply(boot,"main");
+        var TPR;
+        if (TPR=Tonyu.currentProject) {
+            TPR.runningThread=th;
+            TPR.runningObj=boot;
+        }
+        $LASTPOS=0;
+        th.steps();
+    }
     return Tonyu={thread:thread, threadGroup:threadGroup, klass:klass, bless:bless, extend:extend,
             globals:globals, classes:classes, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
             timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
-            VERSION:1446514162440,//EMBED_VERSION
+            run:run,
+            VERSION:1447842476456,//EMBED_VERSION
             A:A};
 }();
 });

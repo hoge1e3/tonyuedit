@@ -9,14 +9,17 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
     var assert=A;
     var fs=require("fs");
     var NativeFS=function (rootPoint) {
-        A.is(rootPoint, P.AbsDir);
-        this.rootPoint=rootPoint;
+        if (rootPoint) {
+            A.is(rootPoint, P.AbsDir);
+            this.rootPoint=rootPoint;
+        }
     };
     NativeFS.available=true;
     var SEP=P.SEP;
     var json=JSON; // JSON changes when page changes, if this is node module, JSON is original JSON
     var Pro=NativeFS.prototype=new FS;
     Pro.toNativePath = function (path) {
+        if (!this.rootPoint) return path;
         A.is(path, P.Absolute);
         return P.rel( this.rootPoint, this.relFromMountPoint(path));
     };
@@ -41,8 +44,9 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
                 if (t===String) {
                     return fs.readFileSync(np, {encoding:"utf8"});
                 } else {
+                    return fs.readFileSync(np);
                     //TODOvar bin=fs.readFileSync(np);
-                    throw new Error("TODO: handling bin file "+path);
+                    //throw new Error("TODO: handling bin file "+path);
                 }
             } else {
                 if (t===String) {
@@ -61,10 +65,12 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
             var np=this.toNativePath(path);
             var cs=typeof content=="string";
             if (this.isText(path)) {
-                if (cs) return fs.writeFileSync(np, content);
+                fs.writeFileSync(np, content)
+                /*if (cs) return fs.writeFileSync(np, content);
                 else {
-                    throw new Error("TODO");
-                }
+                    return fs.writeFileSync(np, content);
+                    //throw new Error("TODO");
+                }*/
             } else {
 //                console.log("NatFS", cs, content);
                 if (!cs) return fs.writeFileSync(np, content);
@@ -154,6 +160,9 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
             } else if (this.exists(path) && !this.isDir(path) ) {
                 // TODO(setlastupdate)
             }
+        },
+        getURL:function (path) {
+            return "file:///"+path.replace(/\\/g,"/");
         }
     });
     return NativeFS;

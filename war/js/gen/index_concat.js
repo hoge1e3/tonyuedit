@@ -1,4 +1,4 @@
-// Created at Tue Nov 03 2015 10:29:22 GMT+0900 (東京 (標準時))
+// Created at Wed Nov 18 2015 19:27:57 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -14,7 +14,7 @@
 	define=function (reqs,func) {
 		R.def(reqs,func,"define");
 	};
-	require=requirejs=function (reqs,func) {
+	/*require=*/requirejs=function (reqs,func) {
 		R.def(reqs,func,"require");
 	};
 	R.setReqs=function (m, reqs) {
@@ -86,116 +86,11 @@
 	return R;
 })();
 
-requireSimulator.setName('WebSite');
-define([], function () {
-    var loc=document.location.href;
-    var devMode=!!loc.match(/html\/dev\//) && !!loc.match(/localhost:3/);
-    var WebSite;
-    if (loc.match(/jsrun\.it/)) {
-        WebSite={
-            urlAliases: {
-                "images/Ball.png":"http://jsrun.it/assets/9/X/T/b/9XTbt.png",
-                "images/base.png":"http://jsrun.it/assets/6/F/y/3/6Fy3B.png",
-                "images/Sample.png":"http://jsrun.it/assets/s/V/S/l/sVSlZ.png",
-                "images/neko.png":"http://jsrun.it/assets/f/D/z/z/fDzze.png",//"http://jsrun.it/assets/j/D/9/q/jD9qQ.png",
-                "images/mapchip.png":"http://jsrun.it/assets/f/u/N/v/fuNvz.png",
-                "images/inputPad.png":"http://jsrun.it/assets/r/K/T/Y/rKTY9.png"
-            },top:"",devMode:devMode, pluginTop: "http://tonyuedit.appspot.com/js/plugins",
-            removeJSOutput:true
-        };
-    } else if (
-      loc.match(/tonyuexe\.appspot\.com/) ||
-      loc.match(/localhost:8887/) ||
- 	  (
- 	    /*(
- 	       loc.match(/^file:/) ||
- 	       loc.match(/localhost/) ||
-	       loc.match(/tonyuedit\.appspot\.com/)
-	    ) &&*/
-	    loc.match(/\/html\/((dev)|(build))\//)
-	  )
-    ) {
-        WebSite={
-            urlAliases: {
-                "images/Ball.png":"../../images/Ball.png",
-                "images/base.png":"../../images/base.png",
-                "images/Sample.png":"../../images/Sample.png",
-                "images/neko.png":"../../images/neko.png",
-                "images/inputPad.png":"../../images/inputPad.png",
-                "images/mapchip.png":"../../images/mapchip.png",
-                "images/sound.png":"../../images/sound.png",
-                    "images/ecl.png":"../../images/ecl.png"
-            },top:"../..",devMode:devMode
-        };
-    } else {
-        WebSite={
-           urlAliases: {}, top: "../..",devMode:devMode
-        };
-    }
-    // from https://w3g.jp/blog/js_browser_sniffing2015
-    var u=window.navigator.userAgent.toLowerCase();
-    WebSite.tablet=(u.indexOf("windows") != -1 && u.indexOf("touch") != -1)
-    || u.indexOf("ipad") != -1
-    || (u.indexOf("android") != -1 && u.indexOf("mobile") == -1)
-    || (u.indexOf("firefox") != -1 && u.indexOf("tablet") != -1)
-    || u.indexOf("kindle") != -1
-    || u.indexOf("silk") != -1
-    || u.indexOf("playbook") != -1;
-    WebSite.mobile=(u.indexOf("windows") != -1 && u.indexOf("phone") != -1)
-    || u.indexOf("iphone") != -1
-    || u.indexOf("ipod") != -1
-    || (u.indexOf("android") != -1 && u.indexOf("mobile") != -1)
-    || (u.indexOf("firefox") != -1 && u.indexOf("mobile") != -1)
-    || u.indexOf("blackberry") != -1;
-
-    if (!WebSite.pluginTop) {
-        WebSite.pluginTop=WebSite.top+"/js/plugins";
-    }
-    WebSite.disableROM={};
-	if (loc.match(/tonyuedit\.appspot\.com/) || loc.match(/localhost:8888/) ) {
-	    //WebSite.disableROM={"ROM_d.js":true};
-	}
-    if (loc.match(/\.appspot\.com/) ||  loc.match(/localhost:888[87]/)) {
-        WebSite.serverType="GAE";
-    }
-    if (loc.match(/localhost:3000/) ) {
-        WebSite.serverType="Node";
-    }
-    if (loc.match(/tonyuexe\.appspot\.com/) ||
-        loc.match(/localhost:8887/)) {
-        WebSite.serverTop=WebSite.top+"/exe"; // Fix NetModule.tonyu!!
-    } else {
-        WebSite.serverTop=WebSite.top+"/edit";// Fix NetModule.tonyu!!
-    }
-    WebSite.sampleImg=WebSite.top+"/images";
-    WebSite.blobPath=WebSite.serverTop+"/serveBlob";        //TODO: urlchange!
-    WebSite.isNW=(typeof process=="object" && process.__node_webkit);
-    WebSite.mp3Disabled=WebSite.isNW;
-    WebSite.tonyuHome="/Tonyu/";
-    WebSite.url={
-        getDirInfo:WebSite.serverTop+"/getDirInfo",
-        getFiles:WebSite.serverTop+"/File2LSSync",
-        putFiles:WebSite.serverTop+"/LS2FileSync"
-    };
-    if (WebSite.isNW) {
-        WebSite.cwd=process.cwd().replace(/\\/g,"/").replace(/\/?$/,"/");
-        if (process.env.TONYU_HOME) {
-            WebSite.tonyuHome=process.env.TONYU_HOME.replace(/\\/g,"/").replace(/\/?$/,"/");
-        } else {
-            WebSite.tonyuHome=WebSite.cwd+"fs/Tonyu/";
-        }
-        WebSite.logdir="/var/log/Tonyu/";
-        WebSite.kernelDir=WebSite.cwd+"www/Kernel/";
-        WebSite.ffmpeg=WebSite.cwd+("ffmpeg/bin/ffmpeg.exe");
-    }
-    if (loc.match(/tonyuedit\.appspot\.com/) ||
-        loc.match(/localhost:888/) ||
-        WebSite.isNW) {
-        WebSite.compiledKernel=WebSite.top+"/Kernel/js/concat.js";
-    } else {
-        WebSite.compiledKernel="http://tonyuexe.appspot.com/Kernel/js/concat.js";
-    }
-    return window.WebSite=WebSite;
+requireSimulator.setName('extend');
+define([],function (){
+   return function extend(d,s) {
+      for (var i in s) {d[i]=s[i];} 
+   };
 });
 
 requireSimulator.setName('assert');
@@ -403,6 +298,7 @@ function endsWith(str,postfix) {
     return str.substring(str.length-postfix.length)===postfix;
 }
 function startsWith(str,prefix) {
+    assert.is(arguments,[String,String]);
     return str.substring(0, prefix.length)===prefix;
 }
 var driveLetter=/^([a-zA-Z]):/;
@@ -497,6 +393,7 @@ PathUtil={
         return PathUtil.up(path);
     },
     rel: function(path,relPath) {
+        if (relPath=="") return path;
 		assert.is(arguments,[AbsDir, Relative]);
     	var paths=PathUtil.splitPath(relPath);
         var resPath=path;
@@ -528,356 +425,48 @@ PathUtil={
 };
 return PathUtil;
 });
-requireSimulator.setName('Env');
-define(["assert","PathUtil"],function (A,P) {
-    var Env=function (value) {
-        this.value=value;
-    };
-    Env.prototype={
-            expand:function (str) {
-                A.is(str,String);
-                var t=this;
-                return str.replace(/\$\{([a-zA-Z0-9_]+)\}/g, function (a,key) {
-                    return t.get(key);
-                });
-            },
-            expandPath:function (path) {
-                A.is(path,String);
-                path=this.expand(path);
-                path=path.replace(/\/+/g,"/");
-                return A.is(path,P.Path);
-            },
-            get: function (key) {
-                return this.value[key];
-            },
-            set: function (key, value) {
-                this.value[key]=value;
-            }
-    };
-    return Env;
-});
-requireSimulator.setName('SFileNW');
-define(["WebSite","Env"],function (WebSite,Env) {
-var exports={};
-if (!WebSite.isNW) return {};
-//--------begin of SFile.js
-var fs=require("fs");
-var env=new Env(WebSite);
-var SEP="/";
-var json=JSON; // JSON changes when page changes, if this is node module, JSON is original JSON
-function SFile(path) {
-    this._path=toCanonicalPath(path);
-}
-function extend(dst,src) {
-	for (var i in src) dst[i]=src[i];
-}
-function endsWith(str,postfix) {
-    return str.substring(str.length-postfix.length)===postfix;
-}
-function startsWith(str,prefix) {
-    return str.substring(0, prefix.length)===prefix;
-}
-var driveLetter=/^([a-zA-Z]):/;
-var hasDriveLetter=driveLetter.exec(process.cwd());
-function isAbsolute(path) {
-    return !hasDriveLetter && startsWith(path,SEP) ||
-            hasDriveLetter && path.match(driveLetter);
-}
-function truncSep(path) {
-    if (endsWith(path,SEP)) return path.substring(0,path.length-1);
-    return path;
-}
-// same as zip.js
-var binMap={".png": "image/png", ".jpg":"image/jpg", ".gif": "image/gif", ".jpeg":"image/jpg",
-        ".mp3":"audio/mp3", ".ogg":"audio/ogg"};
-exports.resolve=function (path, base) {
-    path=env.expandPath(path);
-    return exports.get(toCanonicalPath(path, base));
-};
-exports.expandPath=function () {
-    return env.expandPath.apply(env,arguments);
-};
-
-function toCanonicalPath(path, base) {
-    base=base || process.cwd();
-    base=base.replace(/\\/g,SEP);
-    path=path.replace(/\\/g,SEP);
-    if (hasDriveLetter && startsWith(path,SEP)) {
-        var c=base;
-        var d=driveLetter.exec(c);
-        if (d) {
-            path=d[0]+path;
-        } else {
-            throw new Error(base+" : should have drive letter");
-        }
-    } else if (!isAbsolute(path)) path=truncSep(base)+SEP+path;
-    var paths=path.split(SEP);
-    var built=[];
-    paths.forEach(function (p) {
-        if (p=="") return;
-        if (p==".") return;
-        if (p=="..") {
-            built.pop();
-            return;
-        }
-        built.push(p);
-    });
-    var res=built.join(SEP);
-    if (!hasDriveLetter) res=SEP+res;
-    if (!isAbsolute(res)) throw new Error(res+": is not absolute. hasDriverLetter="+hasDriveLetter);
-    res=truncSep(res);
-    if (endsWith(path,SEP)) res+=SEP;
-    return res;
-}
-extend(SFile.prototype,{
-    isSFile: function (){return true;},
-	text:function () {
-		if (arguments.length==0) {
-		    if (this.isDir()) {
-		        return json.stringify(this.metaInfo());
-		    }
-            if (this.isBinary()) {
-                return this.readDataURLFromBin();
-            } else {
-                return fs.readFileSync(this.path(), {encoding:"utf8"});
-            }
-		} else {
-			var p=this.up();
-			if (p) p.mkdir();
-			if (this.isBinary()) {
-                this.writeBinFromDataURL(arguments[0]);
-			} else {
-                fs.writeFileSync(this.path(), arguments[0]);
-			}
-		}
-	},
-	lines: function () {
-	    return this.text().split("\n");
-	},
-	readDataURLFromBin: function () {
-	    var head=this.dataHeader();
-	    b=fs.readFileSync(this.path());
-	    if (b[0]==head.charCodeAt(0)// d
-	     && b[1]==head.charCodeAt(1)// a
-	     && b[2]==head.charCodeAt(2)// t
-	     && b[3]==head.charCodeAt(3)// a
-	     && b[4]==head.charCodeAt(4)// :
-	     ) {
-	        // file content is dataurl.
-	        return b.toString("utf8");
-	    }
-	    var base64=b.toString("base64");
-	    return head+base64;
-	},
-	writeBinFromDataURL: function (dataURL) {
-	    var head=this.dataHeader();
-	    var base64=dataURL.substring(head.length);
-	    var buf=new Buffer(base64,"base64");
-	    var wstream = fs.createWriteStream(this.path());
-	    wstream.write(buf);
-	    wstream.end();
-	},
-	isBinary: function () {
-	    return binMap[this.ext()];
-	},
-	dataHeader: function () {
-        // data:image/png;base64,AAAAA
-        // "data:"+ctype+";base64,"
-	    var ctype=this.isBinary();
-	    return "data:"+ctype+";base64,";
-	},
-	obj:function () {
-		if (arguments.length==0) {
-			return json.parse(this.text());
-		} else {
-			this.text(json.stringify(arguments[0]));
-		}
-	},
-	isReadOnly: function () {
-	    return false; // TODO
-	},
-    rm: function () {
-        if (this.isDir()) {
-            return fs.rmdirSync(this.path());
-        } else {
-            return fs.unlinkSync(this.path());
-        }
-    },
-	path: function () { return this._path; },
-    pathTS: function () { return truncSep(this.path()); },
-	name: function () {
-		var p=this.pathTS();
-		var t="";
-		if (endsWith(this.path(),SEP)) {
-			t=SEP;
-		}
-		return p.split(SEP).pop()+t;
-	},
-	ext: function () {
-	    var n=this.name();
-	    var r=(/\.[a-zA-Z0-9]+$/).exec(n);
-	    if (r) return r[0];
-	    return null;
-	},
-	truncExt: function (ext) {
-        var name=this.name();
-        return name.substring(0,name.length-ext.length);
-	},
-	endsWith: function (postfix) {
-	    return endsWith(this.name(), postfix);
-	},
-    exists: function () {
-        return fs.existsSync(this.path());
-    },
-	each:function (it, options) {
-	    if (!options) options={};
-		if (!this.isDir()) throw new Error(this+" cannot each. not a dir.");
-		if (!this.exists()) return;
-		var ts=this.pathTS();
-		var r=fs.readdirSync(this.path());
-		var t=this;
-		r.forEach(function (e) {
-		    if (e==".dirinfo" && !options.includeDirInfo) return;
-		    var s=fs.statSync(ts+SEP+e);
-		    var ss=s.isDirectory()?SEP:"";
-			var f=t.rel(e+ss);
-			it(f);
-		});
-	},
-	ls: function () {
-	    var res=[];
-	    this.each(function (f) {
-            res.push(f.name());
-        });
-        return res;
-	},
-	parent: function () {
-		return this.up();
-	},
-	recursive:function (fun) {
-        this.each(function (f) {
-            if (f.isDir()) f.recursive(fun);
-            else fun(f);
-        });
-    },
-	toString: function () {
-		return this.path();
-	},
-	rel: function (n) {
-		//if (!this.isDir()) throw new Error(this+" cannot rel. not a dir.");
-		return new SFile(this.pathTS()+SEP+n);
-	},
-	mkdir: function () {
-		if (this.exists()){
-			if (this.isDir()) {
-				return;
-			} else {
-				throw new Error(this+" is a file. not a dir.");
-			}
-		}
-		var p=this.up();
-		if (p) p.mkdir();
-		fs.mkdirSync(this.path());
-	},
-	relPath: function (base) {
-	    var bp=(base.path ? base.path() : base);
-        if (bp.substring(bp.length-1)!=SEP) {
-            throw  new Error(bp+" is not a directory.");
-        }
-        if (this.path().substring(0,bp.length)!=bp) {
-            return "../"+this.relPath(base.up());
-            //throw path+" is not in "+bp;
-        }
-        return this.path().substring(bp.length);
-
-	    /*if (!origin) origin=this;
-		//console.log("relpath "+this+" - "+base);
-		if ( this.equals(base)) {
-			return ".";
-		}
-		if (this.parent() == null)
-			throw new Error(origin + " is not in " + base);
-		var pp=this.parent().relPath(base, origin);
-		if (pp==".") return this.name();
-		return pp + SEP + this.name();*/
-	},
-	equals: function (f) {
-		return (f instanceof SFile) && f.path()==this.path();
-	},
-	lastModified: function () {
-		return this.stat().mtime.getTime();
-	},
-	lastUpdate: function () {
-		return this.lastModified();
-	},
-	up: function () {
-	    var p=this.pathTS();
-	    var pp=p.split(SEP);
-	    pp.pop();
-	    p=pp.join(SEP);
-        if (p=="") return null;
-		return new SFile(p+SEP);
-	},
-	copyFrom: function (src,options) {
-	    if (this.isDir()) {
-
-	    } else {
-	        this.text(src.text());
-	        if (options.a) file.metaInfo(src.metaInfo());
-	    }
-	},
-	isDir: function () {
-		if (!this.exists()) return endsWith(this.path(),SEP);
-		return this.stat().isDirectory();
-	},
-	stat: function () {
-		return 	fs.statSync(this.path());
-	},
-	metaInfo: function () {
-	    if (this.isDir()) {
-	        var res={};
-	        this.each(function (f) {
-	            res[f.name()]=f.metaInfo();
-	        });
-	        return res;
-	    } else {
-            return {lastUpdate:this.lastUpdate()};
-	    }
-	}
-});
-exports.get=function (path) {
-    if (path==null) throw new Error("FS.get: null path");
-	if (path instanceof SFile) return path;
-    return new SFile(path);
-};
-var DONOTEXPORT="DONOTEXPORT";
-exports.exportDir=function (dir,options) {
-    if (!options) options={};
-    if (typeof dir=="string") dir=exports.get(dir);
-    var res={base: dir.path()};
-    var data=res.data={};
-    e(dir);
-    return res;
-    function e(cfd) {
-        var rp=cfd.relPath(dir);
-        data[rp]=cfd.text();
-        if (!options.keepCR) data[rp]=data[rp].replace(/\r/g,"");
-        if (cfd.isDir()) {
-            if (cfd.rel(DONOTEXPORT).exists()) return;
-            cfd.each(e);
-        }
-    }
-};
-//-------end of SFile.js
-return exports;
-});
-requireSimulator.setName('extend');
-define([],function (){
-   return function extend(d,s) {
-      for (var i in s) {d[i]=s[i];} 
+requireSimulator.setName('MIMETypes');
+define([], function () {
+   return {
+      ".png":"image/png",
+      ".gif":"image/gif",
+      ".jpeg":"image/jpeg",
+      ".jpg":"image/jpeg",
+      ".ico":"image/icon",
+      ".mp3":"audio/mp3",
+      ".ogg":"audio/ogg",
+      ".txt":"text/plain",
+      ".html":"text/html",
+      ".htm":"text/html",
+      ".css":"text/css",
+      ".js":"text/javascript",
+      ".json":"text/json",
+      ".zip":"application/zip",
+      ".swf":"application/x-shockwave-flash",
+      ".pdf":"application/pdf",
+      ".doc":"application/word",
+      ".xls":"application/excel",
+      ".ppt":"application/powerpoint",
+      '.docx':'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.docm':'application/vnd.ms-word.document.macroEnabled.12',
+      '.dotx':'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
+      '.dotm':'application/vnd.ms-word.template.macroEnabled.12',
+      '.xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.xlsm':'application/vnd.ms-excel.sheet.macroEnabled.12',
+      '.xltx':'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
+      '.xltm':'application/vnd.ms-excel.template.macroEnabled.12',
+      '.xlsb':'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
+      '.xlam':'application/vnd.ms-excel.addin.macroEnabled.12',
+      '.pptx':'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      '.pptm':'application/vnd.ms-powerpoint.presentation.macroEnabled.12',
+      '.potx':'application/vnd.openxmlformats-officedocument.presentationml.template',
+      '.potm':'application/vnd.ms-powerpoint.template.macroEnabled.12',
+      '.ppsx':'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
+      '.ppsm':'application/vnd.ms-powerpoint.slideshow.macroEnabled.12',
+      '.ppam':'application/vnd.ms-powerpoint.addin.macroEnabled.12',
+      ".tonyu":"text/tonyu"
    };
 });
-
 requireSimulator.setName('DataURL');
 define(["extend","assert"],function (extend,assert) {
     var A=(typeof Buffer!="undefined") ? Buffer :ArrayBuffer;
@@ -913,11 +502,11 @@ define(["extend","assert"],function (extend,assert) {
 	  },
 	  dataURL2bin: function (dataURL) {
           assert.is(arguments,[String]);
-	      var reg=/data:([^;]+);base64,(.*)$/i;
+	      var reg=/^data:([^;]+);base64,/i;
 	      var r=reg.exec(dataURL);
 	      assert(r, ["malformed dataURL:", dataURL] );
 	      this.contentType=r[1];
-	      this.buffer=Base64_To_ArrayBuffer(r[2]);
+	      this.buffer=Base64_To_ArrayBuffer(dataURL.substring(r[0].length));
           return assert.is(this.buffer , A);
   	  },
   	  dataHeader: function (ctype) {
@@ -1059,1003 +648,6 @@ define(["DataURL"],function (DataURL){
    };
    return Contents;
 });
-requireSimulator.setName('SFile');
-define(["Contents","extend","assert","PathUtil"],
-function (C,extend,A,P) {
-
-var SFile=function (fs, path) {
-    A.is(path, P.Absolute);
-    A(fs && fs.getReturnTypes);
-    this._path=path;
-    this.fs=fs;
-    if (this.isDir() && !P.isDir(path)) {
-        this._path+=P.SEP;
-    }
-};
-SFile.is=function (path) {
-    return path && typeof (path.isSFile)=="function" && path.isSFile();
-};
-function getPath(f) {
-    if (SFile.is(f)) {
-        return f.path();
-    } else {
-        A.is(f,P.Absolute);
-        return f;
-    }
-}
-SFile.prototype={
-    isSFile: function (){return true;},
-    _clone: function (){
-        return this.fs.getRootFS().get(this.path());
-    },
-    _resolve: function (path) {
-        var res;
-        if (SFile.is(path)) {
-            res=path;
-        } else {
-            A.is(path,P.Absolute);
-            res=this.fs.getRootFS().get(path);
-        }
-        if (this.wrapper) {
-            return this.wrapper.wrap(res);
-        } else {
-            return res;
-        }
-    },
-    contains: function (file) {
-        A(SFile.is(file),file+" shoud be a SFile object.");
-        if (!this.isDir()) return false;
-        return P.startsWith( file.path(), this.path());
-    },
-    // Path from Root
-    path: function () {
-        return this._path;//this.fs.getPathFromRootFS(this.pathT);
-    },
-    // Path from This fs
-    /*pathInThisFS: function () {
-        return this.pathT;
-    },*/
-    name: function () {
-        return P.name(this.path());
-    },
-    truncExt: function (ext) {
-        return P.truncExt(this.path(),ext);
-    },
-    ext: function () {
-        return P.ext(this.path());
-    },
-    relPath: function (base) {
-        // base should be SFile or Path from rootFS
-        var bp=(base.path ?
-                base.path() :
-                base );
-        return P.relPath(this.path(), A.is(bp,P.Absolute) );
-    },
-    up:function () {
-        var pathR=this.path();
-        var pa=P.up(pathR);
-        if (pa==null) return null;
-        return this._resolve(pa);
-    },
-    rel: function (relPath) {
-        A.is(relPath, P.Relative);
-        this.assertDir();
-        var pathR=this.path();
-        return this._resolve(P.rel(pathR, relPath));
-    },
-    startsWith: function (pre) {
-        return P.startsWith(this.name(),pre);
-    },
-    endsWith: function (post) {
-        return P.endsWith(this.name(),post);
-    },
-    equals:function (o) {
-        return (o && typeof o.path=="function" && o.path()==this.path());
-    },
-    toString:function (){
-        return this.path();
-    },
-    //Common
-    touch: function () {
-        this.fs.touch(this.path());
-    },
-    isReadOnly: function () {
-        this.fs.isReadOnly(this.path());
-    },
-    isTrashed:function () {
-        var m=this.metaInfo();
-        if (!m) return false;
-        return m.trashed;
-    },
-    metaInfo: function () {
-        if (arguments.length==0) {
-            return this.getMetaInfo.apply(this,arguments);
-        } else {
-            return this.setMetaInfo.apply(this,arguments);
-        }
-    },
-    getMetaInfo: function (options) {
-        return this.fs.getMetaInfo(this.path(),options);
-    },
-    setMetaInfo: function (info, options) {
-        return this.fs.setMetaInfo(this.path(),info, options);
-    },
-    lastUpdate:function () {
-        A(this.exists());
-        return this.metaInfo().lastUpdate;
-    },
-    /*rootFS: function () {
-        return this.fs.getRootFS();
-    },*/
-    exists: function (options) {
-        options=options||{};
-        var p=this.fs.exists(this.path(),options);
-        if (p || options.noFollowLink) {
-            return p;
-        } else {
-            return this.resolveLink().exists({noFollowLink:true});
-        }
-    },
-    /*copyTo: function (dst, options) {
-        this.fs.cp(this.path(),getPath(dst),options);
-    },*/
-    rm: function (options) {
-        options=options||{};
-        if (!this.exists({noFollowLink:true})) {
-            var l=this.resolveLink();
-            if (!this.equals(l)) return l.rm(options);
-        }
-        if (this.isDir() && (options.recursive||options.r)) {
-            this.each(function (f) {
-                f.rm(options);
-            });
-        }
-        var pathT=this.path();
-        this.fs.rm(pathT, options);
-    },
-    removeWithoutTrash: function (options) {
-        options=options||{};
-        options.noTrash=true;
-        this.rm(options);
-    },
-    isDir: function () {
-        return this.fs.isDir(this.path());
-    },
-    // File
-    text:function () {
-        var l=this.resolveLink();
-        if (!this.equals(l)) return l.text.apply(l,arguments);
-        if (arguments.length>0) {
-            this.setText(arguments[0]);
-        } else {
-            return this.getText();
-        }
-    },
-    setText:function (t) {
-        A.is(t,String);
-        this.fs.setContent(this.path(), t);
-    },
-    getText:function (t) {
-        return this.fs.getContent(this.path(), {type:String});
-    },
-    lines:function () {
-        return this.text().split("\n");
-    },
-    obj: function () {
-        var file=this;
-        if (arguments.length==0) {
-            var t=file.text();
-            if (!t) return null;
-            return JSON.parse(t);
-        } else {
-            file.text(JSON.stringify(A.is(arguments[0],Object) ));
-        }
-    },
-    copyFrom: function (src, options) {
-        var dst=this;
-        var options=options||{};
-        var srcIsDir=src.isDir();
-        var dstIsDir=dst.isDir();
-        if (!srcIsDir && dstIsDir) {
-            dst=dst.rel(src.name());
-            assert(!dst.isDir(), dst+" exists as an directory.");
-            dstIsDir=false;
-        }
-        if (srcIsDir && !dstIsDir) {
-           this.err("Cannot move dir to file");
-        } else if (!srcIsDir && !dstIsDir) {
-            //this.fs.cp(A.is(src.path(), P.Absolute), this.path(),options);
-            var srcc=src.getText(); // TODO
-            var res=dst.setText(srcc);
-            if (options.a) {
-                dst.setMetaInfo(src.getMetaInfo());
-            }
-            return res;
-        } else {
-            A(srcIsDir && dstIsDir);
-            var t=this;
-            src.each(function (s) {
-                dst.rel(s.name()).copyFrom(s, options);
-            });
-        }
-        //file.text(src.text());
-        //if (options.a) file.metaInfo(src.metaInfo());
-    },
-    moveFrom: function (src, options) {
-        var res=this.copyFrom(src,options);
-        src.rm({recursive:true});
-        return res;//this.fs.mv(getPath(src),this.path(),options);
-    },
-    // Dir
-    assertDir:function () {
-        A.is(this.path(),P.Dir);
-        return this;
-    },
-    /*files:function (f,options) {
-        var dir=this.assertDir();
-        var res=[];
-        this.each(function (f) {
-            res.add(f);
-        },options);
-        return res;
-    },*/
-    each:function (f,options) {
-        var dir=this.assertDir();
-        dir.listFiles(options).forEach(f);
-    },
-    recursive:function (fun,options) {
-        var dir=this.assertDir();
-        dir.each(function (f) {
-            if (f.isDir()) f.recursive(fun);
-            else fun(f);
-        },options);
-    },
-    listFiles:function (options) {
-        A(options==null || typeof options=="object");
-        var dir=this.assertDir();
-        var l=this.resolveLink();
-        if (!this.equals(l)) return l.listFiles.apply(l,arguments);
-        var path=this.path();
-        var ord;
-        if (typeof options=="function") ord=options;
-        options=dir.convertOptions(options);
-        if (!ord) ord=options.order;
-        var di=this.fs.opendir(path, options);
-        var res=[];
-        for (var i=0;i<di.length; i++) {
-            var name=di[i];
-            //if (!options.includeTrashed && dinfo[i].trashed) continue;
-            if (options.excludes[path+name] ) continue;
-            res.push(dir.rel(name));
-        }
-        if (typeof ord=="function" && res.sort) res.sort(ord);
-        return res;
-    },
-    ls:function (options) {
-        A(options==null || typeof options=="object");
-        var dir=this.assertDir();
-        var res=dir.listFiles(options);
-        return res.map(function (f) {
-            return f.name();
-        });
-    },
-    convertOptions:function(options) {
-        var dir=this.assertDir();
-        var pathR=this.path();
-        if (!options) options={};
-        if (!options.excludes) options.excludes={};
-        if (options.excludes instanceof Array) {
-            var excludes={};
-            options.excludes.forEach(function (e) {
-                if (P.startsWith(e,"/")) {
-                    excludes[e]=1;
-                } else {
-                    excludes[pathR+e]=1;
-                }
-            });
-            options.excludes=excludes;
-        }
-        return A.is(options,{excludes:{}});
-    },
-    mkdir: function () {
-        this.touch();
-    },
-    link: function (to,options) {// % ln to path
-        to=this._resolve(A(to));
-        this.fs.link(this.path(),to.path(),options);
-    },
-    resolveLink: function () {
-        var l=this.fs.resolveLink(this.path());
-        A.is(l,P.Absolute);
-        return this._resolve(l);
-    },
-    isLink: function () {
-        return this.fs.isLink(this.path());
-    }
-};
-return SFile;
-});
-
-requireSimulator.setName('FS');
-define(["WebSite","SFileNW","Env","PathUtil","assert","SFile"],function (WebSite,wfs,Env,P,A,SFile) {
-    if (wfs && wfs.get) {
-        //var wfs=require("SFileNW");
-        if (typeof window=="object") window.FS=wfs;
-        return wfs;
-    }
-    var env=new Env(WebSite);
-    // Media Mask
-    var MM_RAM=1, MM_LS=2, MM_MIX=3;
-    var ramDisk={},ramDiskUsage=null;
-    if (typeof localStorage=="undefined" || localStorage==null) {
-        console.log("FS: Using RAMDisk");
-        ramDiskUsage="ALL";
-    }
-    var FS={};
-    if (typeof window=="object") window.FS=FS;
-    FS.ramDisk=ramDisk;
-    FS.ramDiskUsage=ramDiskUsage;
-
-    var roms={},romParents={};
-    var SEP="/";
-    FS.roms=roms;
-    FS.romParents=romParents;
-    function extend(dst,src) {
-        if (!src) return;
-        for (var i in src) dst[i]=src[i];
-    }
-    function endsWith(str,postfix) {
-        return str.substring(str.length-postfix.length)===postfix;
-    }
-    FS.endsWith=endsWith;
-    function startsWith(str,prefix) {
-        return str.substring(0, prefix.length)===prefix;
-    }
-    function now(){
-        return new Date().getTime();
-    }
-    FS.splitPath=splitPath;
-    function splitPath(path) {
-        var res=path.split(SEP);
-        if (res[res.length-1]=="") {
-            res[res.length-2]+=SEP;
-            res.pop();
-        }
-        return res;
-    }
-    function resolveROM(path) {
-        for (var romPath in roms) {
-            var pre=path.substring(0,romPath.length);
-            var post=path.substring(romPath.length);
-            if (pre==romPath) {
-                return {rom:roms[romPath],rel:post};
-            }
-        }
-        return null;
-    }
-    function isReadonly(path) {
-        return resolveROM(path);
-    }
-    function getLocalStorage(path) {
-        if (isUsingRAMDisk(path)) {
-            return ramDisk;
-        }
-        return localStorage;
-    }
-    function lcs(path, text) {
-        var ls=getLocalStorage(path);
-        var r=resolveROM(path);
-        if (arguments.length==2) {
-            if (r) throw new Error(path+" is Read only.");
-            if (text==null) delete ls[path];
-            else return ls[path]=text;
-        } else {
-            if (r) {
-                return r.rom[r.rel];
-            }
-            return ls[path];
-        }
-    }
-    function lcsExists(path) {
-        var ls=getLocalStorage(path);
-        var r=resolveROM(path);
-        if (r) return r.rel in r.rom;
-        return path in ls;
-    }
-
-    function putDirInfo(path, dinfo, trashed, media) {
-        // trashed: putDirInfo is caused by trashing the file/dir.
-        // if media==MM_RAM, dinfo should be only in ram, otherwise it shoule be only in localStorage
-        if (path==null) throw new Error( "putDir: Null path");
-        if (!isDir(path)) throw  new Error("Not a directory : "+path);
-        if (media==MM_RAM) {
-            ramDisk[path]=dinfo;
-        } else {
-            lcs(path, JSON.stringify(dinfo));
-        }
-        var ppath=up(path);
-        if (ppath==null) return;
-        var pdinfo=getDirInfo(ppath, media);
-        touch(pdinfo, ppath, getName(path), trashed, media);
-    }
-    function isUsingRAMDisk(path) {
-        if (ramDiskUsage=="ALL") return true;
-        if (typeof ramDiskUsage=="object") {
-            if (ramDiskUsage) {
-                return path in ramDiskUsage;
-            }
-        }
-        return false;
-    }
-    function getDirInfo(path ,getMask) {
-        //    var MM_RAM=1, MM_LS=2;
-        if (path==null) throw  new Error("getDir: Null path");
-        if (!endsWith(path,SEP)) path+=SEP;
-        var dinfo={},r={};
-        if (getMask & MM_RAM) {
-            r=ramDisk[path] || {};
-        }
-        if (getMask & MM_LS) {
-            try {
-                var dinfos=lcs(path);
-                if (dinfos) {
-                    dinfo=JSON.parse(dinfos);
-                }
-            } catch (e) {
-                console.log("dinfo err : "+path+" - "+dinfo);
-            }
-        }
-        extend(dinfo, r);
-        extend(dinfo, romParents[path]);
-        for (var i in dinfo) {
-            if (typeof dinfo[i]=="number") {
-                dinfo[i]={lastUpdate:dinfo[i]};
-            }
-        }
-        return dinfo;
-    }
-    function touch(dinfo, path, name, trashed, media) {
-        // media : MM_RAM or MM_LS
-        // path:path of dinfo
-        // trashed: this touch is caused by trashing the file/dir.
-        if (!dinfo[name]) {
-            dinfo[name]={};
-            if (trashed) dinfo[name].trashed=true;
-        }
-        if (!trashed) delete dinfo[name].trashed;
-        dinfo[name].lastUpdate=now();
-        putDirInfo(path ,dinfo, trashed,media);
-    }
-    function removeEntry(dinfo, path, name,media) {// path:path of dinfo
-        if (dinfo[name]) {
-            dinfo[name]={lastUpdate:now(),trashed:true};
-            //delete dinfo[name];
-            putDirInfo(path ,dinfo, true, media);
-        }
-    }
-    function removeEntryWithoutTrash(dinfo, path, name, media) {// path:path of dinfo
-        if (dinfo[name]) {
-            delete dinfo[name];
-            putDirInfo(path ,dinfo, true, media);
-        }
-    }
-    FS.orderByNewest=function (af,bf) {
-        if (!af || !bf || !af.lastUpdate || !bf.lastUpdate) return 0;
-        var a=af.lastUpdate();
-        var b=bf.lastUpdate();
-        return (a<b ? 1 : (a>b ? -1 : 0));
-    };
-    FS.orderByName=function (a,b) {
-        if (a.name && b.name) {
-            a=a.name();
-            b=b.name();
-        }
-        return (a>b ? 1 : (a<b ? -1 : 0));
-    };
-    FS.orderByNumberedName=function (a,b) {
-        if (a.name && b.name) {
-            a=a.name();
-            b=b.name();
-        }
-        function splitByNums(s) {
-            var array=[];
-            var pnum=/^[0-9]*/, pNnum=/^[^0-9]*/;
-            while (s) {
-                s.match(pNnum);
-                array.push(RegExp.lastMatch);
-                s=s.replace(pNnum,"");
-                if (!s) break;
-                s.match(pnum);
-                var v=parseInt(RegExp.lastMatch);
-                array.push(v);
-                s=s.replace(pnum,"");
-            }
-            return array;
-        }
-        var aa=splitByNums(a);
-        var bb=splitByNums(b);
-        var i;
-        for (i=0 ; i<aa.length ; i++) {
-            if (i>=bb.length) return 1; // a = 123_abc2   b=123_abc
-            if (aa[i]>bb[i]) return 1;
-            if (aa[i]<bb[i]) return -1;
-        }
-        if (i<bb.length) return -1;  // a = 123_abc   b=123_abc2
-        return 0;
-    };
-    FS.importDir=function (exported) {
-        var base=FS.get(exported.base);
-        if (!exported.confirm) base.mkdir();
-        var data=exported.data;
-        var res=[];
-        for (var i in data) {
-            var p=base.path()+i;
-            var f=FS.get(p);
-            res.push("["+ ( f.isReadOnly() ? "ro" : f.exists() ? "exists": "new" )+ "]"+p);
-            if (f.isReadOnly()) continue;
-            if (!exported.confirm) {
-                if (f.isDir()) {
-                    var dinfo= getDirInfo(p, MM_LS);
-                    var ovr=JSON.parse(data[i]);
-                    for (var k in ovr) {
-                        dinfo[k]=ovr[k];
-                    }
-                    putDirInfo(p, dinfo,false, MM_LS);
-                } else {
-                    lcs(p, data[i]);
-                }
-            }
-        }
-        return res;
-    };
-    FS.mountROM=function (exported) {
-        console.log("ROM mouted on ",exported.base);
-        roms[exported.base]=exported.data;
-
-        var ps=splitPath(exported.base);
-        var n=ps.pop();
-        var p=ps.join(SEP)+SEP;
-        if (!romParents[p]) romParents[p]={};
-        romParents[p][n]={lastUpdate:new Date().getTime()};
-    };
-    var DONOTEXPORT="DONOTEXPORT";
-    FS.exportDir=function (dir,options) {
-        if (!options) options={};
-        if (typeof dir=="string") dir=FS.get(dir);
-        var res={base: dir.path()};
-        var data=res.data={};
-        e(dir);
-        return res;
-        function e(cfd) {
-            var rp=cfd.relPath(dir);
-            data[rp]=cfd.text();
-            if (!options.keepCR) data[rp]=data[rp].replace(/\r/g,"");
-            if (cfd.isDir()) {
-                if (cfd.rel(DONOTEXPORT).exists()) return;
-                cfd.each(e);
-            }
-        }
-    };
-    /*FS.resolve=function (path, base) {
-        if (base) return FS.get(FS.get(base).rel(path));
-        return FS.get(path);
-    };*/
-    FS.expandPath=function () {
-        return env.expandPath.apply(env,arguments);
-    };
-    FS.resolve=function (path, base) {
-        if (SFile.is(path)) return path;
-        path=env.expandPath(path);
-        if (base && !P.isAbsolutePath(path)) {
-            base=env.expandPath(base);
-            return FS.get(base).rel(path);
-        }
-        return FS.get(path);
-    };
-
-    FS.get=function (path, securityDomain) {
-        if (!securityDomain) securityDomain={};
-        if (path==null) throw  new Error("FS.get: Null path");
-        if (path.isDir) return path;
-        if (securityDomain.topDir && !startsWith(path,securityDomain.topDir)) {
-            throw  new Error(path+" is out of securtyDomain");
-        }
-        if (!isPath(path)) throw  new Error(path+": Path must starts with '/'");
-        var parent=up(path);
-        var name=getName(path);
-        var res;
-        if (isDir(path)) {
-            var dir=res={};
-            dir.files=function (f,options) {
-                var res=[];
-                dir.each(function (f) {
-                    res.add(f);
-                },options);
-                return res;
-            };
-            dir.each=function (f,options) {
-                dir.ls(options).forEach(function (n) {
-                    var subd=dir.rel(n);
-                    f(subd);
-                });
-            };
-            dir.recursive=function (fun,options) {
-                dir.each(function (f) {
-                    if (f.isDir()) f.recursive(fun);
-                    else fun(f);
-                },options);
-            };
-            dir.listFiles=function (options) {
-                var ord;
-                if (typeof options=="function") ord=options;
-                options=dir.convertOptions(options);
-                if (!ord) ord=options.order;
-                var dinfo=getDirInfo(path,MM_MIX);
-                var res=[];
-                for (var i in dinfo) {
-                    if (!options.includeTrashed && dinfo[i].trashed) continue;
-                    if (options.excludes[path+i] ) continue;
-                    res.push(dir.rel(i));
-                }
-                if (typeof ord=="function" && res.sort) res.sort(ord);
-                return res;
-            };
-            dir.ls=function (options) {
-                var res=dir.listFiles(options);
-                var r=[];
-                res.forEach(function (f) {
-                    r.push(f.name());
-                });
-                return r;
-            };
-            dir.convertOptions=function(options) {
-                if (!options) options={};
-                if (!options.excludes) options.excludes={};
-                if (options.excludes instanceof Array) {
-                    var excludes={};
-                    options.excludes.forEach(function (e) {
-                        if (startsWith(e,"/")) {
-                            excludes[e]=1;
-                        } else {
-                            excludes[path+e]=1;
-                        }
-                    });
-                    options.excludes=excludes;
-                }
-                return options;
-            };
-            dir.isDir=function () {return true;};
-            dir.rel=function (relPath){
-                var paths=splitPath(relPath);
-                var resPath=dir.path();
-                resPath=resPath.replace(/\/$/,"");
-                paths.forEach(function (n) {
-                    if (n==".." || n=="../") resPath=up(resPath);
-                    else {
-                        resPath=resPath.replace(/\/$/,"");
-                        resPath+=SEP+(n=="."||n=="./" ? "": n);
-                    }
-                });
-                return FS.get(resPath, securityDomain);
-            };
-            dir.rm=function () {
-                if (!dir.exists()) throw  new Error(path+": No such dir.");
-                var lis=dir.ls();
-                if (lis.length>0) throw  new Error(path+": Directory not empty");
-                //lcs(path, null);
-                if (parent!=null) {
-                    var r=dir.mediaType();
-                    var pinfo=getDirInfo(parent,r);
-                    removeEntry(pinfo, parent, name,r);
-                }
-            };
-            dir.removeWithoutTrash=function() {
-                var r=dir.mediaType();
-                dir.each(function (f) {
-                    f.removeWithoutTrash();
-                },{includeTrashed:true});
-                lcs(path,null);
-                if (parent!=null) {
-                    var pinfo=getDirInfo(parent,r);
-                    removeEntryWithoutTrash(pinfo, parent, name,r);
-                }
-            };
-            dir.mkdir=function () {
-                dir.touch();
-                //getDirInfo(path,r);
-            };
-            dir.text=function () {
-                return lcs(path);
-            };
-            dir.obj =function () {
-                return JSON.parse(dir.text());
-            };
-            dir.exists=function () {
-                if (path=="/") return true;
-                var pinfo=getDirInfo(parent,MM_MIX);
-                return pinfo && pinfo[name] && !pinfo[name].trashed;
-            };
-            dir.mediaType=function () {
-                return (ramDisk[path] && !localStorage[path]) ? MM_RAM :MM_LS;
-            };
-        } else {
-            var file=res={};
-
-            file.isDir=function () {return false;};
-            file.rm=function () {
-                if (!file.exists()) throw new Error( path+": No such file.");
-                lcs(path, null);
-                if (parent!=null) {
-                    var r=file.mediaType();
-                    var pinfo=getDirInfo(parent,r);
-                    removeEntry(pinfo, parent, name,r);
-                }
-            };
-            file.removeWithoutTrash=function () {
-                if (!file.exists() && !file.isTrashed()) throw new Error( path+": No such file.");
-                lcs(path, null);
-                if (parent!=null) {
-                    var r=file.mediaType();
-                    var pinfo=getDirInfo(parent,r);
-                    removeEntryWithoutTrash(pinfo, parent, name,r);
-                }
-            }
-            file.text=function () {
-                if (arguments.length==0) {
-                    return lcs(path);
-                } else {
-                    lcs(path, arguments[0]);
-                    file.touch();
-                }
-            };
-            file.lines=function () {
-                return file.text().split("\n");
-            };
-            file.obj=function () {
-                if (arguments.length==0) {
-                    var t=file.text();
-                    if (!t) return null;
-                    return JSON.parse(t);
-                } else {
-                    file.text(JSON.stringify(arguments[0]));
-                }
-            };
-            file.copyFrom=function (src, options) {
-                file.text(src.text());
-                if (options.a) file.metaInfo(src.metaInfo());
-            };
-            file.exists=function () {
-                return lcsExists(path);
-            };
-            file.useRAMDisk=function () {
-                // currently file only
-                if (ramDiskUsage=="ALL") return file;
-                ramDiskUsage=ramDiskUsage||{};
-                ramDiskUsage[path]=true;
-                return file;
-            };
-            file.mediaType=function () {
-                return isUsingRAMDisk(path)?MM_RAM:MM_LS;
-            };
-        }
-        res.relPath=function (base) {
-            //  path= /a/b/c   base=/a/b/  res=c
-            //  path= /a/b/c/   base=/a/b/  res=c/
-            //  path= /a/b/c/   base=/a/b/c/d  res= ../
-            //  path= /a/b/c/   base=/a/b/e/f  res= ../../c/
-            var bp=(base.path ? base.path() : base);
-            if (bp.substring(bp.length-1)!=SEP) {
-                throw  new Error(bp+" is not a directory.");
-            }
-            if (path.substring(0,bp.length)!=bp) {
-                return "../"+res.relPath(base.up());
-                //throw path+" is not in "+bp;
-            }
-            return path.substring(bp.length);
-        };
-        res.isTrashed=function () {
-            var m=res.metaInfo();
-            if (!m) return false;
-            return m.trashed;
-        };
-        res.metaInfo=function () {
-            if (parent!=null) {
-                var pinfo;
-                if (arguments.length==0) {
-                    pinfo=getDirInfo(parent,MM_MIX);
-                    return pinfo[name];
-                } else {
-                    var media=res.mediaType();
-                    pinfo=getDirInfo(parent,media);
-                    pinfo[name]=arguments[0];
-                    putDirInfo(parent, pinfo, pinfo[name].trashed, media);
-                }
-            }
-            return {};
-        };
-        res.lastUpdate=function () {
-            return res.metaInfo().lastUpdate;
-        };
-        res.up=function () {
-            if (parent==null) return null; //  path=/
-            return FS.get(parent, securityDomain);
-        };
-        res.path=function () {return path;};
-        res.name=function () {return name;};
-        res.truncExt=function (ext) {
-            return name.substring(0,name.length-ext.length);
-        };
-        res.touch=function () {
-            if (parent==null) return ; //  path=/
-            var r=res.mediaType();
-            var pinfo=getDirInfo(parent,r);
-            touch(pinfo, parent, name, false, r);
-        };
-        res.isReadOnly=function () {
-            var r=resolveROM(path);
-            return !!r;
-        };
-        res.startsWith=function (pre) {
-            return startsWith(name, pre);
-        };
-        res.endsWith=function (post) {
-            return endsWith(name, post);
-        };
-        res.equals=function (o) {
-            return (o && typeof o.path=="function" && o.path()==path);
-        };
-        res.toString=function (){
-            return path;
-        };
-        res.isSFile=function (){return true;};
-        return res;
-    };
-    function up(path) {
-        if (path==SEP) return null;
-        //                       path=/a/b/c/               /a/b/c
-        var s=splitPath(path);  //  s=["","a","b","c/"]     ["","a","b","c"]
-        s[s.length-1]=""; //        s=["","a","b",""]       ["","a","b",""]
-        return  s.join(SEP) ;  //     /a/b/                 /a/b/
-    }
-    function isPath(path) {
-        return startsWith(path,SEP);
-    }
-    function isDir(path) {
-        return endsWith(path,SEP);
-    }
-    function getName(path) {  //  a/b/c  => c    a/b/c/  => c/
-        var patha=splitPath(path);
-        return patha[patha.length-1];
-        /*
-        if (patha[patha.length-1]=="") {
-            name=patha[patha.length-2]+SEP;
-        } else {
-            name=patha[patha.length-1];
-        }
-        return name;*/
-    }
-    FS.scan=function () {
-        for (var path in localStorage) {
-            if (!isPath(path)) continue;
-            var p=up(path);
-            if (p==null) continue;
-            var dinfo=getDirInfo(p, MM_LS);
-            var name=getName(path);
-            touch(dinfo, p , name, dinfo[name] && dinfo[name].trashed, MM_LS);
-        }
-    };
-    FS.dump=function () {
-        for (var i in localStorage) {
-            console.log(i);
-        }
-    };
-    FS.ls=function (path) {
-        return FS.get(path).ls();
-    };
-    return FS;
-});
-
-requireSimulator.setName('HttpHelper');
-function HttpHelper(options) {
-    var $h={};
-    var lineMark=options.lineMark;
-    $h.buf=$("<div>");
-    $h.bufs=[$h.buf];
-    $h.maxLineNo=-1;
-    $h.cur=function () {
-        return $h.bufs[$h.bufs.length-1];
-    };
-    function mon(s) {
-        if (typeof s=="string") return s;
-        if (!s[0]) throw s+ " is not jquery obj";
-        return "<"+s[0].tagName+">"+s.html()+"</"+s[0].tagName+">";
-    }
-    $h.p=function (s) {
-        if (typeof s=="string") {
-            if (s.length>0) {
-                s=$("<span>").text(s);
-            } else {
-                s=null;
-            }
-        }
-        //console.log("Append - "+mon(s)+" to "+mon($h.cur()));
-        if ($h.cur()) {
-            if ($h.lineNo>$h.maxLineNo) {
-                $h.maxLineNo=$h.lineNo;
-                $h.cur().append($("<a>").attr({id:lineMark+"-"+$h.lineNo, name:lineMark+"-"+$h.lineNo}));
-            }
-            if (s) $h.cur().append(s);
-        } else {
-            console.log("Warning - Stack underflow");
-        }
-    };
-    $h.enter=function (s) {
-        //console.log("Enter - "+s+"  size="+$h.bufs.length);
-        if (typeof s=="string") s=$(s);
-        $h.bufs.push(s);
-    };
-    $h.exit=function () {
-        var s=$h.bufs.pop();
-        $h.p(s);
-        //console.log("Exit - "+s.html()+"  size="+$h.bufs.length);
-    };
-    $h.h=function (s) {
-        return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-    };
-    return $h;
-}
-requireSimulator.setName('Arrow');
-Arrow=function () {
-    var A={};
-    A.show=function (t) {
-        if (typeof t=="string") t=$(t);
-        if (t.length==0) return false;
-        var b=$.data(t[0],"blinking");
-        if (b=="t") return;
-        $.data(t[0],"blinking","t");
-        var cnt=3;
-        function on() {
-            t.addClass("tutorial-highlight");
-            setTimeout(off,200);
-        }
-        function off() {
-            t.removeClass("tutorial-highlight");
-            if (cnt-->0) setTimeout(on,200);
-            else clear();
-        }
-        on();
-        function clear() {
-            cnt=0;
-            $.data(t[0],"blinking","f");
-        }
-        t.click(function () {
-            clear();
-        });
-    };
-    A.showOld=function (t) {
-        if (typeof t=="string") t=$(t);
-        if (t.length==0) return false;
-        var p=t.offset();
-        var arrow=$("<img>").attr({src:"images/arrow0.png"}).css(
-                {font: "40px", position: "absolute", left:p.left, top:p.top+t.height(), color:"red", zIndex:1000,
-                    "z-index":1000}).
-                appendTo("body");
-        var cnt=0;
-        function up() {
-            if (!arrow) return;
-            arrow.attr({ src:"images/arrow"+cnt+".png" });
-            cnt=(cnt+1)%4;
-        }
-        setInterval(up,250);
-        t.click(function () {
-           if (!arrow) return;
-           arrow.remove();
-           arrow=null;
-        });
-        return true;
-    };
-    return A;
-}();
 requireSimulator.setName('Util');
 Util=(function () {
 
@@ -2191,16 +783,1363 @@ function Base64_From_ArrayBuffer(ary_buffer){
     return base64;
 }
 
-
+function privatize(o){
+    if (o.__privatized) return o;
+    var res={__privatized:true};
+    for (var n in o) {
+        (function (n) {
+            var m=o[n];
+            if (n.match(/^_/)) return;
+            if (typeof m!="function") return;
+            res[n]=function () {
+                var r=m.apply(o,arguments);
+                return r;
+            };
+        })(n);
+    }
+    return res;
+}
 
 return {
     getQueryString:getQueryString,
     endsWith: endsWith, startsWith: startsWith,
     Base64_To_ArrayBuffer:Base64_To_ArrayBuffer,
-    Base64_From_ArrayBuffer:Base64_From_ArrayBuffer
+    Base64_From_ArrayBuffer:Base64_From_ArrayBuffer,
+    privatize: privatize
 };
 })();
 
+requireSimulator.setName('SFile');
+define(["Contents","extend","assert","PathUtil","Util"],
+function (C,extend,A,P,Util) {
+
+var SFile=function (fs, path) {
+    A.is(path, P.Absolute);
+    A(fs && fs.getReturnTypes);
+    this._path=path;
+    this.fs=fs;
+    if (this.isDir() && !P.isDir(path)) {
+        this._path+=P.SEP;
+    }
+};
+SFile.is=function (path) {
+    return path && typeof (path.isSFile)=="function" && path.isSFile();
+};
+function getPath(f) {
+    if (SFile.is(f)) {
+        return f.path();
+    } else {
+        A.is(f,P.Absolute);
+        return f;
+    }
+}
+SFile.prototype={
+    isSFile: function (){return true;},
+    setPolicy: function (p) {
+        if (this.policy) throw new Error("policy already set");
+        this.policy=p;
+        return this._clone();
+    },
+    _clone: function (){
+        return this._resolve(this.path());
+    },
+    _resolve: function (path, options) {
+        var res;
+        options=options||{};
+        if (SFile.is(path)) {
+            res=path;
+        } else {
+            A.is(path,P.Absolute);
+            var topdir;
+            var policy=options.policy || this.policy;
+            if (policy && (topdir=policy.topDir)) {
+                if (topdir.path) topdir=topdir.path();
+                if (!P.startsWith(path, topdir)) {
+                    throw new Error(path+": cannot access. Restricted to "+topdir);
+                }
+            }
+            res=this.fs.getRootFS().get(path);
+            res.policy=policy;
+        }
+        if (res.policy) {
+            return Util.privatize(res);
+        } else {
+            return res;
+        }
+    },
+    contains: function (file) {
+        A(SFile.is(file),file+" shoud be a SFile object.");
+        if (!this.isDir()) return false;
+        return P.startsWith( file.path(), this.path());
+    },
+    // Path from Root
+    path: function () {
+        return this._path;//this.fs.getPathFromRootFS(this.pathT);
+    },
+    // Path from This fs
+    /*pathInThisFS: function () {
+        return this.pathT;
+    },*/
+    name: function () {
+        return P.name(this.path());
+    },
+    truncExt: function (ext) {
+        return P.truncExt(this.path(),ext);
+    },
+    ext: function () {
+        return P.ext(this.path());
+    },
+    relPath: function (base) {
+        // base should be SFile or Path from rootFS
+        var bp=(base.path ?
+                base.path() :
+                base );
+        return P.relPath(this.path(), A.is(bp,P.Absolute) );
+    },
+    up:function () {
+        var pathR=this.path();
+        var pa=P.up(pathR);
+        if (pa==null) return null;
+        return this._resolve(pa);
+    },
+    rel: function (relPath) {
+        A.is(relPath, P.Relative);
+        this.assertDir();
+        var pathR=this.path();
+        return this._resolve(P.rel(pathR, relPath));
+    },
+    startsWith: function (pre) {
+        return P.startsWith(this.name(),pre);
+    },
+    endsWith: function (post) {
+        return P.endsWith(this.name(),post);
+    },
+    equals:function (o) {
+        return (o && typeof o.path=="function" && o.path()==this.path());
+    },
+    toString:function (){
+        return this.path();
+    },
+    //Common
+    touch: function () {
+        this.fs.touch(this.path());
+    },
+    isReadOnly: function () {
+        this.fs.isReadOnly(this.path());
+    },
+    isTrashed:function () {
+        var m=this.metaInfo();
+        if (!m) return false;
+        return m.trashed;
+    },
+    metaInfo: function () {
+        if (arguments.length==0) {
+            return this.getMetaInfo.apply(this,arguments);
+        } else {
+            return this.setMetaInfo.apply(this,arguments);
+        }
+    },
+    getMetaInfo: function (options) {
+        return this.fs.getMetaInfo(this.path(),options);
+    },
+    setMetaInfo: function (info, options) {
+        return this.fs.setMetaInfo(this.path(),info, options);
+    },
+    lastUpdate:function () {
+        A(this.exists());
+        return this.metaInfo().lastUpdate;
+    },
+    /*rootFS: function () {
+        return this.fs.getRootFS();
+    },*/
+    exists: function (options) {
+        options=options||{};
+        var p=this.fs.exists(this.path(),options);
+        if (p || options.noFollowLink) {
+            return p;
+        } else {
+            return this._resolveLinkNoPolicy().exists({noFollowLink:true});
+        }
+    },
+    /*copyTo: function (dst, options) {
+        this.fs.cp(this.path(),getPath(dst),options);
+    },*/
+    rm: function (options) {
+        options=options||{};
+        if (!this.exists({noFollowLink:true})) {
+            var l=this._resolveLinkNoPolicy();
+            if (!this.equals(l)) return l.rm(options);
+        }
+        if (this.isDir() && (options.recursive||options.r)) {
+            this.each(function (f) {
+                f.rm(options);
+            });
+        }
+        var pathT=this.path();
+        this.fs.rm(pathT, options);
+    },
+    removeWithoutTrash: function (options) {
+        options=options||{};
+        options.noTrash=true;
+        this.rm(options);
+    },
+    isDir: function () {
+        return this.fs.isDir(this.path());
+    },
+    // File
+    text:function () {
+        var l=this._resolveLinkNoPolicy();
+        if (!this.equals(l)) return l.text.apply(l,arguments);
+        if (arguments.length>0) {
+            this.setText(arguments[0]);
+        } else {
+            return this.getText();
+        }
+    },
+    setText:function (t) {
+        A.is(t,String);
+        this.fs.setContent(this.path(), t);
+    },
+    getText:function (t) {
+        return this.fs.getContent(this.path(), {type:String});
+    },
+    isText: function () {
+        return this.fs.isText(this.path());
+    },
+    setBytes:function (b) {
+        A.is(t,ArrayBuffer);
+        return this.fs.setContent(b);
+    },
+    getBytes:function (t) {
+        return this.fs.getContent(this.path(), {type:ArrayBuffer});
+    },
+    getURL: function () {
+        return this.fs.getURL(this.path());
+    },
+    lines:function () {
+        return this.text().split("\n");
+    },
+    obj: function () {
+        var file=this;
+        if (arguments.length==0) {
+            var t=file.text();
+            if (!t) return null;
+            return JSON.parse(t);
+        } else {
+            file.text(JSON.stringify(A.is(arguments[0],Object) ));
+        }
+    },
+    copyTo: function (dst, options) {
+        return dst.copyFrom(this,options);
+    },
+    copyFrom: function (src, options) {
+        var dst=this;
+        var options=options||{};
+        var srcIsDir=src.isDir();
+        var dstIsDir=dst.isDir();
+        if (!srcIsDir && dstIsDir) {
+            dst=dst.rel(src.name());
+            A(!dst.isDir(), dst+" is a directory.");
+            dstIsDir=false;
+        }
+        if (srcIsDir && !dstIsDir) {
+           this.err("Cannot move dir to file");
+        } else if (!srcIsDir && !dstIsDir) {
+            if (options.echo) options.echo(src+" -> "+dst);
+            return this.fs.cp(A.is(src.path(), P.Absolute), dst.path(),options);
+            /*var srcc=src.getText(); // TODO
+            var res=dst.setText(srcc);
+            if (options.a) {
+                dst.setMetaInfo(src.getMetaInfo());
+            }
+            return res;*/
+        } else {
+            A(srcIsDir && dstIsDir);
+            src.each(function (s) {
+                dst.rel(s.name()).copyFrom(s, options);
+            });
+        }
+        //file.text(src.text());
+        //if (options.a) file.metaInfo(src.metaInfo());
+    },
+    moveFrom: function (src, options) {
+        var res=this.copyFrom(src,options);
+        src.rm({recursive:true});
+        return res;//this.fs.mv(getPath(src),this.path(),options);
+    },
+    // Dir
+    assertDir:function () {
+        A.is(this.path(),P.Dir);
+        return this;
+    },
+    /*files:function (f,options) {
+        var dir=this.assertDir();
+        var res=[];
+        this.each(function (f) {
+            res.add(f);
+        },options);
+        return res;
+    },*/
+    each:function (f,options) {
+        var dir=this.assertDir();
+        dir.listFiles(options).forEach(f);
+    },
+    recursive:function (fun,options) {
+        var dir=this.assertDir();
+        dir.each(function (f) {
+            if (f.isDir()) f.recursive(fun);
+            else fun(f);
+        },options);
+    },
+    listFiles:function (options) {
+        A(options==null || typeof options=="object");
+        var dir=this.assertDir();
+        var l=this._resolveLinkNoPolicy();
+        if (!this.equals(l)) {
+            return l.listFiles.apply(l,arguments).map(function (f) {
+                return dir.rel(f.name());
+            });
+        }
+        var path=this.path();
+        var ord;
+        if (typeof options=="function") ord=options;
+        options=dir.convertOptions(options);
+        if (!ord) ord=options.order;
+        var di=this.fs.opendir(path, options);
+        var res=[];
+        for (var i=0;i<di.length; i++) {
+            var name=di[i];
+            //if (!options.includeTrashed && dinfo[i].trashed) continue;
+            if (options.excludes[path+name] ) continue;
+            res.push(dir.rel(name));
+        }
+        if (typeof ord=="function" && res.sort) res.sort(ord);
+        return res;
+    },
+    ls:function (options) {
+        A(options==null || typeof options=="object");
+        var dir=this.assertDir();
+        var res=dir.listFiles(options);
+        return res.map(function (f) {
+            return f.name();
+        });
+    },
+    convertOptions:function(options) {
+        var dir=this.assertDir();
+        var pathR=this.path();
+        if (!options) options={};
+        if (!options.excludes) options.excludes={};
+        if (options.excludes instanceof Array) {
+            var excludes={};
+            options.excludes.forEach(function (e) {
+                if (P.startsWith(e,"/")) {
+                    excludes[e]=1;
+                } else {
+                    excludes[pathR+e]=1;
+                }
+            });
+            options.excludes=excludes;
+        }
+        return A.is(options,{excludes:{}});
+    },
+    mkdir: function () {
+        this.touch();
+    },
+    link: function (to,options) {// % ln to path
+        to=this._resolve(A(to));
+        this.fs.link(this.path(),to.path(),options);
+    },
+    _resolveLinkOpt: function (options) {
+        var l=this.fs.resolveLink(this.path());
+        A.is(l,P.Absolute);
+        return this._resolve(l, options);
+    },
+    _resolveLinkNoPolicy: function () {
+        return this._resolveLinkOpt({policy:{}});
+    },
+    resolveLink:function () {
+        return this._resolveLinkOpt();
+    },
+    isLink: function () {
+        return this.fs.isLink(this.path());
+    }
+};
+return SFile;
+});
+
+requireSimulator.setName('FS2');
+define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M,assert,SFile){
+    var FS=function () {
+    };
+    function stub(n) {
+        throw new Error (n+" is STUB!");
+    }
+    extend(FS.prototype, {
+        err: function (path, mesg) {
+            throw new Error(path+": "+mesg);
+        },
+        // mounting
+        fstab: function () {
+            return this._fstab=this._fstab||[];//[{fs:this, path:P.SEP}];
+        },
+        resolveFS:function (path, options) {
+            assert.is(path,P.Absolute);
+            var res;
+            this.fstab().forEach(function (tb) {
+                if (res) return;
+                if (P.startsWith(path, tb.path)) {
+                    res=tb.fs;
+                }
+            });
+            if (!res) res=this; //this.err(path,"Cannot resolve");
+            return assert.is(res,FS);
+        },
+        isReadOnly: function (path, options) {// mainly for check ENTIRELY read only
+            stub("isReadOnly");
+        },
+        mounted: function (parentFS, mountPoint ) {
+            assert.is(arguments,[FS,P.AbsDir]);
+            this.parentFS=parentFS;
+            this.mountPoint=mountPoint;
+        },
+        relFromMountPoint: function (path) {
+            assert.is(path, P.Absolute);
+            if (this.parentFS) {
+                assert.is(this.mountPoint, P.AbsDir);
+                return P.relPath(path, this.mountPoint);
+            } else {
+                return P.relPath(path, P.SEP);
+            }
+        },
+        dirFromFstab: function (path, options) {
+            assert.is(path, P.AbsDir);
+            var res=(options||{}).res || [];
+            this.fstab().forEach(function (tb) {
+                if (P.up( tb.path )==path) res.push(P.name(tb.path));
+            });
+            return res;
+        },
+        getRootFS: function () {
+            var res;
+            for (var r=this;r;r=r.parentFS){res=r;}
+            return assert.is(res,FS);
+        },
+        //-------- end of mouting
+        //-------- spec
+        getReturnTypes: function (path, options) {
+            //{getContent:String|DataURL|ArrayBuffer|OutputStream|Writer
+            //   ,opendir:Array|...}
+            stub("");
+        },
+        //-------  for file
+        getContent: function (path, options) {
+            // options:{type:String|DataURL|ArrayBuffer|OutputStream|Writer}
+            // succ : [type],
+            stub("");
+        },
+        setContent: function (path, content, options) {
+            // content: String|ArrayBuffer|InputStream|Reader
+            stub("");
+        },
+        getMetaInfo: function (path, options) {
+            stub("");
+        },
+        setMetaInfo: function (path, info, options) {
+            stub("");
+        },
+        mkdir: function (path, options) {
+            stub("mkdir");
+        },
+        touch: function (path) {
+            stub("touch");
+        },
+        exists: function (path, options) {
+            // exists return false if path is existent by follwing symlink
+            stub("exists");
+        },
+        opendir: function (path, options) {
+            //ret: [String] || Stream<string> // https://nodejs.org/api/stream.html#stream_class_stream_readable
+            stub("opendir");
+        },
+        cp: function(path, dst, options) {
+            assert.is(arguments,[P.Absolute,P.Absolute]);
+            options=options||{};
+            var srcIsDir=this.isDir(path);
+            var dstIsDir=this.resolveFS(dst).isDir(dst);
+            if (!srcIsDir && !dstIsDir) {
+                var cont=this.getContent(path);
+                var res=this.resolveFS(dst).setContent(dst,cont);
+                if (options.a) {
+                    //console.log("-a", this.getMetaInfo(path));
+                    this.setMetaInfo(dst, this.getMetaInfo(path));
+                }
+                return res;
+            } else {
+                throw "only file to file supports";
+            }
+        },
+        mv: function (path,to,options) {
+            this.cp(path,to,options);
+            return this.rm(path,{r:true});
+        },
+        rm:function (path, options) {
+            stub("");
+        },
+        link: function (path, to, options) {
+            throw new Error("This FS not support link.");
+        },
+        getURL: function (path) {
+            stub("");
+        }
+    });
+    //res=[]; for (var k in a) { res.push(k); } res;
+    FS.delegateMethods=function (prototype,  methods) {
+        for (var n in methods) {
+            (function (n){
+                prototype[n]=function () {
+                    var path=arguments[0];
+                    assert.is(path,P.Absolute);
+                    var fs=this.resolveFS(path);
+                    //console.log(n, f.fs===this  ,f.fs, this);
+                    if (fs!==this) {
+                        //arguments[0]=f.path;
+                        return fs[n].apply(fs, arguments);
+                    } else {
+                        return methods[n].apply(this, arguments);
+                    }
+                };
+            })(n);
+        }
+    };
+    FS.delegateMethods(FS.prototype, {
+        assertWriteable: function (path) {
+            if (this.isReadOnly(path)) this.err(path, "read only.");
+        },
+        mount: function (path, fs, options) {
+            assert.is(arguments,[P.AbsDir, FS] );
+            if (this.exists(path)) {
+                throw new Error(path+": Directory exists");
+            }
+            var parent=P.up(path);
+            if (parent==null) throw new Error("Cannot mount on root");
+            if (!this.exists(parent)) {
+                throw new Error(path+": Parent Directory not exist");
+            }
+            fs.mounted(this, path);
+            this.fstab().unshift({path:path, fs:fs});
+        },
+        getContentType: function (path, options) {
+            var e=P.ext(path);
+            return M[e] || (options||{}).def || "text/plain";
+        },
+        isText:function (path) {
+            var m=this.getContentType(path);
+            return P.startsWith( m, "text");
+        },
+        assertExist: function (path, options) {
+            if (!this.exists(path, options)) {
+                this.err(path, ": No such "+(P.isDir(path)?"directory":"file"));
+            }
+        },
+        isDir: function (path,options) {
+            return P.isDir(path);
+        },
+        find: function (path, options) {
+            assert.is(arguments,[P.Absolute]);
+            var ls=this.opendir(path, options);
+            var t=this;
+            var res=[path];
+            ls.forEach(function (e) {
+                var ep=P.rel(path, e);
+                if (P.isDir(ep)) {
+                    var fs=t.resolveFS(ep);
+                    res=res.concat(
+                            fs.find( ep ,options)
+                    );
+                } else {
+                    res.push( ep );//getPathFromRootFS
+                }
+            });
+            return res;
+        },
+        resolveLink: function (path) {
+            assert.is(path,P.Absolute);
+            // returns non-link path
+            // ln -s /a/b/ /c/d/
+            // resolveLink /a/b/    ->  /a/b/
+            // resolveLink /c/d/e/f -> /a/b/e/f
+            // resolveLink /c/d/non_existent -> /a/b/non_existent
+            // isLink      /c/d/    -> /a/b/
+            // isLink      /c/d/e/f -> null
+            // ln /testdir/ /ram/files/
+            // resolveLink /ram/files/sub/test2.txt -> /testdir/sub/test2.txt
+            // path=/ram/files/test.txt
+            for (var p=path ; p ; p=P.up(p)) {
+                assert(!this.mountPoint || P.startsWith(p, this.mountPoint), p+" is out of mountPoint. path="+path);
+                var l=this.isLink(p);  // p=/ram/files/ l=/testdir/
+                if (l) {
+                    assert(l!=p,"l==p=="+l);
+                    //        /testdir/    test.txt
+                    var np=P.rel(l,P.relPath(path, p));  //   /testdir/test.txt
+                    assert(np!=path,"np==path=="+np);
+                    return assert.is(this.getRootFS().resolveFS(np).resolveLink(np),P.Absolute)  ;
+                }
+                if (this.exists(p)) return path;
+            }
+            return path;
+        },
+        isLink: function (path) {
+            return null;
+        },
+        get: function (path) {
+            assert.eq(this.resolveFS(path), this);
+            return new SFile(this, path);
+            //var r=this.resolveFS(path);
+            //return new SFile(r.fs, r.path);
+        }
+    });
+    return FS;
+});
+
+requireSimulator.setName('WebSite');
+define([], function () {
+    var loc=document.location.href;
+    var devMode=!!loc.match(/html\/dev\//) && !!loc.match(/localhost:3/);
+    var WebSite;
+    if (loc.match(/jsrun\.it/)) {
+        WebSite={
+            urlAliases: {
+                "images/Ball.png":"http://jsrun.it/assets/9/X/T/b/9XTbt.png",
+                "images/base.png":"http://jsrun.it/assets/6/F/y/3/6Fy3B.png",
+                "images/Sample.png":"http://jsrun.it/assets/s/V/S/l/sVSlZ.png",
+                "images/neko.png":"http://jsrun.it/assets/f/D/z/z/fDzze.png",//"http://jsrun.it/assets/j/D/9/q/jD9qQ.png",
+                "images/mapchip.png":"http://jsrun.it/assets/f/u/N/v/fuNvz.png",
+                "images/inputPad.png":"http://jsrun.it/assets/r/K/T/Y/rKTY9.png"
+            },top:"",devMode:devMode, pluginTop: "http://tonyuedit.appspot.com/js/plugins",
+            removeJSOutput:true
+        };
+    } else if (
+      loc.match(/tonyuexe\.appspot\.com/) ||
+      loc.match(/localhost:8887/) ||
+ 	  (
+ 	    /*(
+ 	       loc.match(/^file:/) ||
+ 	       loc.match(/localhost/) ||
+	       loc.match(/tonyuedit\.appspot\.com/)
+	    ) &&*/
+	    loc.match(/\/html\/((dev)|(build))\//)
+	  )
+    ) {
+        WebSite={
+            urlAliases: {
+                "images/Ball.png":"../../images/Ball.png",
+                "images/base.png":"../../images/base.png",
+                "images/Sample.png":"../../images/Sample.png",
+                "images/neko.png":"../../images/neko.png",
+                "images/inputPad.png":"../../images/inputPad.png",
+                "images/mapchip.png":"../../images/mapchip.png",
+                "images/sound.png":"../../images/sound.png",
+                    "images/ecl.png":"../../images/ecl.png"
+            },top:"../..",devMode:devMode
+        };
+    } else {
+        WebSite={
+           urlAliases: {}, top: ".",devMode:devMode
+        };
+    }
+    // from https://w3g.jp/blog/js_browser_sniffing2015
+    var u=window.navigator.userAgent.toLowerCase();
+    WebSite.tablet=(u.indexOf("windows") != -1 && u.indexOf("touch") != -1)
+    || u.indexOf("ipad") != -1
+    || (u.indexOf("android") != -1 && u.indexOf("mobile") == -1)
+    || (u.indexOf("firefox") != -1 && u.indexOf("tablet") != -1)
+    || u.indexOf("kindle") != -1
+    || u.indexOf("silk") != -1
+    || u.indexOf("playbook") != -1;
+    WebSite.mobile=(u.indexOf("windows") != -1 && u.indexOf("phone") != -1)
+    || u.indexOf("iphone") != -1
+    || u.indexOf("ipod") != -1
+    || (u.indexOf("android") != -1 && u.indexOf("mobile") != -1)
+    || (u.indexOf("firefox") != -1 && u.indexOf("mobile") != -1)
+    || u.indexOf("blackberry") != -1;
+
+    if (!WebSite.pluginTop) {
+        WebSite.pluginTop=WebSite.top+"/js/plugins";
+    }
+    WebSite.disableROM={};
+	if (loc.match(/tonyuedit\.appspot\.com/) || loc.match(/localhost:8888/) ) {
+	    //WebSite.disableROM={"ROM_d.js":true};
+	}
+    if (loc.match(/\.appspot\.com/) ||  loc.match(/localhost:888[87]/)) {
+        WebSite.serverType="GAE";
+    }
+    if (loc.match(/localhost:3000/) ) {
+        WebSite.serverType="Node";
+    }
+    if (loc.match(/tonyuexe\.appspot\.com/) ||
+        loc.match(/localhost:8887/)) {
+        WebSite.serverTop=WebSite.top+"/exe"; // Fix NetModule.tonyu!!
+    } else {
+        WebSite.serverTop=WebSite.top+"/edit";// Fix NetModule.tonyu!!
+    }
+    WebSite.sampleImg=WebSite.top+"/images";
+    WebSite.blobPath=WebSite.serverTop+"/serveBlob";        //TODO: urlchange!
+    WebSite.isNW=(typeof process=="object" && process.__node_webkit);
+    WebSite.mp3Disabled=WebSite.isNW;
+    WebSite.tonyuHome="/Tonyu/";
+    WebSite.url={
+        getDirInfo:WebSite.serverTop+"/getDirInfo",
+        getFiles:WebSite.serverTop+"/File2LSSync",
+        putFiles:WebSite.serverTop+"/LS2FileSync"
+    };
+    if (WebSite.isNW) {
+        WebSite.cwd=process.cwd().replace(/\\/g,"/").replace(/\/?$/,"/");
+        if (process.env.TONYU_HOME) {
+            WebSite.tonyuHome=process.env.TONYU_HOME.replace(/\\/g,"/").replace(/\/?$/,"/");
+        } else {
+            WebSite.tonyuHome=WebSite.cwd+"fs/Tonyu/";
+        }
+        WebSite.logdir="/var/log/Tonyu/";
+        WebSite.wwwDir=WebSite.cwd+"www/";
+        WebSite.kernelDir=WebSite.wwwDir+"Kernel/";
+        WebSite.ffmpeg=WebSite.cwd+("ffmpeg/bin/ffmpeg.exe");
+    }
+    if (loc.match(/tonyuedit\.appspot\.com/) ||
+        loc.match(/localhost:888/) ||
+        WebSite.isNW) {
+        WebSite.compiledKernel=WebSite.top+"/Kernel/js/concat.js";
+    } else {
+        WebSite.compiledKernel="http://tonyuexe.appspot.com/Kernel/js/concat.js";
+    }
+    return window.WebSite=WebSite;
+});
+
+requireSimulator.setName('NativeFS');
+define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
+        function (FS,A,P,extend,MIME,DataURL) {
+    var available=(typeof process=="object" && process.__node_webkit);
+    if (!available) {
+        return function () {
+            throw new Error("This system not suppert native FS");
+        };
+    }
+    var assert=A;
+    var fs=require("fs");
+    var NativeFS=function (rootPoint) {
+        if (rootPoint) {
+            A.is(rootPoint, P.AbsDir);
+            this.rootPoint=rootPoint;
+        }
+    };
+    NativeFS.available=true;
+    var SEP=P.SEP;
+    var json=JSON; // JSON changes when page changes, if this is node module, JSON is original JSON
+    var Pro=NativeFS.prototype=new FS;
+    Pro.toNativePath = function (path) {
+        if (!this.rootPoint) return path;
+        A.is(path, P.Absolute);
+        return P.rel( this.rootPoint, this.relFromMountPoint(path));
+    };
+    /*Pro.isText=function (path) {
+        var e=P.ext(path);
+        var m=MIME[e];
+        return P.startsWith( m, "text");
+    };*/
+    FS.delegateMethods(NativeFS.prototype, {
+        getReturnTypes: function(path, options) {
+            assert.is(arguments,[String]);
+            return {
+                getContent: ArrayBuffer, opendir:[String]
+            };
+        },
+        getContent: function (path, options) {
+            options=options||{};
+            A.is(path,P.Absolute);
+            var np=this.toNativePath(path);
+            var t=options.type;
+            if (this.isText(path)) {
+                if (t===String) {
+                    return fs.readFileSync(np, {encoding:"utf8"});
+                } else {
+                    return fs.readFileSync(np);
+                    //TODOvar bin=fs.readFileSync(np);
+                    //throw new Error("TODO: handling bin file "+path);
+                }
+            } else {
+                if (t===String) {
+                    var bin=fs.readFileSync(np);
+                    var d=new DataURL(bin, this.getContentType(path) );
+                    return d.url;
+                } else {
+                    return fs.readFileSync(np);
+                }
+            }
+        },
+        setContent: function (path,content) {
+            A.is(path,P.Absolute);
+            var pa=P.up(path);
+            if (pa) this.getRootFS().mkdir(pa);
+            var np=this.toNativePath(path);
+            var cs=typeof content=="string";
+            if (this.isText(path)) {
+                fs.writeFileSync(np, content)
+                /*if (cs) return fs.writeFileSync(np, content);
+                else {
+                    return fs.writeFileSync(np, content);
+                    //throw new Error("TODO");
+                }*/
+            } else {
+//                console.log("NatFS", cs, content);
+                if (!cs) return fs.writeFileSync(np, content);
+                else {
+                    var d=new DataURL(content);
+                    //console.log(d.buffer);
+                    return fs.writeFileSync(np, d.buffer);
+                }
+            }
+        },
+        getMetaInfo: function(path, options) {
+            this.assertExist(path, options);
+            var s=this.stat(path);
+            s.lastUpdate=s.mtime.getTime();
+            return s;
+        },
+        setMetaInfo: function(path, info, options) {
+
+            //options.lastUpdate
+
+            //TODO:
+        },
+        isReadOnly: function (path) {
+            // TODO:
+            return false;
+        },
+        stat: function (path) {
+            A.is(path,P.Absolute);
+            var np=this.toNativePath(path);
+            return fs.statSync(np);
+        },
+        mkdir: function(path, options) {
+            assert.is(arguments,[P.Absolute]);
+            if (this.exists(path)){
+                if (this.isDir(path)) {
+                    return;
+                } else {
+                    throw new Error(this+" is a file. not a dir.");
+                }
+            }
+            this.assertWriteable(path);
+            var pa=P.up(path);
+            if (pa) this.getRootFS().mkdir(pa);
+            var np=this.toNativePath(path);
+            return fs.mkdirSync(np);
+        },
+        opendir: function (path, options) {
+            assert.is(arguments,[String]);
+            var np=this.toNativePath(path);
+            var ts=P.truncSEP(np);
+            var r=fs.readdirSync(np).map(function (e) {
+                var s=fs.statSync(ts+SEP+e);
+                var ss=s.isDirectory()?SEP:"";
+                return e+ss;
+            });
+            var res=this.dirFromFstab(path);
+            return assert.is(res.concat(r),Array);
+        },
+        rm: function(path, options) {
+            assert.is(arguments,[P.Absolute]);
+            options=options||{};
+            this.assertExist(path);
+            var np=this.toNativePath(path);
+            if (this.isDir(path)) {
+                return fs.rmdirSync(np);
+            } else {
+                return fs.unlinkSync(np);
+            }
+        },
+        exists: function (path, options) {
+            var np=this.toNativePath(path);
+            return fs.existsSync(np);
+        },
+        isDir: function (path) {
+            if (!this.exists(path)) {
+                return P.isDir(path);
+            }
+            return this.stat(path).isDirectory();
+        },
+        /*link: function(path, to, options) {
+        }//TODO
+        isLink:
+        */
+        touch: function (path) {
+            if (!this.exists(path) && this.isDir(path)) {
+                this.mkdir(path);
+            } else if (this.exists(path) && !this.isDir(path) ) {
+                // TODO(setlastupdate)
+            }
+        },
+        getURL:function (path) {
+            return "file:///"+path.replace(/\\/g,"/");
+        }
+    });
+    return NativeFS;
+});
+requireSimulator.setName('LSFS');
+define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,assert,DataURL) {
+    var LSFS = function(storage,options) {
+    	this.storage=storage;
+    	this.options=options||{};
+    };
+    var isDir = P.isDir.bind(P);
+    var up = P.up.bind(P);
+    var endsWith= P.endsWith.bind(P);
+    //var getName = P.name.bind(P);
+    var Path=P.Path;
+    var Absolute=P.Absolute;
+    var SEP= P.SEP;
+    function now(){
+        return new Date().getTime();
+    }
+    LSFS.ramDisk=function () {
+        var s={};
+        s[P.SEP]="{}";
+        return new LSFS(s);
+    };
+    LSFS.now=now;
+    LSFS.prototype=new FS;
+    //private methods
+    LSFS.prototype.resolveKey=function (path) {
+        assert.is(path,P.Absolute);
+        return P.SEP+this.relFromMountPoint(path);
+    };
+    LSFS.prototype.getItem=function (path) {
+        assert.is(path,P.Absolute);
+        var key=this.resolveKey(path);
+        return this.storage[key];
+    };
+    LSFS.prototype.setItem=function (path, value) {
+        assert.is(path,P.Absolute);
+        var key=this.resolveKey(path);
+        /*if (key.indexOf("..")>=0) {
+            console.log(path,key,value);
+        }*/
+        assert(key.indexOf("..")<0);
+        assert(P.startsWith(key,P.SEP));
+        this.storage[key]=value;
+    };
+    LSFS.prototype.removeItem=function (path) {
+        assert.is(path,P.Absolute);
+        var key=this.resolveKey(path);
+        delete this.storage[key];
+    };
+    LSFS.prototype.itemExists=function (path) {
+        assert.is(path,P.Absolute);
+        var key=this.resolveKey(path);
+        return key in this.storage;
+    };
+    LSFS.prototype.inMyFS=function (path){
+        return !this.mountPoint || P.startsWith(path, this.mountPoint);
+    };
+    LSFS.prototype.getDirInfo=function getDirInfo(path) {
+        assert.is(arguments,[P.AbsDir]);
+        if (path == null) throw new Error("getDir: Null path");
+        if (!endsWith(path, SEP)) path += SEP;
+        assert(this.inMyFS(path));
+        var dinfo = {};
+        try {
+            var dinfos = this.getItem(path);
+            if (dinfos) {
+                dinfo = JSON.parse(dinfos);
+            }
+        } catch (e) {
+            console.log("dinfo err : " , path , dinfos);
+        }
+        return dinfo;
+    };
+    LSFS.prototype.putDirInfo=function putDirInfo(path, dinfo, trashed) {
+  	    assert.is(arguments,[P.AbsDir, Object]);
+  	    if (!isDir(path)) throw new Error("Not a directory : " + path);
+  	    assert(this.inMyFS(path));
+  	    this.setItem(path, JSON.stringify(dinfo));
+        var ppath = up(path);
+        if (ppath == null) return;
+        if (!this.inMyFS(ppath)) {
+            assert(this.getRootFS()!==this);
+            this.getRootFS().touch(ppath);
+            return;
+        }
+        var pdinfo = this.getDirInfo(ppath);
+        this._touch(pdinfo, ppath, P.name(path), trashed);
+    };
+    LSFS.prototype._touch=function _touch(dinfo, path, name, trashed) {
+        // path:path of dinfo
+        // trashed: this touch is caused by trashing the file/dir.
+        assert.is(arguments,[Object, String, String]);
+        assert(this.inMyFS(path));
+        if (!dinfo[name]) {
+            dinfo[name] = {};
+            if (trashed) dinfo[name].trashed = true;
+        }
+        if (!trashed) delete dinfo[name].trashed;
+        dinfo[name].lastUpdate = now();
+        this.putDirInfo(path, dinfo, trashed);
+    };
+    LSFS.prototype.removeEntry=function removeEntry(dinfo, path, name) { // path:path of dinfo
+        assert.is(arguments,[Object, String, String]);
+        if (dinfo[name]) {
+            dinfo[name] = {
+                lastUpdate: now(),
+                trashed: true
+            };
+            this.putDirInfo(path, dinfo, true);
+        }
+    };
+    LSFS.prototype.removeEntryWithoutTrash=function (dinfo, path, name) { // path:path of dinfo
+        assert.is(arguments,[Object, String, String]);
+        if (dinfo[name]) {
+            delete dinfo[name];
+            this.putDirInfo(path, dinfo, true);
+        }
+    };
+    // public methods (with resolve fs)
+    FS.delegateMethods(LSFS.prototype, {
+        isReadOnly: function () {return this.options.readOnly;},
+        getReturnTypes: function(path, options) {
+            assert.is(arguments,[String]);
+            return {
+                getContent: String, opendir:[String]
+            };
+        },
+        getContent: function(path, options) {
+            assert.is(arguments,[Absolute]);
+            this.assertExist(path);
+            if (options && options.type==ArrayBuffer) {
+                var d=new DataURL(this.getItem(path));
+                return d.buffer;
+            }
+            return this.getItem(path);
+        },
+        setContent: function(path, content, options) {
+            assert.is(arguments,[Absolute,String]);
+            this.assertWriteable(path);
+            this.setItem(path, content);
+            this.touch(path);
+        },
+        getMetaInfo: function(path, options) {
+            this.assertExist(path, {includeTrashed:true});
+            assert.is(arguments,[Absolute]);
+            if (path==P.SEP) {
+                return {};
+            }
+            var parent=assert(P.up(path));
+            if (!this.inMyFS(parent)) {
+                return {};
+            }
+            var name=P.name(path);
+            assert.is(parent,P.AbsDir);
+            var pinfo=this.getDirInfo(parent);
+            return assert(pinfo[name]);
+        },
+        setMetaInfo: function(path, info, options) {
+            assert.is(arguments,[String,Object]);
+            this.assertWriteable(path);
+            var parent=assert(P.up(path));
+            if (!this.inMyFS(parent)) {
+                return;
+            }
+            var pinfo=this.getDirInfo(parent);
+            var name=P.name(path);
+            pinfo[name]=info;
+            this.putDirInfo(parent, pinfo, pinfo[name].trashed);
+        },
+        mkdir: function(path, options) {
+            assert.is(arguments,[Absolute]);
+            this.assertWriteable(path);
+			this.touch(path);
+        },
+        opendir: function(path, options) {
+            assert.is(arguments,[String]);
+            //succ: iterator<string> // next()
+            // options: {includeTrashed:Boolean}
+            options=options||{};
+            var inf=this.getDirInfo(path);
+            var res=this.dirFromFstab(path);
+            for (var i in inf) {
+                assert(inf[i]);
+                if (!inf[i].trashed || options.includeTrashed) res.push(i);
+            }
+            return assert.is(res,Array);
+        },
+        rm: function(path, options) {
+            assert.is(arguments,[Absolute]);
+            options=options||{};
+            this.assertWriteable(path);
+            var parent=P.up(path);
+            if (parent==null || !this.inMyFS(parent)) {
+                throw new Error(path+": cannot remove. It is root of this FS.");
+            }
+            this.assertExist(path,{includeTrashed:options.noTrash });
+            if (P.isDir(path)) {
+                var lis=this.opendir(path);
+                if (lis.length>0) {
+                    this.err(path,"Directory not empty");
+                }
+                if (options.noTrash) {
+                    this.removeItem(path);
+                }
+            } else {
+                this.removeItem(path);
+            }
+            var pinfo=this.getDirInfo(parent);
+            if (options.noTrash) {
+                this.removeEntryWithoutTrash(pinfo, parent, P.name(path) );
+            } else {
+                this.removeEntry(pinfo, parent, P.name(path) );
+            }
+        },
+        exists: function (path,options) {
+            assert.is(arguments,[Absolute]);
+            options=options||{};
+            var name=P.name(path);
+            var parent=P.up(path);
+            if (parent==null || !this.inMyFS(parent)) return true;
+            var pinfo=this.getDirInfo(parent);
+            var res=pinfo[name];
+            if (res && res.trashed && this.itemExists(path)) {
+                if (this.isDir(path)) {
+
+                } else {
+                    assert.fail("Inconsistent "+path+": trashed, but remains in storage");
+                }
+            }
+            if (!res && this.itemExists(path)) {
+                assert.fail("Inconsistent "+path+": not exists in metadata, but remains in storage");
+            }
+            if (res && !res.trashed && !res.link && !this.itemExists(path)) {
+                assert.fail("Inconsistent "+path+": exists in metadata, but not in storage");
+            }
+            if (res && !options.includeTrashed) {
+                res=!res.trashed;
+            }
+            return !!res;
+        },
+        link: function(path, to, options) {
+            assert.is(arguments,[P.AbsDir,P.AbsDir]);
+            this.assertWriteable(path);
+            if (this.exists(path)) this.err(path,"file exists");
+            if (P.isDir(path) && !P.isDir(to)) {
+                this.err(path," can not link to file "+to);
+            }
+            if (!P.isDir(path) && P.isDir(to)) {
+                this.err(path," can not link to directory "+to);
+            }
+            var m={};//assert(this.getMetaInfo(path));
+            m.link=to;
+            m.lastUpdate=now();
+            this.setMetaInfo(path, m);
+            //console.log(this.getMetaInfo(path));
+            console.log(this.storage);
+            //console.log(this.getMetaInfo(P.up(path)));
+            assert(this.exists(path));
+            assert(this.isLink(path));
+        },
+        isLink: function (path) {
+            assert.is(arguments,[P.AbsDir]);
+            if (!this.exists(path)) return null;
+            var m=assert(this.getMetaInfo(path));
+            return m.link;
+        },
+        touch: function (path) {
+            assert.is(arguments,[Absolute]);
+            this.assertWriteable(path);
+            if (!this.itemExists(path)) {
+                if (P.isDir(path)) {
+                    this.setItem(path,"{}");
+                } else {
+                    this.setItem(path,"");
+                }
+            }
+            var parent=up(path);
+            if (parent!=null) {
+                if (this.inMyFS(parent)) {
+                    var pinfo=this.getDirInfo(parent);
+                    this._touch(pinfo, parent , P.name(path), false);
+                } else {
+                    assert(this.getRootFS()!==this);
+                    this.getRootFS().touch(parent);
+                }
+            }
+        },
+        getURL: function (path) {
+            return this.getContent(path,{type:String});
+        }
+    });
+    return LSFS;
+
+});
+requireSimulator.setName('Env');
+define(["assert","PathUtil"],function (A,P) {
+    var Env=function (value) {
+        this.value=value;
+    };
+    Env.prototype={
+            expand:function (str) {
+                A.is(str,String);
+                var t=this;
+                return str.replace(/\$\{([a-zA-Z0-9_]+)\}/g, function (a,key) {
+                    return t.get(key);
+                });
+            },
+            expandPath:function (path) {
+                A.is(path,String);
+                path=this.expand(path);
+                path=path.replace(/\/+/g,"/");
+                return A.is(path,P.Path);
+            },
+            get: function (key) {
+                return this.value[key];
+            },
+            set: function (key, value) {
+                this.value[key]=value;
+            }
+    };
+    return Env;
+});
+requireSimulator.setName('FS');
+define(["FS2","WebSite","NativeFS","LSFS", "PathUtil","Env","assert","SFile"],
+        function (FS,WebSite,NativeFS,LSFS, P,Env,A,SFile) {
+    var FS={};
+    if (typeof window=="object") window.FS=FS;
+    var rootFS;
+    var env=new Env(WebSite);
+    if (WebSite.isNW) {
+        //var nfsp=process.env.TONYU_FS_HOME || P.rel(process.cwd().replace(/\\/g,"/"), "www/fs/");
+        //console.log("nfsp",nfsp);
+        rootFS=new NativeFS();//(nfsp);
+    } else {
+        rootFS=new LSFS(localStorage);
+    }
+    FS.get=function () {
+        return rootFS.get.apply(rootFS,arguments);
+    };
+    FS.expandPath=function () {
+        return env.expandPath.apply(env,arguments);
+    };
+    FS.resolve=function (path, base) {
+        if (SFile.is(path)) return path;
+        path=env.expandPath(path);
+        if (base && !P.isAbsolutePath(path)) {
+            base=env.expandPath(base);
+            return FS.get(base).rel(path);
+        }
+        return FS.get(path);
+    };
+    FS.mount=function () {
+        return rootFS.mount.apply(rootFS,arguments);
+    };
+    return FS;
+});
+requireSimulator.setName('HttpHelper');
+function HttpHelper(options) {
+    var $h={};
+    var lineMark=options.lineMark;
+    $h.buf=$("<div>");
+    $h.bufs=[$h.buf];
+    $h.maxLineNo=-1;
+    $h.cur=function () {
+        return $h.bufs[$h.bufs.length-1];
+    };
+    function mon(s) {
+        if (typeof s=="string") return s;
+        if (!s[0]) throw s+ " is not jquery obj";
+        return "<"+s[0].tagName+">"+s.html()+"</"+s[0].tagName+">";
+    }
+    $h.p=function (s) {
+        if (typeof s=="string") {
+            if (s.length>0) {
+                s=$("<span>").text(s);
+            } else {
+                s=null;
+            }
+        }
+        //console.log("Append - "+mon(s)+" to "+mon($h.cur()));
+        if ($h.cur()) {
+            if ($h.lineNo>$h.maxLineNo) {
+                $h.maxLineNo=$h.lineNo;
+                $h.cur().append($("<a>").attr({id:lineMark+"-"+$h.lineNo, name:lineMark+"-"+$h.lineNo}));
+            }
+            if (s) $h.cur().append(s);
+        } else {
+            console.log("Warning - Stack underflow");
+        }
+    };
+    $h.enter=function (s) {
+        //console.log("Enter - "+s+"  size="+$h.bufs.length);
+        if (typeof s=="string") s=$(s);
+        $h.bufs.push(s);
+    };
+    $h.exit=function () {
+        var s=$h.bufs.pop();
+        $h.p(s);
+        //console.log("Exit - "+s.html()+"  size="+$h.bufs.length);
+    };
+    $h.h=function (s) {
+        return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    };
+    return $h;
+}
+requireSimulator.setName('Arrow');
+Arrow=function () {
+    var A={};
+    A.show=function (t) {
+        if (typeof t=="string") t=$(t);
+        if (t.length==0) return false;
+        var b=$.data(t[0],"blinking");
+        if (b=="t") return;
+        $.data(t[0],"blinking","t");
+        var cnt=3;
+        function on() {
+            t.addClass("tutorial-highlight");
+            setTimeout(off,200);
+        }
+        function off() {
+            t.removeClass("tutorial-highlight");
+            if (cnt-->0) setTimeout(on,200);
+            else clear();
+        }
+        on();
+        function clear() {
+            cnt=0;
+            $.data(t[0],"blinking","f");
+        }
+        t.click(function () {
+            clear();
+        });
+    };
+    A.showOld=function (t) {
+        if (typeof t=="string") t=$(t);
+        if (t.length==0) return false;
+        var p=t.offset();
+        var arrow=$("<img>").attr({src:"images/arrow0.png"}).css(
+                {font: "40px", position: "absolute", left:p.left, top:p.top+t.height(), color:"red", zIndex:1000,
+                    "z-index":1000}).
+                appendTo("body");
+        var cnt=0;
+        function up() {
+            if (!arrow) return;
+            arrow.attr({ src:"images/arrow"+cnt+".png" });
+            cnt=(cnt+1)%4;
+        }
+        setInterval(up,250);
+        t.click(function () {
+           if (!arrow) return;
+           arrow.remove();
+           arrow=null;
+        });
+        return true;
+    };
+    return A;
+}();
 requireSimulator.setName('Shell');
 define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
     var Shell={cwd:FS.get("/")};
@@ -2236,10 +2175,13 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
         if (!options) options={};
         if (options.v) {
             Shell.echo("cp", from ,to);
+            options.echo=Shell.echo.bind(Shell);
         }
         var f=resolve(from, true);
         var t=resolve(to);
-        if (f.isDir() && t.isDir()) {
+        return f.copyTo(t,options);
+
+        /*if (f.isDir() && t.isDir()) {
             var sum=0;
             f.recursive(function (src) {
                 var rel=src.relPath(f);
@@ -2261,7 +2203,7 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
             return 1;
         } else {
             throw "Cannot copy directory "+f+" to file "+t;
-        }
+        }*/
     };
     Shell.rm=function (file, options) {
         if (!options) options={};
@@ -2394,7 +2336,9 @@ define(["FS","WebSite","Shell"], function (FS,WebSite,sh) {
     };
     if (!WebSite.logging && !WebSite.isNW) {
         var varlog=FS.get("/var/log/");
-        if (varlog.exists()) varlog.removeWithoutTrash();
+        if (varlog.exists() && varlog.fs.storage===localStorage) {
+            varlog.removeWithoutTrash({r:true});
+        }
     }
     Log.append=function (line) {
         if (!doLog) return;
@@ -3466,12 +3410,12 @@ define(["FS","Shell","requestFragment","WebSite"],function (FS,sh,rf,WebSite) {
             var data=info.data;
             for (var rel in data) {
                 var file=base.rel(rel);
-                var lcm=file.metaInfo();
+                var lcm=file.exists({includeTrashed:true}) && file.metaInfo();
                 var rmm=data[rel];
                 cmp(file,rel,lcm,rmm);
             }
             local.recursive(function (file) {
-                var lcm=file.metaInfo();
+                var lcm=file.exists({includeTrashed:true}) && file.metaInfo();
                 var rel=file.relPath(local);
                 var rmm=data[rel];
                 cmp(file,rel,lcm,rmm);
@@ -3530,7 +3474,7 @@ define(["FS","Shell","requestFragment","WebSite"],function (FS,sh,rf,WebSite) {
             //if (options.v) sh.echo("onend",onend);
             if (typeof onend=="function") onend(res);
         }
-        function cmp(f,rel,lcm,rmm) {
+        function cmp(f,rel,lcm,rmm) {// f:localFile
             if (visited[rel]) return ;
             visited[rel]=1;
             if (rmm && (!lcm || lcm.lastUpdate<rmm.lastUpdate)) {
@@ -3540,7 +3484,7 @@ define(["FS","Shell","requestFragment","WebSite"],function (FS,sh,rf,WebSite) {
                             "Download "+f+
                             " trash="+!!rmm.trashed);
             } else if (lcm && (!rmm || lcm.lastUpdate>rmm.lastUpdate)) {
-                var o={text:f.text()};
+                var o=lcm.trashed ? {} : {text:f.text()};
                 var m=f.metaInfo();
                 for (var i in m) o[i]=m[i];
                 uploads[rel]=o;
@@ -3610,10 +3554,10 @@ define(["WebSite"],function (WebSite) {
     return auth;
 });
 requireSimulator.setName('zip');
-define(["FS","Shell","Util"],function (FS,sh,Util) {
+define(["FS","Shell","Util"/*"JSZip","FileSaver"*/],function (FS,sh,Util/*,JSZip,fileSaver*/) {
     if (typeof JSZip=="undefined") return {};
     var zip={};
-    zip.zip=function (dir,options) {
+    zip.zip=function (base,options) {
         var zip = new JSZip();
         function loop(dst, dir) {
             dir.each(function (f) {
@@ -3621,11 +3565,15 @@ define(["FS","Shell","Util"],function (FS,sh,Util) {
                     var sf=dst.folder(f.name());
                     loop(sf, f);
                 } else {
-                    dst.file(f.name(),f.text());
+                    if (f.isText()) {
+                        dst.file(f.name(),f.text());
+                    } else {
+                        dst.file(f.name(),f.getBytes());
+                    }
                 }
             });
         }
-        loop(zip, dir);
+        loop(zip, base);
         //zip.file("Hello.txt", "Hello World\n");
         //var img = zip.folder("images");
         //img.file("smile.gif", imgData, {base64: true});
@@ -3633,11 +3581,16 @@ define(["FS","Shell","Util"],function (FS,sh,Util) {
         return content;
     };
     if (typeof saveAs!="undefined") {
-        sh.dlzip=function (dir) {
-            dir=sh.resolve(dir);
+        zip.dlzip=function (dir) {
             var content=zip.zip(dir);
-            saveAs(content, dir.name().replace(/\//g,"")+".zip");
-        }
+            saveAs(content, dir.name().replace(/\/$/,"")+".zip");
+        };
+        sh.dlzip=function (dir) {
+            dir=sh.resolve(dir||".");
+            zip.dlzip(dir);
+            //var content=zip.zip(dir);
+            //saveAs(content, dir.name().replace(/\//g,"")+".zip");
+        };
     }
     // same as SFileNW.js
     var binMap={".png": "image/png", ".jpg":"image/jpg", ".gif": "image/gif", ".jpeg":"image/jpg",
@@ -3675,6 +3628,9 @@ $(function () {
     if (!projects.exists()) projects.mkdir();
     sh.cd(projects);
     var curDir=projects;
+    if (WebSite.isNW) {
+        $("#loginGrp").hide();
+    }
     function ls() {
         $("#prjItemList").empty();
         var d=[];
@@ -3705,7 +3661,7 @@ $(function () {
                 var tn=f.rel("images/").rel("icon_thumbnail.png");
                 //console.log(tn.path());
                 if (tn.exists()) {
-                    u.$vars.t.attr("src",tn.text());
+                    u.$vars.t.attr("src",tn.getURL());
                 }
             },10);
             //$("#fileItem").tmpl({name: name, href:"project.html?dir="+f.path()}).appendTo("#prjItemList");

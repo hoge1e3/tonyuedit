@@ -1,5 +1,5 @@
-define(["Contents","extend","assert","PathUtil"],
-function (C,extend,A,P) {
+define(["Contents","extend","assert","PathUtil","Util"],
+function (C,extend,A,P,Util) {
 
 var SFile=function (fs, path) {
     A.is(path, P.Absolute);
@@ -23,19 +23,34 @@ function getPath(f) {
 }
 SFile.prototype={
     isSFile: function (){return true;},
-    _clone: function (){
-        return this.fs.getRootFS().get(this.path());
+    setPolicy: function (p) {
+        if (this.policy) throw new Error("policy already set");
+        this.policy=p;
+        return this._clone();
     },
-    _resolve: function (path) {
+    _clone: function (){
+        return this._resolve(this.path());
+    },
+    _resolve: function (path, options) {
         var res;
+        options=options||{};
         if (SFile.is(path)) {
             res=path;
         } else {
             A.is(path,P.Absolute);
+            var topdir;
+            var policy=options.policy || this.policy;
+            if (policy && (topdir=policy.topDir)) {
+                if (topdir.path) topdir=topdir.path();
+                if (!P.startsWith(path, topdir)) {
+                    throw new Error(path+": cannot access. Restricted to "+topdir);
+                }
+            }
             res=this.fs.getRootFS().get(path);
+            res.policy=policy;
         }
-        if (this.wrapper) {
-            return this.wrapper.wrap(res);
+        if (res.policy) {
+            return Util.privatize(res);
         } else {
             return res;
         }
@@ -131,7 +146,7 @@ SFile.prototype={
         if (p || options.noFollowLink) {
             return p;
         } else {
-            return this.resolveLink().exists({noFollowLink:true});
+            return this._resolveLinkNoPolicy().exists({noFollowLink:true});
         }
     },
     /*copyTo: function (dst, options) {
@@ -140,7 +155,7 @@ SFile.prototype={
     rm: function (options) {
         options=options||{};
         if (!this.exists({noFollowLink:true})) {
-            var l=this.resolveLink();
+            var l=this._resolveLinkNoPolicy();
             if (!this.equals(l)) return l.rm(options);
         }
         if (this.isDir() && (options.recursive||options.r)) {
@@ -161,7 +176,7 @@ SFile.prototype={
     },
     // File
     text:function () {
-        var l=this.resolveLink();
+        var l=this._resolveLinkNoPolicy();
         if (!this.equals(l)) return l.text.apply(l,arguments);
         if (arguments.length>0) {
             this.setText(arguments[0]);
@@ -176,6 +191,19 @@ SFile.prototype={
     getText:function (t) {
         return this.fs.getContent(this.path(), {type:String});
     },
+    isText: function () {
+        return this.fs.isText(this.path());
+    },
+    setBytes:function (b) {
+        A.is(t,ArrayBuffer);
+        return this.fs.setContent(b);
+    },
+    getBytes:function (t) {
+        return this.fs.getContent(this.path(), {type:ArrayBuffer});
+    },
+    getURL: function () {
+        return this.fs.getURL(this.path());
+    },
     lines:function () {
         return this.text().split("\n");
     },
@@ -189,6 +217,9 @@ SFile.prototype={
             file.text(JSON.stringify(A.is(arguments[0],Object) ));
         }
     },
+    copyTo: function (dst, options) {
+        return dst.copyFrom(this,options);
+    },
     copyFrom: function (src, options) {
         var dst=this;
         var options=options||{};
@@ -196,22 +227,22 @@ SFile.prototype={
         var dstIsDir=dst.isDir();
         if (!srcIsDir && dstIsDir) {
             dst=dst.rel(src.name());
-            assert(!dst.isDir(), dst+" exists as an directory.");
+            A(!dst.isDir(), dst+" is a directory.");
             dstIsDir=false;
         }
         if (srcIsDir && !dstIsDir) {
            this.err("Cannot move dir to file");
         } else if (!srcIsDir && !dstIsDir) {
-            //this.fs.cp(A.is(src.path(), P.Absolute), this.path(),options);
-            var srcc=src.getText(); // TODO
+            if (options.echo) options.echo(src+" -> "+dst);
+            return this.fs.cp(A.is(src.path(), P.Absolute), dst.path(),options);
+            /*var srcc=src.getText(); // TODO
             var res=dst.setText(srcc);
             if (options.a) {
                 dst.setMetaInfo(src.getMetaInfo());
             }
-            return res;
+            return res;*/
         } else {
             A(srcIsDir && dstIsDir);
-            var t=this;
             src.each(function (s) {
                 dst.rel(s.name()).copyFrom(s, options);
             });
@@ -251,8 +282,12 @@ SFile.prototype={
     listFiles:function (options) {
         A(options==null || typeof options=="object");
         var dir=this.assertDir();
-        var l=this.resolveLink();
-        if (!this.equals(l)) return l.listFiles.apply(l,arguments);
+        var l=this._resolveLinkNoPolicy();
+        if (!this.equals(l)) {
+            return l.listFiles.apply(l,arguments).map(function (f) {
+                return dir.rel(f.name());
+            });
+        }
         var path=this.path();
         var ord;
         if (typeof options=="function") ord=options;
@@ -302,10 +337,16 @@ SFile.prototype={
         to=this._resolve(A(to));
         this.fs.link(this.path(),to.path(),options);
     },
-    resolveLink: function () {
+    _resolveLinkOpt: function (options) {
         var l=this.fs.resolveLink(this.path());
         A.is(l,P.Absolute);
-        return this._resolve(l);
+        return this._resolve(l, options);
+    },
+    _resolveLinkNoPolicy: function () {
+        return this._resolveLinkOpt({policy:{}});
+    },
+    resolveLink:function () {
+        return this._resolveLinkOpt();
     },
     isLink: function () {
         return this.fs.isLink(this.path());

@@ -82,6 +82,9 @@ var reqConf={
             },
             Base64: {
                 exports:"Base64"
+            },
+            FileSaver: {
+                exports:"saveAs"
             }
         },
         "paths": {
@@ -111,6 +114,7 @@ var reqConf={
             //dumpScript: "build/dumpScript",
             buildAll: "build/buildAll",
             runScript: "runtime/runScript",
+            runScript2: "runtime/runScript2",
             copySample: "ide/copySample",
             "Shell": "fs/Shell",
             "ide/wikiEditor": "ide/wikiEditor",
@@ -144,7 +148,7 @@ var reqConf={
             "Key": "runtime/Key",
             "TextRect": "graphics/TextRect",
             "fukidashi": "graphics/fukidashi",
-            "FS": "fs/fs",
+            "FS": "fs/fs2stub",
             "SFileNW": "fs/SFileNW",
             "Tonyu.Project": "ide/TonyuProject",
             "thumbnail": "ide/thumbnail",
@@ -187,6 +191,7 @@ var reqConf={
             importFromTonyu1:"tonyu1/importFromTonyu1",
             forkBlobs: "social/forkBlobs",
             JSZip:"lib/jszip.min",
+            FileSaver:"lib/FileSaver.min",
             plugins:"plugins/plugins",
             exceptionCatcher:"lib/exceptionCatcher",
             Assets:"fs/Assets",
@@ -200,14 +205,16 @@ var reqConf={
             "MIMETypes":"fs2/MIMETypes",
             "NativeFS":"fs2/NativeFS",
             "PathUtil":"fs2/PathUtil",
-            "SandBoxFile":"fs2/SandBoxFile",
             "SFile":"fs2/SFile",
             "Env":"fs2/Env",
             "compiledProject":"lang/compiledProject",
+            "compiledTonyuProject":"ide/compiledTonyuProject",
             "DeferredUtil":"lib/DeferredUtil",
             "NWMenu":"ide/NWMenu",
             "IFrameDialog":"help/IFrameDialog",
             "OggConverter":"ide/OggConverter",
+            "mkrun":"mkrun/mkrun",
+            "mkrunDiag":"mkrun/mkrunDiag",
 
             "foo":"bar"
         },

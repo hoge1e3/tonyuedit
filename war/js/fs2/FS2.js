@@ -10,7 +10,7 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         // mounting
         fstab: function () {
-            return this._fstab=this._fstab||[{fs:this, path:P.SEP}];
+            return this._fstab=this._fstab||[];//[{fs:this, path:P.SEP}];
         },
         resolveFS:function (path, options) {
             assert.is(path,P.Absolute);
@@ -21,7 +21,7 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
                     res=tb.fs;
                 }
             });
-            if (!res) this.err(path,"Cannot resolve");
+            if (!res) res=this; //this.err(path,"Cannot resolve");
             return assert.is(res,FS);
         },
         isReadOnly: function (path, options) {// mainly for check ENTIRELY read only
@@ -97,8 +97,8 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             var srcIsDir=this.isDir(path);
             var dstIsDir=this.resolveFS(dst).isDir(dst);
             if (!srcIsDir && !dstIsDir) {
-                var src=this.getContent(path,{type:String}); // TODO
-                var res=this.resolveFS(dst).setContent(dst,src);
+                var cont=this.getContent(path);
+                var res=this.resolveFS(dst).setContent(dst,cont);
                 if (options.a) {
                     //console.log("-a", this.getMetaInfo(path));
                     this.setMetaInfo(dst, this.getMetaInfo(path));
@@ -160,7 +160,7 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         getContentType: function (path, options) {
             var e=P.ext(path);
-            return M[e] || (options||{}).def || "application/octet-stream";
+            return M[e] || (options||{}).def || "text/plain";
         },
         isText:function (path) {
             var m=this.getContentType(path);
@@ -203,15 +203,16 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             // isLink      /c/d/e/f -> null
             // ln /testdir/ /ram/files/
             // resolveLink /ram/files/sub/test2.txt -> /testdir/sub/test2.txt
-            if (this.exists(path)) return path;
             // path=/ram/files/test.txt
             for (var p=path ; p ; p=P.up(p)) {
                 assert(!this.mountPoint || P.startsWith(p, this.mountPoint), p+" is out of mountPoint. path="+path);
                 var l=this.isLink(p);  // p=/ram/files/ l=/testdir/
                 if (l) {
+                    assert(l!=p,"l==p=="+l);
                     //        /testdir/    test.txt
                     var np=P.rel(l,P.relPath(path, p));  //   /testdir/test.txt
-                    return assert.is(this.resolveFS(np).resolveLink(np),P.Absolute)  ;
+                    assert(np!=path,"np==path=="+np);
+                    return assert.is(this.getRootFS().resolveFS(np).resolveLink(np),P.Absolute)  ;
                 }
                 if (this.exists(p)) return path;
             }
