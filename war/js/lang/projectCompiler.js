@@ -109,15 +109,8 @@ var TPRC=function (dir) {
          console.log("LoadClasses: "+dir.path());
          ctx=initCtx(ctx);
          var visited=ctx.visited||{};
-         //var classes=ctx.classes||{};
          if (visited[TPR.path()]) return DU.directPromise();
          visited[TPR.path()]=true;
-         /*TPR.getDependingProjects().forEach(function (p) {
-             if (p.getNamespace()==myNsp) return;
-             task=task.then(function () {
-                 return p.loadClasses(ctx);
-             });
-         });*/
          return TPR.loadDependingClasses(ctx).then(function () {
              return TPR.shouldCompile();
          }).then(function (sc) {
@@ -125,10 +118,10 @@ var TPRC=function (dir) {
                  return TPR.compile(ctx);
              } else {
                  var outF=TPR.getOutputFile("js");
-                 return evalFile(outF).then(F(copyToClasses));
+                 return evalFile(outF);//.then(F(copyToClasses));
              }
          });
-         function copyToClasses() {
+         /*function copyToClasses() {
              var ns=TPR.getNamespace();
             //same as compiledProject (XXXX)
              var cls=Tonyu.classes;
@@ -145,13 +138,13 @@ var TPRC=function (dir) {
                  }
              }
              //------------------XXXX
-         }
+         }*/
      };
      function initCtx(ctx) {
          var env=TPR.env;
          if (!ctx) ctx={};
          if (!ctx.visited) {
-             ctx={visited:{}, classes:(env.classes=env.classes||{}),options:ctx};
+             ctx={visited:{}, classes:(env.classes=env.classes||Tonyu.classMetas),options:ctx};
          }
          return ctx;
      }
@@ -159,23 +152,14 @@ var TPRC=function (dir) {
          Tonyu.runMode=false;
          console.log("Compile: "+dir.path());
          ctx=initCtx(ctx);
-         //var dp=TPR.getDependingProjects();
          var myNsp=TPR.getNamespace();
-         /*var task=DU.directPromise();
-         dp.forEach(function (dprj) {
-             var nsp=dprj.getNamespace();
-             if (nsp!=myNsp) {
-                 task=task.then(F(function () {
-                     dprj.loadClasses(ctx);
-                 }));
-             }
-         });*/
          return TPR.loadDependingClasses(ctx).then(F(function () {
              var baseClasses=ctx.classes;
              //console.log("baseClasses", baseClasses);
              var ctxOpt=ctx.options;
              var env=TPR.env;
              env.aliases={};
+             env.parsedNode=env.parsedNode||{};
              env.classes=baseClasses;
              for (var n in baseClasses) {
                  var cl=baseClasses[n];
@@ -186,14 +170,15 @@ var TPRC=function (dir) {
              for (var shortCn in sf) {
                  var f=sf[shortCn];
                  var fullCn=myNsp+"."+shortCn;
-                 newClasses[fullCn]=baseClasses[fullCn]={
-                         fullName:  fullCn,
-                         shortName: shortCn,
-                         namespace: myNsp,
-                         src:{
-                             tonyu: f
-                         }
-                 };
+                 var m=Tonyu.klass.getMeta(fullCn);
+                 newClasses[fullCn]=baseClasses[fullCn]=m;
+                 Tonyu.extend(m,{
+                     fullName:  fullCn,
+                     shortName: shortCn,
+                     namespace: myNsp
+                 });
+                 m.src=m.src||{};
+                 m.src.tonyu=f;
                  env.aliases[shortCn]=fullCn;
              }
              for (var n in newClasses) {
@@ -280,12 +265,6 @@ var TPRC=function (dir) {
                 if (added[n]) continue;
                 var c=classes[n];/*ENVC*/
                 var deps=dep1(c);
-                //var ready=true;
-                /*deps.forEach(function (cl) {
-                    ready=ready && (
-                       !cl || !classes[cl.fullName] || cl.builtin || added[cl.fullName]
-                    );
-                });*/
                 if (deps.length==0) {
                     res.push(c);
                     added[n]=true;

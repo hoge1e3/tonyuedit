@@ -1,7 +1,7 @@
 if (typeof define!=="function") {
     define=require("requirejs").define;
 }
-define([],function () {
+define(["assert"],function (assert) {
 return Tonyu=function () {
     var preemptionTime=60;
     function thread() {
@@ -313,7 +313,7 @@ return Tonyu=function () {
         }
         return f;
     }
-    function klass() {
+    /*function klass() {
         var parent, prot, includes=[];
         if (arguments.length==1) {
             prot=arguments[0];
@@ -357,12 +357,6 @@ return Tonyu=function () {
                     prot[n]=m.methods[n];
                 }
             }
-            /*for (var n in m.prototype) {
-                if (!(n in prot)) {  //-> cannot override color in ColorMod(MetaClicker/FlickEdit)
-                //if ((typeof m.prototype[n])=="function") { //-> BodyActor::onAppear is overriden by Actor::onAppear(nop)
-                    prot[n]=m.prototype[n];
-                }
-            }*/
         });
         res.prototype=bless(parent, prot);
         res.prototype.isTonyuObject=true;
@@ -375,14 +369,24 @@ return Tonyu=function () {
             return m;
         };
         return res;
-    }
+    }*/
+    klass=function () {
+        alert("この関数は古くなりました。コンパイルをやり直してください。 Deprecated. compile again.");
+        throw new Error("この関数は古くなりました。コンパイルをやり直してください。 Deprecated. compile again.");
+    };
     klass.addMeta=addMeta;
-    function addMeta(k,m) {
-        k.meta=k.meta||{};
-        extend(k.meta, m);
+    function addMeta(fn,m) {
+        assert.is(arguments,[String,Object]);
+        return extend(klass.getMeta(fn), m);
     }
-    klass.getMeta=function (k) {
-        return k.meta;
+    klass.getMeta=function (k) {// Class or fullName
+        if (typeof k=="function") {
+            return k.meta;
+        } else if (typeof k=="string"){
+            var mm = classMetas[k];
+            if (!mm) classMetas[k]=mm={};
+            return mm;
+        }
     };
     klass.ensureNamespace=function (top,nsp) {
         var keys=nsp.split(".");
@@ -455,7 +459,7 @@ return Tonyu=function () {
         for (var k in props) {
             Object.defineProperty(res.prototype, k , props[k]);
         }
-        addMeta(res,{
+        res.meta=addMeta(fullName,{
             fullName:fullName,shortName:shortName,namepsace:namespace,decls:decls,
             superclass:parent ? parent.meta : null,func:res,
             includes:includes.map(function(c){return c.meta;})
@@ -478,9 +482,11 @@ return Tonyu=function () {
         }
         return dst;
     }
+
     //alert("init");
     var globals={};
-    var classes={};
+    var classes={};// classes.namespace.classname= function
+    var classMetas={}; // classes.namespace.classname.meta ( or env.classes / ctx.classes)
     function setGlobal(n,v) {
         globals[n]=v;
     }
@@ -567,11 +573,11 @@ return Tonyu=function () {
         th.steps();
     }
     return Tonyu={thread:thread, threadGroup:threadGroup, klass:klass, bless:bless, extend:extend,
-            globals:globals, classes:classes, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
+            globals:globals, classes:classes, classMetas:classMetas, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
             timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             run:run,
-            VERSION:1447842476456,//EMBED_VERSION
+            VERSION:1448500513331,//EMBED_VERSION
             A:A};
 }();
 });
