@@ -1,6 +1,10 @@
 define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M,assert,SFile){
     var FS=function () {
     };
+    var fstypes={};
+    FS.addFSType=function (name,fsgen) {
+        fstypes[name]=fsgen;
+    };
     function stub(n) {
         throw new Error (n+" is STUB!");
     }
@@ -8,9 +12,25 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         err: function (path, mesg) {
             throw new Error(path+": "+mesg);
         },
+        fstype:function () {
+            return "Unknown";
+        },
         // mounting
         fstab: function () {
             return this._fstab=this._fstab||[];//[{fs:this, path:P.SEP}];
+        },
+        unmount: function (path, options) {
+            assert.is(arguments,[P.AbsDir] );
+            var t=this.fstab();
+            console.log(t);
+            for (var i=0; i<t.length; i++) {
+                console.log(t[i].path, path)
+                if (t[i].path==path) {
+                    t.splice(i,1);
+                    return true;
+                }
+            }
+            return false;
         },
         resolveFS:function (path, options) {
             assert.is(path,P.Absolute);
@@ -26,6 +46,9 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         isReadOnly: function (path, options) {// mainly for check ENTIRELY read only
             stub("isReadOnly");
+        },
+        supportsSync: function () {
+            return true;
         },
         mounted: function (parentFS, mountPoint ) {
             assert.is(arguments,[FS,P.AbsDir]);
@@ -65,11 +88,22 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         getContent: function (path, options) {
             // options:{type:String|DataURL|ArrayBuffer|OutputStream|Writer}
             // succ : [type],
-            stub("");
+            stub("getContent");
+        },
+        getContentAsync: function (path, options) {
+            if (!this.supportsSync()) stub("getContentAsync");
+            return $.when(this.getContent.apply(this,arguments));
         },
         setContent: function (path, content, options) {
             // content: String|ArrayBuffer|InputStream|Reader
             stub("");
+        },
+        setContentAsync: function (path, content, options) {
+            var t=this;
+            if (!t.supportsSync()) stub("setContentAsync");
+            return $.when(content).then(function (content) {
+                return $.when(t.setContent(path,content,options));
+            });
         },
         getMetaInfo: function (path, options) {
             stub("");
@@ -93,19 +127,32 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         cp: function(path, dst, options) {
             assert.is(arguments,[P.Absolute,P.Absolute]);
+            this.assertExist(path);
             options=options||{};
             var srcIsDir=this.isDir(path);
-            var dstIsDir=this.resolveFS(dst).isDir(dst);
+            var dstfs=this.getRootFS().resolveFS(dst);
+            var dstIsDir=dstfs.isDir(dst);
             if (!srcIsDir && !dstIsDir) {
-                var cont=this.getContent(path);
-                var res=this.resolveFS(dst).setContent(dst,cont);
-                if (options.a) {
-                    //console.log("-a", this.getMetaInfo(path));
-                    this.setMetaInfo(dst, this.getMetaInfo(path));
+                if (this.supportsSync() && dstfs.supportsSync()) {
+                    var cont=this.getContent(path);
+                    var res=dstfs.setContent(dst,cont);
+                    if (options.a) {
+                        dstfs.setMetaInfo(dst, this.getMetaInfo(path));
+                    }
+                    return res;
+                } else {
+                    return dstfs.setContentAsync(
+                            dst,
+                            this.getContentAsync(path)
+                    ).then(function (res) {
+                        if (options.a) {
+                            return dstfs.setMetaInfo(dst, this.getMetaInfo(path));
+                        }
+                        return res;
+                    });
                 }
-                return res;
             } else {
-                throw "only file to file supports";
+                throw new Error("only file to file supports");
             }
         },
         mv: function (path,to,options) {
@@ -146,8 +193,13 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             if (this.isReadOnly(path)) this.err(path, "read only.");
         },
         mount: function (path, fs, options) {
-            assert.is(arguments,[P.AbsDir, FS] );
-            if (this.exists(path)) {
+            assert.is(arguments,[P.AbsDir] );
+            if (typeof fs=="string") {
+                var fact=assert( fstypes[fs] ,"fstype "+fs+" is undefined.");
+                fs=fact(path, options||{});
+            }
+            assert.is(fs,FS);
+            if (!P.isURL(path) && this.exists(path)) {
                 throw new Error(path+": Directory exists");
             }
             var parent=P.up(path);

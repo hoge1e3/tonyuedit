@@ -148,12 +148,52 @@ function privatize(o){
     }
     return res;
 }
+function hasNodeBuffer() {
+    return typeof Buffer!="undefined";
+}
+function isNodeBuffer(data) {
+    return (hasNodeBuffer() && data instanceof Buffer);
+}
+function isBuffer(data) {
+    return data instanceof ArrayBuffer || isNodeBuffer(data);
+}
+function utf8bytes2str(bytes) {
+    var e=[];
+    for (var i=0 ; i<bytes.length ; i++) {
+         e.push("%"+("0"+bytes[i].toString(16)).slice(-2));
+    }
+    try {
+        return decodeURIComponent(e.join(""));
+    } catch (er) {
+        console.log(e.join(""));
+        throw er;
+    }
+}
+function str2utf8bytes(str, binType) {
+    var e=encodeURIComponent(str);
+    var r=/^%(..)/;
+    var a=[];
+    var ad=0;
+    for (var i=0 ; i<e.length; i++) {
+        var m=r.exec( e.substring(i));
+        if (m) {
+            a.push(parseInt("0x"+m[1]));
+            i+=m[0].length-1;
+        } else a.push(e.charCodeAt(i));
+    }
+    return (typeof Buffer!="undefined" && binType===Buffer ? new Buffer(a) : new Uint8Array(a).buffer);
+}
 
 return {
     getQueryString:getQueryString,
     endsWith: endsWith, startsWith: startsWith,
     Base64_To_ArrayBuffer:Base64_To_ArrayBuffer,
     Base64_From_ArrayBuffer:Base64_From_ArrayBuffer,
-    privatize: privatize
+    utf8bytes2str: utf8bytes2str,
+    str2utf8bytes: str2utf8bytes,
+    privatize: privatize,
+    hasNodeBuffer:hasNodeBuffer,
+    isNodeBuffer: isNodeBuffer,
+    isBuffer: isBuffer
 };
 })();

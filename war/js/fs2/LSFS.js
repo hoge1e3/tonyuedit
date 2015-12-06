@@ -1,4 +1,5 @@
-define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,assert,DataURL) {
+define(["FS2","PathUtil","extend","assert","Util","Content"],
+        function(FS,P,extend,assert,Util,Content) {
     var LSFS = function(storage,options) {
     	this.storage=storage;
     	this.options=options||{};
@@ -18,6 +19,13 @@ define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,asse
         s[P.SEP]="{}";
         return new LSFS(s);
     };
+    FS.addFSType("localStorage",function (path, options) {
+        return new LSFS(localStorage);
+    });
+    FS.addFSType("ramDisk",function (path, options) {
+        return LSFS.ramDisk();
+    });
+
     LSFS.now=now;
     LSFS.prototype=new FS;
     //private methods
@@ -114,6 +122,13 @@ define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,asse
             this.putDirInfo(path, dinfo, true);
         }
     };
+    LSFS.prototype.isRAM=function (){
+        return this.storage!==localStorage;
+    };
+    LSFS.prototype.fstype=function () {
+        return (this.isRAM() ? "ramDisk" : "localStorage" );
+    };
+
     // public methods (with resolve fs)
     FS.delegateMethods(LSFS.prototype, {
         isReadOnly: function () {return this.options.readOnly;},
@@ -126,16 +141,22 @@ define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,asse
         getContent: function(path, options) {
             assert.is(arguments,[Absolute]);
             this.assertExist(path);
-            if (options && options.type==ArrayBuffer) {
-                var d=new DataURL(this.getItem(path));
-                return d.buffer;
+            var c;
+            if (this.isText(path)) {
+                c=Content.plainText(this.getItem(path));
+            } else {
+                c=Content.url(this.getItem(path));
             }
-            return this.getItem(path);
+            return c;
         },
         setContent: function(path, content, options) {
-            assert.is(arguments,[Absolute,String]);
+            assert.is(arguments,[Absolute,Content]);
             this.assertWriteable(path);
-            this.setItem(path, content);
+            if (this.isText(path)) {
+                this.setItem(path, content.toPlainText());
+            } else {
+                this.setItem(path, content.toURL());
+            }
             this.touch(path);
         },
         getMetaInfo: function(path, options) {
@@ -284,7 +305,7 @@ define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,asse
             }
         },
         getURL: function (path) {
-            return this.getContent(path,{type:String});
+            return this.getContent(path).toURL();
         }
     });
     return LSFS;

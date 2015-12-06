@@ -1,5 +1,5 @@
-define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
-        function (FS,A,P,extend,MIME,DataURL) {
+define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL","Content"],
+        function (FS,A,P,extend,MIME,DataURL,Content) {
     var available=(typeof process=="object" && process.__node_webkit);
     if (!available) {
         return function () {
@@ -23,11 +23,27 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
         A.is(path, P.Absolute);
         return P.rel( this.rootPoint, this.relFromMountPoint(path));
     };
+    Pro.arrayBuffer2Buffer= function (a) {
+        if (a instanceof ArrayBuffer) {
+            console.log("WOW3!", a[0]);
+            var b=new Buffer(new Uint8Array(a));
+            console.log("WOW4!", b[0]);
+            return b;
+        }
+        return a;
+    };
+
     /*Pro.isText=function (path) {
         var e=P.ext(path);
         var m=MIME[e];
         return P.startsWith( m, "text");
     };*/
+    FS.addFSType("NativeFS",function (path, options) {
+            return new NativeFS(options.r);
+    });
+    NativeFS.prototype.fstype=function () {
+        return "Native"+(this.rootPoint?"("+this.rootPoint+")":"");
+    };
     FS.delegateMethods(NativeFS.prototype, {
         getReturnTypes: function(path, options) {
             assert.is(arguments,[String]);
@@ -39,46 +55,23 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
             options=options||{};
             A.is(path,P.Absolute);
             var np=this.toNativePath(path);
-            var t=options.type;
+            this.assertExist(path);
             if (this.isText(path)) {
-                if (t===String) {
-                    return fs.readFileSync(np, {encoding:"utf8"});
-                } else {
-                    return fs.readFileSync(np);
-                    //TODOvar bin=fs.readFileSync(np);
-                    //throw new Error("TODO: handling bin file "+path);
-                }
+                return Content.plainText( fs.readFileSync(np, {encoding:"utf8"}) );
             } else {
-                if (t===String) {
-                    var bin=fs.readFileSync(np);
-                    var d=new DataURL(bin, this.getContentType(path) );
-                    return d.url;
-                } else {
-                    return fs.readFileSync(np);
-                }
+                return Content.bin( fs.readFileSync(np) , this.getContentType(path));
             }
         },
         setContent: function (path,content) {
-            A.is(path,P.Absolute);
+            A.is(arguments,[P.Absolute,Content]);
             var pa=P.up(path);
             if (pa) this.getRootFS().mkdir(pa);
             var np=this.toNativePath(path);
-            var cs=typeof content=="string";
-            if (this.isText(path)) {
-                fs.writeFileSync(np, content)
-                /*if (cs) return fs.writeFileSync(np, content);
-                else {
-                    return fs.writeFileSync(np, content);
-                    //throw new Error("TODO");
-                }*/
+            if (content.hasBin() || !content.hasPlainText() ) {
+                fs.writeFileSync(np, content.toNodeBuffer() );
             } else {
-//                console.log("NatFS", cs, content);
-                if (!cs) return fs.writeFileSync(np, content);
-                else {
-                    var d=new DataURL(content);
-                    //console.log(d.buffer);
-                    return fs.writeFileSync(np, d.buffer);
-                }
+                // !hasBin && hasText
+                fs.writeFileSync(np, content.toPlainText());
             }
         },
         getMetaInfo: function(path, options) {

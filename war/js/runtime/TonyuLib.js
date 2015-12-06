@@ -130,7 +130,8 @@ return Tonyu=function () {
         function waitFor(j) {
             _isWaiting=true;
             suspend();
-            if (j && j.addTerminatedListener) j.addTerminatedListener(function () {
+            if (!j) return;
+            if (j.addTerminatedListener) j.addTerminatedListener(function () {
                 _isWaiting=false;
                 if (fb.group) fb.group.notifyResume();
                 else if (isAlive()) {
@@ -142,6 +143,22 @@ return Tonyu=function () {
                 }
                 //fb.group.add(fb);
             });
+            else if (j.then && j.fail) {
+                j.then(function (r) {
+                    fb.retVal=r;
+                    steps();
+                });
+                j.fail(function (e) {
+                    if (e instanceof Error) {
+                        gotoCatch(e);
+                    } else {
+                        var re=new Error(e);
+                        re.original=e;
+                        gotoCatch(re);
+                    }
+                    steps();
+                });
+            }
         }
         function setGroup(g) {
             fb.group=g;
@@ -415,18 +432,18 @@ return Tonyu=function () {
         var res;
         res=(init?
             (parent? function () {
-                if (!(this instanceof res)) useNew();
+                if (!(this instanceof res)) useNew(fullName);
                 if (Tonyu.runMode) init.apply(this,arguments);
                 else parent.apply(this,arguments);
             }:function () {
-                if (!(this instanceof res)) useNew();
+                if (!(this instanceof res)) useNew(fullName);
                 if (Tonyu.runMode) init.apply(this,arguments);
             }):
             (parent? function () {
-                if (!(this instanceof res)) useNew();
+                if (!(this instanceof res)) useNew(fullName);
                 parent.apply(this,arguments);
             }:function (){
-                if (!(this instanceof res)) useNew();
+                if (!(this instanceof res)) useNew(fullName);
             })
         );
         nso[shortName]=res;
@@ -547,8 +564,8 @@ return Tonyu=function () {
         }
         return res;
     }
-    function useNew() {
-        throw new Error("クラス名はnewをつけて呼び出して下さい。");
+    function useNew(c) {
+        throw new Error("クラス名"+c+"はnewをつけて呼び出して下さい。");
     }
     function not_a_tonyu_object(o) {
         console.log("Not a tonyu object: ",o);
@@ -577,7 +594,7 @@ return Tonyu=function () {
             timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             run:run,
-            VERSION:1448500513331,//EMBED_VERSION
+            VERSION:1449368686631,//EMBED_VERSION
             A:A};
 }();
 });

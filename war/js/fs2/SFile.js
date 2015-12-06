@@ -1,5 +1,5 @@
-define(["Contents","extend","assert","PathUtil","Util"],
-function (C,extend,A,P,Util) {
+define(["extend","assert","PathUtil","Util","Content"],
+function (extend,A,P,Util,Content) {
 
 var SFile=function (fs, path) {
     A.is(path, P.Absolute);
@@ -186,20 +186,41 @@ SFile.prototype={
     },
     setText:function (t) {
         A.is(t,String);
-        this.fs.setContent(this.path(), t);
+        if (this.isText()) {
+            this.fs.setContent(this.path(), Content.plainText(t));
+        } else {
+            this.fs.setContent(this.path(), Content.url(t));
+        }
     },
-    getText:function (t) {
-        return this.fs.getContent(this.path(), {type:String});
+    getContent: function (f) {
+        if (typeof f=="function") {
+            return this.fs.getContentAsync(this.path()).then(f);
+        }
+        return this.fs.getContent(this.path());
+    },
+    setContent: function (c) {
+        return this.fs.setContentAsync(this.path(),c);
+    },
+
+    getText:function () {
+        if (this.isText()) {
+            return this.fs.getContent(this.path()).toPlainText();
+        } else {
+            return this.fs.getContent(this.path()).toURL();
+        }
     },
     isText: function () {
         return this.fs.isText(this.path());
     },
-    setBytes:function (b) {
-        A.is(t,ArrayBuffer);
-        return this.fs.setContent(b);
+    contentType: function () {
+        return this.fs.getContentType(this.path());
     },
-    getBytes:function (t) {
-        return this.fs.getContent(this.path(), {type:ArrayBuffer});
+    setBytes:function (b) {
+        return this.fs.setContent(this.path(), Content.bin(b,this.contentType()));
+    },
+    getBytes:function (options) {
+        options=options||{};
+        return this.fs.getContent(this.path()).toBin(options.binType);
     },
     getURL: function () {
         return this.fs.getURL(this.path());
@@ -217,11 +238,11 @@ SFile.prototype={
             file.text(JSON.stringify(A.is(arguments[0],Object) ));
         }
     },
-    copyTo: function (dst, options) {
-        return dst.copyFrom(this,options);
-    },
     copyFrom: function (src, options) {
-        var dst=this;
+        return src.copyTo(this,options);
+    },
+    copyTo: function (dst, options) {
+        var src=this;
         var options=options||{};
         var srcIsDir=src.isDir();
         var dstIsDir=dst.isDir();

@@ -1,4 +1,5 @@
-define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
+define(["FS","Util","WebSite","PathUtil","assert"],
+        function (FS,Util,WebSite,PathUtil,assert) {
     var Shell={cwd:FS.get("/")};
     Shell.cd=function (dir) {
         Shell.cwd=resolve(dir,true);
@@ -9,10 +10,31 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
         if (mustExist && !r.exists()) throw r+": no such file or directory";
         return r;
     }
+
+    Shell.mount=function (path, options) {
+        //var r=resolve(path);
+        if (!options || !options.t) {
+            sh.err("-t=[fstype] should be specified.");
+            return;
+        }
+        FS.mount(path,options.t, options);
+    };
+    Shell.unmount=function (path) {
+        FS.unmount(path);
+    };
+    Shell.fstab=function () {
+        var rfs=FS.getRootFS();
+        var t=rfs.fstab();
+        var sh=this;
+        sh.echo(rfs.fstype()+"\t"+"<Root>");
+        t.forEach(function (te) {
+            sh.echo(te.fs.fstype()+"\t"+te.path);
+        });
+    }
     Shell.resolve=resolve;
     function resolve2(v) {
         if (typeof v!="string") return v;
-        if (Util.startsWith(v,"/")) return FS.get(v);
+        if (PathUtil.isAbsolutePath(v)) return FS.get(v);
         var c=Shell.cwd;
         /*while (Util.startsWith(v,"../")) {
             c=c.up();
@@ -38,29 +60,6 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
         var t=resolve(to);
         return f.copyTo(t,options);
 
-        /*if (f.isDir() && t.isDir()) {
-            var sum=0;
-            f.recursive(function (src) {
-                var rel=src.relPath(f);
-                var dst=t.rel(rel);
-                if (options.test || options.v) {
-                    Shell.echo((dst.exists()?"[ovr]":"[new]")+dst+"<-"+src);
-                }
-                if (!options.test) {
-                    dst.copyFrom(src,options);
-                }
-                sum++;
-            });
-            return sum;
-        } else if (!f.isDir() && !t.isDir()) {
-            t.text(f.text());
-            return 1;
-        } else if (!f.isDir() && t.isDir()) {
-            t.rel(f.name()).text(f.text());
-            return 1;
-        } else {
-            throw "Cannot copy directory "+f+" to file "+t;
-        }*/
     };
     Shell.rm=function (file, options) {
         if (!options) options={};
@@ -88,7 +87,6 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
     Shell.cat=function (file,options) {
         file=resolve(file, true);
         Shell.echo(file.text());
-        //else return file.text();
     };
     Shell.resolve=function (file) {
 	if (!file) file=".";

@@ -11,6 +11,7 @@ define(["FS2","WebSite","NativeFS","LSFS", "PathUtil","Env","assert","SFile"],
     } else {
         rootFS=new LSFS(localStorage);
     }
+    FS.getRootFS=function () {return rootFS;};
     FS.get=function () {
         return rootFS.get.apply(rootFS,arguments);
     };
@@ -28,6 +29,9 @@ define(["FS2","WebSite","NativeFS","LSFS", "PathUtil","Env","assert","SFile"],
     };
     FS.mount=function () {
         return rootFS.mount.apply(rootFS,arguments);
+    };
+    FS.unmount=function () {
+        return rootFS.unmount.apply(rootFS,arguments);
     };
     return FS;
 });
