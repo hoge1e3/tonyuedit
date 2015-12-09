@@ -14,20 +14,22 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL","Content"],
             this.rootPoint=rootPoint;
         }
     };
+    var hasDriveLetter=P.hasDriveLetter(process.cwd());
     NativeFS.available=true;
     var SEP=P.SEP;
     var json=JSON; // JSON changes when page changes, if this is node module, JSON is original JSON
     var Pro=NativeFS.prototype=new FS;
     Pro.toNativePath = function (path) {
+        // rootPoint: on NativePath   C:/jail/
+        // mountPoint: on VirtualFS   /mnt/natfs/
         if (!this.rootPoint) return path;
         A.is(path, P.Absolute);
-        return P.rel( this.rootPoint, this.relFromMountPoint(path));
+        A(this.inMyFS(path),path+" is not fs of "+this);
+        return P.rel( this.rootPoint, P.relPath(path, this.mountPoint || P.SEP));
     };
     Pro.arrayBuffer2Buffer= function (a) {
         if (a instanceof ArrayBuffer) {
-            console.log("WOW3!", a[0]);
             var b=new Buffer(new Uint8Array(a));
-            console.log("WOW4!", b[0]);
             return b;
         }
         return a;
@@ -43,6 +45,14 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL","Content"],
     });
     NativeFS.prototype.fstype=function () {
         return "Native"+(this.rootPoint?"("+this.rootPoint+")":"");
+    };
+    NativeFS.prototype.inMyFS=function (path) {
+        if (this.mountPoint) {
+            return P.startsWith(path, this.mountPoint)
+        } else {
+//            console.log(path, hasDriveLetter , P.hasDriveLetter(path));
+            return !( !!hasDriveLetter ^ !!P.hasDriveLetter(path));
+        }
     };
     FS.delegateMethods(NativeFS.prototype, {
         getReturnTypes: function(path, options) {
@@ -65,7 +75,7 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL","Content"],
         setContent: function (path,content) {
             A.is(arguments,[P.Absolute,Content]);
             var pa=P.up(path);
-            if (pa) this.getRootFS().mkdir(pa);
+            if (pa) this.getRootFS().resolveFS(pa).mkdir(pa);
             var np=this.toNativePath(path);
             if (content.hasBin() || !content.hasPlainText() ) {
                 fs.writeFileSync(np, content.toNodeBuffer() );
@@ -106,7 +116,7 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL","Content"],
             }
             this.assertWriteable(path);
             var pa=P.up(path);
-            if (pa) this.getRootFS().mkdir(pa);
+            if (pa) this.getRootFS().resolveFS(pa).mkdir(pa);
             var np=this.toNativePath(path);
             return fs.mkdirSync(np);
         },
@@ -119,7 +129,7 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL","Content"],
                 var ss=s.isDirectory()?SEP:"";
                 return e+ss;
             });
-            var res=this.dirFromFstab(path);
+            var res=[]; //this.dirFromFstab(path);
             return assert.is(res.concat(r),Array);
         },
         rm: function(path, options) {

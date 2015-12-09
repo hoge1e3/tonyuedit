@@ -1,6 +1,6 @@
 define(["FS","Util","WebSite","PathUtil","assert"],
         function (FS,Util,WebSite,PathUtil,assert) {
-    var Shell={cwd:FS.get("/")};
+    var Shell={};
     Shell.cd=function (dir) {
         Shell.cwd=resolve(dir,true);
         return Shell.pwd();
@@ -11,10 +11,14 @@ define(["FS","Util","WebSite","PathUtil","assert"],
         return r;
     }
 
-    Shell.mount=function (path, options) {
+    Shell.mount=function (options, path) {
         //var r=resolve(path);
         if (!options || !options.t) {
-            sh.err("-t=[fstype] should be specified.");
+            var fst=[];
+            for (var k in FS.getRootFS().availFSTypes()) {
+                fst.push(k);
+            }
+            sh.err("-t=("+fst.join("|")+") should be specified.");
             return;
         }
         FS.mount(path,options.t, options);
@@ -26,9 +30,9 @@ define(["FS","Util","WebSite","PathUtil","assert"],
         var rfs=FS.getRootFS();
         var t=rfs.fstab();
         var sh=this;
-        sh.echo(rfs.fstype()+"\t"+"<Root>");
-        t.forEach(function (te) {
-            sh.echo(te.fs.fstype()+"\t"+te.path);
+        //sh.echo(rfs.fstype()+"\t"+"<Root>");
+        t.forEach(function (fs) {
+            sh.echo(fs.fstype()+"\t"+(fs.mountPoint||""));
         });
     }
     Shell.resolve=resolve;
@@ -59,7 +63,17 @@ define(["FS","Util","WebSite","PathUtil","assert"],
         var f=resolve(from, true);
         var t=resolve(to);
         return f.copyTo(t,options);
-
+    };
+    Shell.ln=function (to , from ,options) {
+        var f=resolve(from);
+        var t=resolve(to, true);
+        if (f.isDir() && f.exists()) {
+            f=f.rel(t.name());
+        }
+        if (f.exists()) {
+            throw new Error(f+" exists");
+        }
+        return f.link(t,options);
     };
     Shell.rm=function (file, options) {
         if (!options) options={};
@@ -86,12 +100,18 @@ define(["FS","Util","WebSite","PathUtil","assert"],
     };
     Shell.cat=function (file,options) {
         file=resolve(file, true);
-        Shell.echo(file.text());
+        return Shell.echo(file.getContent(function (c) {
+            if (file.isText()) {
+                return c.toPlainText();
+            } else {
+                return c.toURL();
+            }
+        }));
     };
     Shell.resolve=function (file) {
-	if (!file) file=".";
-	file=resolve(file);
-	return file;
+        if (!file) file=".";
+        file=resolve(file);
+        return file;
     };
     Shell.grep=function (pattern, file, options) {
         file=resolve(file, true);
@@ -135,6 +155,7 @@ define(["FS","Util","WebSite","PathUtil","assert"],
         console.log.apply(console,arguments);
         if (Shell.outUI && Shell.outUI.err) Shell.outUI.err.apply(Shell.outUI,arguments);
     };
+
 
     Shell.prompt=function () {};
     Shell.ASYNC={r:"SH_ASYNC"};

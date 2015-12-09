@@ -1,9 +1,12 @@
-define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M,assert,SFile){
+define(["extend","PathUtil","MIMETypes","assert"],function (extend, P, M,assert){
     var FS=function () {
     };
     var fstypes={};
     FS.addFSType=function (name,fsgen) {
         fstypes[name]=fsgen;
+    };
+    FS.availFSTypes=function () {
+        return fstypes;
     };
     function stub(n) {
         throw new Error (n+" is STUB!");
@@ -15,67 +18,34 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         fstype:function () {
             return "Unknown";
         },
-        // mounting
-        fstab: function () {
-            return this._fstab=this._fstab||[];//[{fs:this, path:P.SEP}];
-        },
-        unmount: function (path, options) {
-            assert.is(arguments,[P.AbsDir] );
-            var t=this.fstab();
-            console.log(t);
-            for (var i=0; i<t.length; i++) {
-                console.log(t[i].path, path)
-                if (t[i].path==path) {
-                    t.splice(i,1);
-                    return true;
-                }
-            }
-            return false;
-        },
-        resolveFS:function (path, options) {
-            assert.is(path,P.Absolute);
-            var res;
-            this.fstab().forEach(function (tb) {
-                if (res) return;
-                if (P.startsWith(path, tb.path)) {
-                    res=tb.fs;
-                }
-            });
-            if (!res) res=this; //this.err(path,"Cannot resolve");
-            return assert.is(res,FS);
-        },
         isReadOnly: function (path, options) {// mainly for check ENTIRELY read only
             stub("isReadOnly");
         },
         supportsSync: function () {
             return true;
         },
-        mounted: function (parentFS, mountPoint ) {
-            assert.is(arguments,[FS,P.AbsDir]);
-            this.parentFS=parentFS;
+        resolveFS:function (path, options) {
+            assert(this.getRootFS()!==this);
+            return this.getRootFS().resolveFS(path);
+        },
+        mounted: function (rootFS, mountPoint ) {
+            //assert.is(arguments,[FS,P.AbsDir]);
+            this.rootFS=rootFS;
             this.mountPoint=mountPoint;
         },
-        relFromMountPoint: function (path) {
-            assert.is(path, P.Absolute);
-            if (this.parentFS) {
-                assert.is(this.mountPoint, P.AbsDir);
-                return P.relPath(path, this.mountPoint);
-            } else {
-                return P.relPath(path, P.SEP);
-            }
+        inMyFS:function (path) {
+            return !this.mountPoint || P.startsWith(path, this.mountPoint);
         },
-        dirFromFstab: function (path, options) {
+        /*dirFromFstab: function (path, options) {
             assert.is(path, P.AbsDir);
             var res=(options||{}).res || [];
             this.fstab().forEach(function (tb) {
                 if (P.up( tb.path )==path) res.push(P.name(tb.path));
             });
             return res;
-        },
+        },*/
         getRootFS: function () {
-            var res;
-            for (var r=this;r;r=r.parentFS){res=r;}
-            return assert.is(res,FS);
+            return assert( this.rootFS, "rootFS is not set" );
         },
         //-------- end of mouting
         //-------- spec
@@ -163,7 +133,7 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             stub("");
         },
         link: function (path, to, options) {
-            throw new Error("This FS not support link.");
+            throw new Error("ln "+to+" "+path+" : This FS not support link.");
         },
         getURL: function (path) {
             stub("");
@@ -173,6 +143,7 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
     FS.delegateMethods=function (prototype,  methods) {
         for (var n in methods) {
             (function (n){
+                assert.ne(n,"inMyFS");
                 prototype[n]=function () {
                     var path=arguments[0];
                     assert.is(path,P.Absolute);
@@ -191,24 +162,6 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
     FS.delegateMethods(FS.prototype, {
         assertWriteable: function (path) {
             if (this.isReadOnly(path)) this.err(path, "read only.");
-        },
-        mount: function (path, fs, options) {
-            assert.is(arguments,[P.AbsDir] );
-            if (typeof fs=="string") {
-                var fact=assert( fstypes[fs] ,"fstype "+fs+" is undefined.");
-                fs=fact(path, options||{});
-            }
-            assert.is(fs,FS);
-            if (!P.isURL(path) && this.exists(path)) {
-                throw new Error(path+": Directory exists");
-            }
-            var parent=P.up(path);
-            if (parent==null) throw new Error("Cannot mount on root");
-            if (!this.exists(parent)) {
-                throw new Error(path+": Parent Directory not exist");
-            }
-            fs.mounted(this, path);
-            this.fstab().unshift({path:path, fs:fs});
         },
         getContentType: function (path, options) {
             var e=P.ext(path);
@@ -272,13 +225,13 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         isLink: function (path) {
             return null;
-        },
-        get: function (path) {
+        }//,
+        /*get: function (path) {
             assert.eq(this.resolveFS(path), this);
             return new SFile(this, path);
             //var r=this.resolveFS(path);
             //return new SFile(r.fs, r.path);
-        }
+        }*/
     });
     return FS;
 });

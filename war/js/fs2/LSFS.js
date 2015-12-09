@@ -22,7 +22,7 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
     FS.addFSType("localStorage",function (path, options) {
         return new LSFS(localStorage);
     });
-    FS.addFSType("ramDisk",function (path, options) {
+    FS.addFSType("ram",function (path, options) {
         return LSFS.ramDisk();
     });
 
@@ -31,7 +31,11 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
     //private methods
     LSFS.prototype.resolveKey=function (path) {
         assert.is(path,P.Absolute);
-        return P.SEP+this.relFromMountPoint(path);
+        if (this.mountPoint) {
+            return P.SEP+P.relPath(path,this.mountPoint);//FromMountPoint(path);
+        } else {
+            return path;
+        }
     };
     LSFS.prototype.getItem=function (path) {
         assert.is(path,P.Absolute);
@@ -58,9 +62,9 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
         var key=this.resolveKey(path);
         return key in this.storage;
     };
-    LSFS.prototype.inMyFS=function (path){
+    /*LSFS.prototype.inMyFS=function (path){
         return !this.mountPoint || P.startsWith(path, this.mountPoint);
-    };
+    };*/
     LSFS.prototype.getDirInfo=function getDirInfo(path) {
         assert.is(arguments,[P.AbsDir]);
         if (path == null) throw new Error("getDir: Null path");
@@ -85,8 +89,8 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
         var ppath = up(path);
         if (ppath == null) return;
         if (!this.inMyFS(ppath)) {
-            assert(this.getRootFS()!==this);
-            this.getRootFS().touch(ppath);
+            //assert(this.getRootFS()!==this);
+            //this.getRootFS().resolveFS(ppath).touch(ppath);
             return;
         }
         var pdinfo = this.getDirInfo(ppath);
@@ -140,7 +144,7 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
         },
         getContent: function(path, options) {
             assert.is(arguments,[Absolute]);
-            this.assertExist(path);
+            this.assertExist(path); // Do not use this??( because it does not follow symlinks)
             var c;
             if (this.isText(path)) {
                 c=Content.plainText(this.getItem(path));
@@ -197,7 +201,7 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
             // options: {includeTrashed:Boolean}
             options=options||{};
             var inf=this.getDirInfo(path);
-            var res=this.dirFromFstab(path);
+            var res=[]; //this.dirFromFstab(path);
             for (var i in inf) {
                 assert(inf[i]);
                 if (!inf[i].trashed || options.includeTrashed) res.push(i);
@@ -258,7 +262,7 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
             return !!res;
         },
         link: function(path, to, options) {
-            assert.is(arguments,[P.AbsDir,P.AbsDir]);
+            assert.is(arguments,[P.Absolute,P.Absolute]);
             this.assertWriteable(path);
             if (this.exists(path)) this.err(path,"file exists");
             if (P.isDir(path) && !P.isDir(to)) {
@@ -272,13 +276,13 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
             m.lastUpdate=now();
             this.setMetaInfo(path, m);
             //console.log(this.getMetaInfo(path));
-            console.log(this.storage);
+            //console.log(this.storage);
             //console.log(this.getMetaInfo(P.up(path)));
             assert(this.exists(path));
             assert(this.isLink(path));
         },
         isLink: function (path) {
-            assert.is(arguments,[P.AbsDir]);
+            assert.is(arguments,[P.Absolute]);
             if (!this.exists(path)) return null;
             var m=assert(this.getMetaInfo(path));
             return m.link;
@@ -300,7 +304,7 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
                     this._touch(pinfo, parent , P.name(path), false);
                 } else {
                     assert(this.getRootFS()!==this);
-                    this.getRootFS().touch(parent);
+                    this.getRootFS().resolveFS(parent).touch(parent);
                 }
             }
         },
