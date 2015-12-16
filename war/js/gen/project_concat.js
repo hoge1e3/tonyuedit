@@ -1,4 +1,4 @@
-// Created at Wed Dec 09 2015 11:04:16 GMT+0900 (東京 (標準時))
+// Created at Wed Dec 09 2015 17:32:18 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -1111,7 +1111,7 @@ return Tonyu=function () {
             timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             run:run,
-            VERSION:1449626654106,//EMBED_VERSION
+            VERSION:1449649934403,//EMBED_VERSION
             A:A};
 }();
 });
@@ -2410,14 +2410,14 @@ define(["FS2","PathUtil","extend","assert","Util","Content"],
                 if (this.isDir(path)) {
 
                 } else {
-                    assert.fail("Inconsistent "+path+": trashed, but remains in storage");
+                    //assert.fail("Inconsistent "+path+": trashed, but remains in storage");
                 }
             }
             if (!res && this.itemExists(path)) {
-                assert.fail("Inconsistent "+path+": not exists in metadata, but remains in storage");
+                //assert.fail("Inconsistent "+path+": not exists in metadata, but remains in storage");
             }
             if (res && !res.trashed && !res.link && !this.itemExists(path)) {
-                assert.fail("Inconsistent "+path+": exists in metadata, but not in storage");
+                //assert.fail("Inconsistent "+path+": exists in metadata, but not in storage");
             }
             if (res && !options.includeTrashed) {
                 res=!res.trashed;
@@ -13093,6 +13093,7 @@ $(function () {
         if (!inf) {
             var progDOM=$("<pre>").css("height", screenH+"px").text(f.text()).appendTo("#progs");
             var prog=ace.edit(progDOM[0]);
+            window.lastEditor=prog;
             if (typeof desktopEnv.editorFontSize=="number") prog.setFontSize(desktopEnv.editorFontSize);
             prog.setTheme("ace/theme/eclipse");
             prog.getSession().setMode("ace/mode/tonyu");
@@ -13103,6 +13104,11 @@ $(function () {
             prog.setReadOnly(false);
             prog.clearSelection();
             prog.focus();
+            try {
+                prog.commands.removeCommand("toggleFoldWidget");
+                prog.setOptions({fixedWidthGutter:true});
+            }catch(e){}// F2
+
             curDOM=progDOM;
         } else {
             inf.dom.show();
