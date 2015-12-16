@@ -4,7 +4,8 @@ requirejs(["Util", "Tonyu", "FS", "PathUtil","FileList", "FileMenu",
            "IFrameDialog",/*"WikiDialog",*/"runtime", "KernelDiffDialog","Sync","searchDialog","StackTrace","syncWithKernel",
            "UI","ResEditor","WebSite","exceptionCatcher","Tonyu.TraceTbl",
            "SoundDiag","Log","MainClassDialog","DeferredUtil","NWMenu",
-           "ProjectCompiler","compiledProject","mkrunDiag","zip","LSFS","WebFS"
+           "ProjectCompiler","compiledProject","mkrunDiag","zip","LSFS","WebFS",
+           "extLink"
           ],
 function (Util, Tonyu, FS, PathUtil, FileList, FileMenu,
           showErrorPos, fixIndent, Wiki, Tonyu_Project,
@@ -12,7 +13,8 @@ function (Util, Tonyu, FS, PathUtil, FileList, FileMenu,
           IFrameDialog,/*WikiDialog,*/ rt , KDD,Sync,searchDialog,StackTrace,swk,
           UI,ResEditor,WebSite,EC,TTB,
           sd,Log,MainClassDialog,DU,NWMenu,
-          TPRC,CPPRJ,mkrunDiag,zip,LSFS,WebFS
+          TPRC,CPPRJ,mkrunDiag,zip,LSFS,WebFS,
+          extLink
           ) {
 $(function () {
     if (!WebSite.isNW) {
@@ -38,7 +40,7 @@ $(function () {
         }
     }
     var dir=Util.getQueryString("dir", "/Tonyu/Projects/SandBox/");
-    var curProjectDir=FS.get(dir);
+    var curPrjDir=curProjectDir=FS.get(dir);
     var curPrj=Tonyu_Project(curProjectDir);//, kernelDir);
     Tonyu.globals.$currentProject=curPrj;
     Tonyu.currentProject=curPrj;
@@ -334,6 +336,7 @@ $(function () {
             o.run.mainClass=name;
             curPrj.setOptions();
         }
+        curPrjDir.touch();
         curPrj.rawRun(o.run.bootClass).fail(function (e) {
             if (e.isTError) {
                 console.log("showErr: run");
@@ -598,5 +601,6 @@ $(function () {
         });
         ld.dialog({modal:true});
     }
+    extLink.all();
 });
 });
