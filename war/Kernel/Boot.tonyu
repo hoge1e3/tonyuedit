@@ -20,9 +20,9 @@ native requestAnimationFrame;
 }
 \loadPlugins() {
     print ("Loading plugins..");
-    var a=asyncResult();
-    $currentProject.loadPlugins(a.receiver);
-    waitFor(a);
+    runAsync \(r) {
+        $currentProject.loadPlugins(r);
+    };
 }
 \initSprites() {
     $Sprites=new Sprites();
@@ -36,13 +36,13 @@ native requestAnimationFrame;
     drawFrame();
     print ("Loading pats..");
     var rs=$currentProject.getResource();
-    a=asyncResult();
-    ImageList.load( rs.images, a.receiver)
-    {baseDir:$currentProject.getDir()};
-    waitFor(a);
-    var r=a[0];
-    $Sprites.setImageList(r);
-    for (var name,val in r.names) {
+    var r;
+    r=runAsync \(succ) {
+        ImageList.load( rs.images, succ) {baseDir:$currentProject.getDir()};
+    };
+    //var r=a[0];
+    $Sprites.setImageList(r[0]);
+    for (var name,val in r[0].names) {
         Tonyu.setGlobal(name, val);
     }
     print ("Loading pats done.");
@@ -80,11 +80,19 @@ native requestAnimationFrame;
     method=method||"main";
     args=args||[];
     var th=scheduler.newThread(obj, method, args);
-    addThreadGroup(obj);
-    obj.addThread(th);
+    obj.setThreadGroup(this);
+    th.setThreadGroup(obj);
     return th;
 }
+\initEvents() {
+    eventTypes={
+        "screenOut":ScreenOutHandler,
+        "crashTo":CrashToHandler,
+        "within":WithinHandler
+    };
+}
 $Boot=this;
+initEvents();
 loadPlugins();
 initSprites();
 initSounds();
@@ -92,6 +100,7 @@ $InputDevice=new InputDevice;
 $InputDevice.initCanvasEvents(cvj);
 initThread();
 
+$ObjectPool=new ObjectPool;
 $pat_fruits=30;
 $Keys=new Keys;
 $Math=Math;
@@ -116,10 +125,10 @@ while (true) {
 	while(moves<frameSkip) {
 		moveFrame();
 		moves++;
-		if (moves<frameSkip) afterDraw();
+		if (moves<frameSkip) afterDraw(false);
 	}
 	drawFrame();
-	afterDraw();
+	afterDraw(true);
 	waitRAF();//★
     elapsed = now()-start;
     var cnt=rafCount-1;
@@ -144,7 +153,7 @@ nowait \detectRAFResolution(t) {
 	if (rafResolution) return;
 // RAFの分解能（1フレーム時間をRAFの回数に換算したもの）を求める。tはRAFとRAFの間隔ms
 	var time=1000/_fps;
-	var reso=time/t;  // t=15 time=30  reso=2  
+	var reso=time/t;  // t=15 time=30  reso=2
 	// reso は、nを整数として n あるいは 1/n  と表現できると期待
 	if (reso>1) reso=floor(reso+0.5); // 1.8 -> 2
 	else reso=1/floor(1/reso+0.5);  // 0.6 -> 1/2
@@ -183,7 +192,7 @@ nowait \detectRAFResolution(t) {
     } else {
         frameSkipped++;
     }
-    afterDraw();
+    afterDraw(doDraw);
     waitFrame(); // FPS制御
 }
 \handlePause() {
@@ -211,9 +220,9 @@ nowait \moveFrame() {
     moveTime=now()-s;
     fps_rpsCnt ++;
 }
-nowait \afterDraw() {// should call (after draw) or (move and frame skip)
+nowait \afterDraw(drawn) {// should call (after draw) or (move and frame skip)
     $Sprites.checkHit();
-    $Sprites.removeOneframes();
+    $Sprites.removeOneframes(drawn);
 }
 nowait \initFPSParams() {
     // フレームレートの設定
@@ -257,8 +266,8 @@ nowait \getFrameRate() {
 
 // Tonyu1の$System.setFrameRate() //
 nowait \setFrameRate(fps, maxFrameSkip) {
-	if (_fps!=fps) { 
-		rafRess={}; 
+	if (_fps!=fps) {
+		rafRess={};
 		rafResolution=null;
 		frameSkip=1;
 		rafCnt=floor(60/fps+0.5);

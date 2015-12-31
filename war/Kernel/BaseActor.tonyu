@@ -9,18 +9,14 @@ native FS;
 native Array;
 
 \new(x,y,p) {
-    //if (Tonyu.runMode) {
-        _th=$Boot.schedule(this,"main",[]);
-        registerEventHandler("screenOut",new ScreenOutHandler);
-        registerEventHandler("crashTo",new CrashToHandler);
-        registerEventHandler("within",new WithinHandler);
-    //}
+    _th=$Boot.schedule(this,"main",[]);
     if (typeof x=="object") Tonyu.extend(this,x);
     else if (typeof x=="number") {
         this.x=x;
         this.y=y;
         this.p=p;
     }
+
     if (scaleX==null) scaleX=1;
     if (rotation==null) rotation=0;
     if (rotate==null) rotate=0;
@@ -198,7 +194,7 @@ nowait \within1(t,distance){
     while(true){
         if(typeof d=="function"){
             for(obj in allWithin(d,r)){
-                print(r);
+                //print(r);
                 f(obj);
             }
         }else if(within(d,r)){
@@ -217,20 +213,15 @@ nowait \currentThreadGroup() {//@deprecated
 }
 nowait \die() {
     killThreadGroup();
-    /*if (_th) {
-        _th.kill();
-    }*/
     hide();
     fireEvent("die");
     _isDead=true;
+    if (_poolArray) {
+        _poolArray.push(this);
+        objectPoolAge=(objectPoolAge||0)+1;
+    }
 }
 nowait \hide() {
-    /*if (_sprite) {
-        $Sprites.remove(_sprite);
-        _sprite=null;
-    } else {*/
-        //$Sprites.remove(this);
-    //}
     if(layer && typeof layer.remove=="function"){
         layer.remove(this);
     }else{
@@ -328,9 +319,9 @@ nowait \draw(ctx) {
         }
     }
 }
-nowait \asyncResult() {//@deperecated
+/*nowait \asyncResult() {//@deperecated
     return Tonyu.asyncResult();
-}
+}*/
 
 \runAsync(f) {
     if (!_thread) throw new Error("runAsync should run in wait mode");
@@ -374,7 +365,10 @@ nowait \asyncResult() {//@deperecated
     return files.rel(path).setPolicy {topDir:d};
 }
 \waitInputDevice(fl) {
-    if (fl!==false) {
+    runAsync \(f){
+        $InputDevice.addOnetimeListener(f);
+    };
+    /*if (fl!==false) {
         if (!origTG) {
             ifwait {
                 origTG=_thread.group;
@@ -391,7 +385,7 @@ nowait \asyncResult() {//@deperecated
                 origTG=null;
             }
         }
-    }
+    }*/
 }
 \redrawScreen() {
     $Sprites.draw($Screen.buf[0]);
@@ -433,6 +427,48 @@ nowait \asyncResult() {//@deperecated
 \setVisible(v) {
     _isInvisible=!v;
 }
-\appear(o) {
-    return o;
+\useObjectPool=value {
+    if (value) {
+        _poolArray=$ObjectPool.poolList(getClassInfo().fullName);
+    }
+}
+\appear(o,param) {
+    if (typeof o=="function") {
+        var p=$ObjectPool.withdraw(o.meta.fullName);
+        if (p) {
+        	for (var k in Object.keys(p)) {
+        	   if (k!="objectPoolAge") delete p[k];
+		    }
+		    o.call(p,param);
+        	return p;
+        } else {
+        	return new o(param);
+        }
+    } else {
+	    return o;
+	}
+}
+\wait(t) {
+    if(_thread) {
+        _thread.suspend();
+        if (t) {
+            _thread.waitCount=t;
+            if ($Scheduler) $Scheduler.addToNext(_thread);
+        }
+    } else if (_th) {
+        if (t) {
+            _th.waitCount=t;
+        } else {
+            if (_th.scheduled) _th.scheduled.unschedule(_th);
+        }
+    }
+}
+nowait \notify() {
+    if (_th) {
+        if (_th.scheduled) {
+             _th.waitCount=0;
+        } else {
+            if ($Scheduler) $Scheduler.addToCur(_th);
+        }
+    }
 }

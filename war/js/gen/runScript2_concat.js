@@ -1,4 +1,4 @@
-// Created at Wed Dec 16 2015 16:37:33 GMT+0900 (東京 (標準時))
+// Created at Sun Dec 27 2015 21:10:44 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -865,7 +865,7 @@ define(["PathUtil"], function (P) {
         } else {
             WebSite.tonyuHome=P.rel(WebSite.cwd,"fs/Tonyu/");
         }
-        WebSite.logdir="C:/var/log/Tonyu/";
+        WebSite.logdir=process.env.TONYU_LOGDIR;//"C:/var/log/Tonyu/";
         WebSite.wwwDir=P.rel(WebSite.cwd,"www/");
         WebSite.platform=process.platform;
         WebSite.ffmpeg=P.rel(WebSite.cwd,(WebSite.platform=="win32"?
@@ -2435,7 +2435,7 @@ define(["WebSite"],function (WebSite){
         }
         var i=0;
         console.log("loading plugins",namea);
-        loadNext();
+        setTimeout(loadNext,0);
         function loadNext() {
             if (i>=namea.length) options.onload();
             else plugins.load(namea[i++],loadNext);
@@ -2814,18 +2814,383 @@ define(["FS","Util","WebSite","PathUtil","assert"],
     return Shell;
 });
 
+requireSimulator.setName('Class');
+define(["assert"],function (A) {
+    function Class() {
+        var superClass,defs;
+        if (arguments.length==2) {
+            superClass=A.is(arguments[0],Function);
+            defs=A.is(arguments[1],Object);
+        } else if (arguments.length==1) {
+            superClass=Object;
+            defs=A.is(arguments[0],Object);
+        }
+        var c=defs.initialize || function (){};
+        var p=c.prototype;
+        for (var m in defs) {
+            p[m]=defs[m];
+        }
+        p.callSuper=function () {
+            var a=[];
+            for (var i=0; arguments.length;i++) {
+                a.push(arguments[i]);
+            }
+            var n=A.is(a.shift(),String);
+            var f=A.is(superClass.prototype[n], Function);
+            return f.apply(this,a);
+        };
+        return c;
+    }
+    return Class;
+});
+requireSimulator.setName('Tonyu.Thread');
+define(["Class"],function (Class) {
+    var cnts={enterC:{},exitC:0};
+    try {window.cnts=cnts;}catch(e){}
+    var TonyuThread=Class({
+        initialize: function TonyuThread() {
+            this.frame=null;
+            this._isDead=false;
+            //this._isAlive=true;
+            this.cnt=0;
+            this._isWaiting=false;
+            this.fSuspended=false;
+            this.tryStack=[];
+            this.preemptionTime=60;
+            this.age=0; // inc if object pooled
+        },
+        isAlive:function isAlive() {
+            return !this.isDead();
+            //return this.frame!=null && this._isAlive;
+        },
+        isDead: function () {
+            return this._isDead=this._isDead || (this.frame==null) ||
+            (this._threadGroup && (
+                    this._threadGroup.objectPoolAge!=this.tGrpObjectPoolAge ||
+                    this._threadGroup.isDeadThreadGroup()
+            ));
+        },
+        setThreadGroup: function setThreadGroup(g) {// g:TonyuThread
+            this._threadGroup=g;
+            this.tGrpObjectPoolAge=g.objectPoolAge;
+            //if (g) g.add(fb);
+        },
+        isWaiting:function isWaiting() {
+            return this._isWaiting;
+        },
+        suspend:function suspend() {
+            this.fSuspended=true;
+            this.cnt=0;
+        },
+        enter:function enter(frameFunc) {
+            //var n=frameFunc.name;
+            //cnts.enterC[n]=(cnts.enterC[n]||0)+1;
+            this.frame={prev:this.frame, func:frameFunc};
+        },
+        apply:function apply(obj, methodName, args) {
+            if (!args) args=[];
+            var method;
+            if (typeof methodName=="string") {
+                method=obj["fiber$"+methodName];
+            }
+            if (typeof methodName=="function") {
+                method=methodName.fiber;
+            }
+            args=[this].concat(args);
+            var pc=0;
+            return this.enter(function () {
+                switch (pc){
+                case 0:
+                    method.apply(obj,args);
+                    pc=1;break;
+                case 1:
+                    args[0].exit();
+                    pc=2;break;
+                }
+            });
+        },
+        gotoCatch: function gotoCatch(e) {
+            var fb=this;
+            if (fb.tryStack.length==0) {
+                fb.kill();
+                fb.handleEx(e);
+                return;
+            }
+            fb.lastEx=e;
+            var s=fb.tryStack.pop();
+            while (fb.frame) {
+                if (s.frame===fb.frame) {
+                    fb.catchPC=s.catchPC;
+                    break;
+                } else {
+                    fb.frame=fb.frame.prev;
+                }
+            }
+        },
+        startCatch: function startCatch() {
+            var fb=this;
+            var e=fb.lastEx;
+            fb.lastEx=null;
+            return e;
+        },
+        exit: function exit(res) {
+            //cnts.exitC++;
+            this.frame=(this.frame ? this.frame.prev:null);
+            this.retVal=res;
+        },
+        enterTry: function enterTry(catchPC) {
+            var fb=this;
+            fb.tryStack.push({frame:fb.frame,catchPC:catchPC});
+        },
+        exitTry: function exitTry() {
+            var fb=this;
+            fb.tryStack.pop();
+        },
+        waitEvent: function waitEvent(obj,eventSpec) { // eventSpec=[EventType, arg1, arg2....]
+            var fb=this;
+            fb.suspend();
+            if (!obj.on) return;
+            var h;
+            eventSpec=eventSpec.concat(function () {
+                fb.lastEvent=arguments;
+                fb.retVal=arguments[0];
+                h.remove();
+                fb.steps();
+            });
+            h=obj.on.apply(obj, eventSpec);
+        },
+        runAsync: function runAsync(f) {
+            var fb=this;
+            var succ=function () {
+                fb.retVal=arguments;
+                fb.steps();
+            };
+            var err=function () {
+                var msg="";
+                for (var i=0; i<arguments.length; i++) {
+                    msg+=arguments[i]+",";
+                }
+                if (msg.length==0) msg="Async fail";
+                var e=new Error(msg);
+                e.args=arguments;
+                fb.gotoCatch(e);
+                fb.steps();
+            };
+            fb.suspend();
+            setTimeout(function () {
+                f(succ,err);
+            },0);
+        },
+        waitFor: function waitFor(j) {
+            var fb=this;
+            fb._isWaiting=true;
+            fb.suspend();
+            if (!j) return;
+            /*if (j.addTerminatedListener) j.addTerminatedListener(function () {
+                fb._isWaiting=false;
+                if (fb.group) fb.group.notifyResume();
+                else if (fb.isAlive()) {
+                    try {
+                        fb.steps();
+                    }catch(e) {
+                        fb.handleEx(e);
+                    }
+                }
+            });
+            else */if (j.then && j.fail) {
+                j.then(function (r) {
+                    fb.retVal=r;
+                    fb.steps();
+                });
+                j.fail(function (e) {
+                    if (e instanceof Error) {
+                        fb.gotoCatch(e);
+                    } else {
+                        var re=new Error(e);
+                        re.original=e;
+                        fb.gotoCatch(re);
+                    }
+                    fb.steps();
+                });
+            }
+        },
+        resume: function (retVal) {
+            this.retVal=retVal;
+            this.steps();
+        },
+        steps: function steps() {
+            var fb=this;
+            if (fb.isDead()) return;
+            var sv=Tonyu.currentThread;
+            Tonyu.currentThread=fb;
+            fb.cnt=fb.preemptionTime;
+            fb.preempted=false;
+            fb.fSuspended=false;
+            while (fb.cnt>0 && fb.frame) {
+                try {
+                    //while (new Date().getTime()<lim) {
+                    while (fb.cnt-->0 && fb.frame) {
+                        fb.frame.func(fb);
+                    }
+                    fb.preempted= (!fb.fSuspended) && fb.isAlive();
+                } catch(e) {
+                    fb.gotoCatch(e);
+                }
+            }
+            Tonyu.currentThread=sv;
+        },
+        kill: function kill() {
+            var fb=this;
+            //fb._isAlive=false;
+            fb._isDead=true;
+            fb.frame=null;
+        },
+        clearFrame: function clearFrame() {
+            this.frame=null;
+            this.tryStack=[];
+        }
+    });
+    return TonyuThread;
+});
+requireSimulator.setName('Tonyu.Iterator');
+define(["Class"], function (Class) {
+    var ArrayValueIterator=Class({
+        initialize: function ArrayValueIterator(set) {
+            this.set=set;
+            this.i=0;
+        },
+        next:function () {
+            if (this.i>=this.set.length) return false;
+            this[0]=this.set[this.i];
+            this.i++;
+            return true;
+        }
+    });
+    var ArrayKeyValueIterator=Class({
+        initialize: function ArrayKeyValueIterator(set) {
+            this.set=set;
+            this.i=0;
+        },
+        next:function () {
+            if (this.i>=this.set.length) return false;
+            this[0]=this.i;
+            this[1]=this.set[this.i];
+            this.i++;
+            return true;
+        }
+    });
+    var ObjectKeyIterator=Class({
+        initialize: function ObjectKeyIterator(set) {
+            this.elems=[];
+            for (var k in set) {
+                this.elems.push(k);
+            }
+            this.i=0;
+        },
+        next:function () {
+            if (this.i>=this.elems.length) return false;
+            this[0]=this.elems[this.i];
+            this.i++;
+            return true;
+        }
+    });
+    var ObjectKeyValueIterator=Class({
+        initialize: function ObjectKeyValueIterator(set) {
+            this.elems=[];
+            for (var k in set) {
+                this.elems.push([k,set[k]]);
+            }
+            this.i=0;
+        },
+        next:function () {
+            if (this.i>=this.elems.length) return false;
+            this[0]=this.elems[this.i][0];
+            this[1]=this.elems[this.i][1];
+            this.i++;
+            return true;
+        }
+    });
+
+
+    function IT(set, arity) {
+        //var res={};
+       if (set.tonyuIterator) {
+    	   return set.tonyuIterator(arity);
+       } else if (set instanceof Array) {
+           //res.i=0;
+           if (arity==1) {
+               return new ArrayValueIterator(set);
+               /*res.next=function () {
+                   if (res.i>=set.length) return false;
+                   this[0]=set[res.i];
+                   res.i++;
+                   return true;
+               };*/
+           } else {
+               return new ArrayKeyValueIterator(set);
+               /*res.next=function () {
+                   if (res.i>=set.length) return false;
+                   this[0]=res.i;
+                   this[1]=set[res.i];
+                   res.i++;
+                   return true;
+               };*/
+           }
+       } else if (set instanceof Object){
+           //res.i=0;
+           //var elems=[];
+           if (arity==1) {
+               return new ObjectKeyIterator(set);
+               /*for (var k in set) {
+                   elems.push(k);
+               }
+               res.next=function () {
+                   if (res.i>=elems.length) return false;
+                   this[0]=elems[res.i];
+                   res.i++;
+                   return true;
+               };*/
+           } else {
+               return new ObjectKeyValueIterator(set);
+               /*for (var k in set) {
+                   elems.push([k, set[k]]);
+               }
+               res.next=function () {
+                   if (res.i>=elems.length) return false;
+                   this[0]=elems[res.i][0];
+                   this[1]=elems[res.i][1];
+                   res.i++;
+                   return true;
+               };*/
+           }
+       } else {
+           console.log(set);
+           throw new Error(set+" is not iterable");
+       }
+       return res;
+   }
+
+//   Tonyu.iterator=IT;
+    return IT;
+});
 requireSimulator.setName('Tonyu');
 if (typeof define!=="function") {
     define=require("requirejs").define;
 }
-define(["assert"],function (assert) {
+define(["assert","Tonyu.Thread","Tonyu.Iterator","DeferredUtil"],
+        function (assert,TT,IT,DU) {
 return Tonyu=function () {
     var preemptionTime=60;
     function thread() {
+        var t=new TT;
+        t.handleEx=handleEx;
+        return t;
+    }
+    /*function threadOLD() {
         //var stpd=0;
         var fb={enter:enter, apply:apply,
                 exit:exit, steps:steps, step:step, isAlive:isAlive, isWaiting:isWaiting,
-                suspend:suspend,retVal:0/*retVal*/,tryStack:[],
+                suspend:suspend,retVal:0,tryStack:[],
                 kill:kill, waitFor: waitFor,setGroup:setGroup,
                 enterTry:enterTry,exitTry:exitTry,startCatch:startCatch,
                 waitEvent:waitEvent,runAsync:runAsync,clearFrame:clearFrame};
@@ -2981,9 +3346,9 @@ return Tonyu=function () {
             fb.group=g;
             if (g) g.add(fb);
         }
-        /*function retVal() {
+        //function retVal() {
             return retVal;
-        }*/
+        //}/
         function steps() {
             //stpd++;
             //if (stpd>5) throw new Error("Depth too much");
@@ -3010,9 +3375,12 @@ return Tonyu=function () {
             tryStack=[];
         }
         return fb;
-    }
+    }*/
     function timeout(t) {
-        var res={};
+        return DU.funcPromise(function (s) {
+            setTimeout(s,t);
+        });
+        /*var res={};
         var ls=[];
         res.addTerminatedListener=function (l) {
             ls.push(l);
@@ -3022,10 +3390,13 @@ return Tonyu=function () {
                 l();
             });
         },t);
-        return res;
+        return res;*/
     }
     function animationFrame() {
-        var res={};
+        return DU.funcPromise( function (f) {
+            requestAnimationFrame(f);
+        });
+        /*var res={};
         var ls=[];
         res.addTerminatedListener=function (l) {
             ls.push(l);
@@ -3035,10 +3406,10 @@ return Tonyu=function () {
                 l();
             });
         });
-        return res;
+        return res;*/
     }
 
-    function asyncResult() {
+    /*function asyncResult() {
         var res=[];
         var ls=[];
         var hasRes=false;
@@ -3059,8 +3430,8 @@ return Tonyu=function () {
             });
         };
         return res;
-    }
-    function threadGroup() {//@deprecated
+    }*/
+    /*function threadGroup() {//@deprecated
         var threads=[];
         var waits=[];
         var _isAlive=true;
@@ -3125,7 +3496,7 @@ return Tonyu=function () {
             }
         }
         return thg={add:add, addObj:addObj,  steps:steps, kill:kill, notifyResume: notifyResume, threads:threads};
-    }
+    }*/
     function handleEx(e) {
         if (Tonyu.onRuntimeError) {
             Tonyu.onRuntimeError(e);
@@ -3134,7 +3505,7 @@ return Tonyu=function () {
             throw e;
         }
     }
-    function defunct(f) {
+    /*function defunct(f) {
         if (f===Function) {
             return null;
         }
@@ -3146,7 +3517,7 @@ return Tonyu=function () {
             }
         }
         return f;
-    }
+    }*/
     /*function klass() {
         var parent, prot, includes=[];
         if (arguments.length==1) {
@@ -3233,6 +3604,9 @@ return Tonyu=function () {
         }
         return o;
     };
+    Function.prototype.constructor=function () {
+        throw new Error("This method should not be called");
+    };
     klass.define=function (params) {
         // fullName, shortName,namspace, superclass, includes, methods:{name/fiber$name: func}, decls
         var parent=params.superclass;
@@ -3243,7 +3617,7 @@ return Tonyu=function () {
         var methods=params.methods;
         var decls=params.decls;
         var nso=klass.ensureNamespace(Tonyu.classes, namespace);
-        var prot=defunct(methods);
+        var prot=methods;
         var init=prot.initialize;
         delete prot.initialize;
         var res;
@@ -3406,12 +3780,13 @@ return Tonyu=function () {
         $LASTPOS=0;
         th.steps();
     }
-    return Tonyu={thread:thread, threadGroup:threadGroup, klass:klass, bless:bless, extend:extend,
+    return Tonyu={thread:thread, /*threadGroup:threadGroup,*/ klass:klass, bless:bless, extend:extend,
             globals:globals, classes:classes, classMetas:classMetas, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
-            timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
+            timeout:timeout,animationFrame:animationFrame, /*asyncResult:asyncResult,*/
+            bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
-            run:run,
-            VERSION:1450251439339,//EMBED_VERSION
+            run:run,iterator:IT,
+            VERSION:1451218215118,//EMBED_VERSION
             A:A};
 }();
 });
@@ -4279,64 +4654,6 @@ setTimeout(function(){ T2MediaLib.stopAudio(); }, 10000);
 
 
 
-requireSimulator.setName('Tonyu.Iterator');
-define(["Tonyu"], function (T) {
-   function IT(set, arity) {
-       var res={};
-       if (set.tonyuIterator) {
-    	   return set.tonyuIterator(arity);
-       } else if (set instanceof Array) {
-           res.i=0;
-           if (arity==1) {
-               res.next=function () {
-                   if (res.i>=set.length) return false;
-                   this[0]=set[res.i];
-                   res.i++;
-                   return true;
-               };
-           } else {
-               res.next=function () {
-                   if (res.i>=set.length) return false;
-                   this[0]=res.i;
-                   this[1]=set[res.i];
-                   res.i++;
-                   return true;
-               };
-           }
-       } else if (set instanceof Object){
-           res.i=0;
-           var elems=[];
-           if (arity==1) {
-               for (var k in set) {
-                   elems.push(k);
-               }
-               res.next=function () {
-                   if (res.i>=elems.length) return false;
-                   this[0]=elems[res.i];
-                   res.i++;
-                   return true;
-               };
-           } else {
-               for (var k in set) {
-                   elems.push([k, set[k]]);
-               }
-               res.next=function () {
-                   if (res.i>=elems.length) return false;
-                   this[0]=elems[res.i][0];
-                   this[1]=elems[res.i][1];
-                   res.i++;
-                   return true;
-               };
-           }
-       } else {
-           console.log(set);
-           throw new Error(set+" is not iterable");
-       }
-       return res;
-   }
-   Tonyu.iterator=IT;
-    return IT;
-});
 requireSimulator.setName('exceptionCatcher');
 define([], function () {
     var res={};
@@ -4482,13 +4799,13 @@ define(["Util","exceptionCatcher"],function (Util, EC) {
         $edits.on.writeToModel= function (name, val) {};
 
         if (listeners.length>0) {
-            setTimeout(F(l),10);
+            setTimeout(F(l),50);
         }
         function l() {
             listeners.forEach(function (li) {
                 li();
             });
-            setTimeout(F(l),10);
+            setTimeout(F(l),50);
         }
         return res;
         function parse(expr) {
@@ -4635,7 +4952,7 @@ define(["UI"],function (UI) {
     return UIDiag;
 });
 requireSimulator.setName('runtime');
-requirejs(["ImageList","T2MediaLib","Tonyu","Tonyu.Iterator","UIDiag"], function () {
+requirejs(["ImageList","T2MediaLib","Tonyu","UIDiag"], function () {
 
 });
 requireSimulator.setName('runScript2');

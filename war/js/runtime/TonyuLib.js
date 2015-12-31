@@ -1,14 +1,20 @@
 if (typeof define!=="function") {
     define=require("requirejs").define;
 }
-define(["assert"],function (assert) {
+define(["assert","Tonyu.Thread","Tonyu.Iterator","DeferredUtil"],
+        function (assert,TT,IT,DU) {
 return Tonyu=function () {
     var preemptionTime=60;
     function thread() {
+        var t=new TT;
+        t.handleEx=handleEx;
+        return t;
+    }
+    /*function threadOLD() {
         //var stpd=0;
         var fb={enter:enter, apply:apply,
                 exit:exit, steps:steps, step:step, isAlive:isAlive, isWaiting:isWaiting,
-                suspend:suspend,retVal:0/*retVal*/,tryStack:[],
+                suspend:suspend,retVal:0,tryStack:[],
                 kill:kill, waitFor: waitFor,setGroup:setGroup,
                 enterTry:enterTry,exitTry:exitTry,startCatch:startCatch,
                 waitEvent:waitEvent,runAsync:runAsync,clearFrame:clearFrame};
@@ -164,9 +170,9 @@ return Tonyu=function () {
             fb.group=g;
             if (g) g.add(fb);
         }
-        /*function retVal() {
+        //function retVal() {
             return retVal;
-        }*/
+        //}/
         function steps() {
             //stpd++;
             //if (stpd>5) throw new Error("Depth too much");
@@ -193,9 +199,12 @@ return Tonyu=function () {
             tryStack=[];
         }
         return fb;
-    }
+    }*/
     function timeout(t) {
-        var res={};
+        return DU.funcPromise(function (s) {
+            setTimeout(s,t);
+        });
+        /*var res={};
         var ls=[];
         res.addTerminatedListener=function (l) {
             ls.push(l);
@@ -205,10 +214,13 @@ return Tonyu=function () {
                 l();
             });
         },t);
-        return res;
+        return res;*/
     }
     function animationFrame() {
-        var res={};
+        return DU.funcPromise( function (f) {
+            requestAnimationFrame(f);
+        });
+        /*var res={};
         var ls=[];
         res.addTerminatedListener=function (l) {
             ls.push(l);
@@ -218,10 +230,10 @@ return Tonyu=function () {
                 l();
             });
         });
-        return res;
+        return res;*/
     }
 
-    function asyncResult() {
+    /*function asyncResult() {
         var res=[];
         var ls=[];
         var hasRes=false;
@@ -242,8 +254,8 @@ return Tonyu=function () {
             });
         };
         return res;
-    }
-    function threadGroup() {//@deprecated
+    }*/
+    /*function threadGroup() {//@deprecated
         var threads=[];
         var waits=[];
         var _isAlive=true;
@@ -308,7 +320,7 @@ return Tonyu=function () {
             }
         }
         return thg={add:add, addObj:addObj,  steps:steps, kill:kill, notifyResume: notifyResume, threads:threads};
-    }
+    }*/
     function handleEx(e) {
         if (Tonyu.onRuntimeError) {
             Tonyu.onRuntimeError(e);
@@ -317,7 +329,7 @@ return Tonyu=function () {
             throw e;
         }
     }
-    function defunct(f) {
+    /*function defunct(f) {
         if (f===Function) {
             return null;
         }
@@ -329,7 +341,7 @@ return Tonyu=function () {
             }
         }
         return f;
-    }
+    }*/
     /*function klass() {
         var parent, prot, includes=[];
         if (arguments.length==1) {
@@ -416,6 +428,9 @@ return Tonyu=function () {
         }
         return o;
     };
+    Function.prototype.constructor=function () {
+        throw new Error("This method should not be called");
+    };
     klass.define=function (params) {
         // fullName, shortName,namspace, superclass, includes, methods:{name/fiber$name: func}, decls
         var parent=params.superclass;
@@ -426,7 +441,7 @@ return Tonyu=function () {
         var methods=params.methods;
         var decls=params.decls;
         var nso=klass.ensureNamespace(Tonyu.classes, namespace);
-        var prot=defunct(methods);
+        var prot=methods;
         var init=prot.initialize;
         delete prot.initialize;
         var res;
@@ -589,12 +604,13 @@ return Tonyu=function () {
         $LASTPOS=0;
         th.steps();
     }
-    return Tonyu={thread:thread, threadGroup:threadGroup, klass:klass, bless:bless, extend:extend,
+    return Tonyu={thread:thread, /*threadGroup:threadGroup,*/ klass:klass, bless:bless, extend:extend,
             globals:globals, classes:classes, classMetas:classMetas, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
-            timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
+            timeout:timeout,animationFrame:animationFrame, /*asyncResult:asyncResult,*/
+            bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
-            run:run,
-            VERSION:1450251439339,//EMBED_VERSION
+            run:run,iterator:IT,
+            VERSION:1451218215118,//EMBED_VERSION
             A:A};
 }();
 });
