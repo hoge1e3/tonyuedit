@@ -116,6 +116,7 @@ function genJS(klass, env) {//B
     }
     function lastPosF(node) {//G
         return function () {
+            if (ctx.noLastPos) return;
             buf.printf("%s%s=%s;//%s%n", (env.options.compiler.commentLastPos?"//":""),
                     LASTPOS, traceTbl.add(klass/*.src.tonyu*/,node.pos ), klass.fullName+":"+node.pos);
         };
@@ -188,12 +189,15 @@ function genJS(klass, env) {//B
             if (node.value) {
                 buf.printf("%v = %v", node.name, node.value );
             } else {
-                buf.printf("%v", node.name);
+                //buf.printf("%v", node.name);
             }
         },
         varsDecl: function (node) {
-            lastPosF(node)();
-            buf.printf("%j;", [";",node.decls]);
+            var decls=node.decls.filter(function (n) { return n.value; });
+            if (decls.length>0) {
+                lastPosF(node)();
+                buf.printf("%j;", [",",decls]);
+            }
         },
         jsonElem: function (node) {
             if (node.value) {
@@ -577,17 +581,30 @@ function genJS(klass, env) {//B
                     );
                 } else {
                     ctx.enter({noWait:true},function() {
-                        buf.printf(
-                            "%v%n"+
-                            "while(%v) {%{" +
-                               "%v%n" +
-                               "%v;%n" +
-                            "%}}",
-                            node.inFor.init ,
-                            node.inFor.cond,
-                                node.loop,
-                                node.inFor.next
-                        );
+                        if (node.inFor.init.type=="varsDecl" || node.inFor.init.type=="exprstmt") {
+                            buf.printf(
+                                    "for (%f  %v ; %v) {%{"+
+                                       "%v%n" +
+                                    "%}}"
+                                       ,
+                                    enterV({noLastPos:true}, node.inFor.init),
+                                    node.inFor.cond,
+                                    node.inFor.next,
+                                    node.loop
+                                );
+                        } else {
+                            buf.printf(
+                                    "%v%n"+
+                                    "while(%v) {%{" +
+                                       "%v%n" +
+                                       "%v;%n" +
+                                    "%}}",
+                                    node.inFor.init ,
+                                    node.inFor.cond,
+                                        node.loop,
+                                        node.inFor.next
+                                );
+                        }
                     });
                 }
             }
