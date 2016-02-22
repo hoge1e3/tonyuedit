@@ -3,7 +3,7 @@ requirejs(["Util", "Tonyu", "FS", "PathUtil","FileList", "FileMenu",
            /*"copySample",*/"Shell","Shell2","ProjectOptionsEditor","copyToKernel","KeyEventChecker",
            "IFrameDialog",/*"WikiDialog",*/"runtime", "KernelDiffDialog","Sync","searchDialog","StackTrace","syncWithKernel",
            "UI","ResEditor","WebSite","exceptionCatcher","Tonyu.TraceTbl",
-           "SoundDiag","Log","MainClassDialog","DeferredUtil","NWMenu",
+           "Log","MainClassDialog","DeferredUtil","NWMenu",
            "ProjectCompiler","compiledProject","mkrunDiag","zip","LSFS","WebFS",
            "extLink"
           ],
@@ -12,7 +12,7 @@ function (Util, Tonyu, FS, PathUtil, FileList, FileMenu,
           /*copySample,*/sh,sh2, ProjectOptionsEditor, ctk, KeyEventChecker,
           IFrameDialog,/*WikiDialog,*/ rt , KDD,Sync,searchDialog,StackTrace,swk,
           UI,ResEditor,WebSite,EC,TTB,
-          sd,Log,MainClassDialog,DU,NWMenu,
+          Log,MainClassDialog,DU,NWMenu,
           TPRC,CPPRJ,mkrunDiag,zip,LSFS,WebFS,
           extLink
           ) {
@@ -143,22 +143,23 @@ $(function () {
     };
     FM.on.mv=function (old,_new) {
         if (!refactorUI) return;
-        var oldCN=old.truncExt(EXT);
-        var newCN=_new.truncExt(EXT);
-        if (refactorUI.$vars.chk.prop("checked")) {
-            //alert(oldCN+"=>"+newCN);
-            save();
-            try {
-                curPrj.renameClassName(oldCN,newCN);
-            } catch (e) {
-                alert("プログラム内にエラーがあります．エラーを修正するか，「プログラム中のクラス名も変更する」のチェックを外してもう一度やり直してください．");
-                console.log(e);
-                return false;
+
+        //alert(oldCN+"=>"+newCN);
+        return $.when(save()).then(function () {
+            if (refactorUI.$vars.chk.prop("checked")) {
+                var oldCN=old.truncExt(EXT);
+                var newCN=_new.truncExt(EXT);
+                return curPrj.renameClassName(oldCN,newCN);
             }
-        }
+        }).then(function () {
+            refactorUI=null;
+            return reloadFromFiles();
+        }).fail(function (e) {
+            alert("プログラム内にエラーがあります．エラーを修正するか，「プログラム中のクラス名も変更する」のチェックを外してもう一度やり直してください．");
+            console.log(e);
+            return false;
+        });
         //close(old);  does in FileMenu
-        reloadFromFiles();
-        refactorUI=null;
     };
     F(FM.on);
     fl.ls(curProjectDir);
@@ -392,7 +393,7 @@ $(function () {
             //var userAgent = window.navigator.userAgent.toLowerCase();
             //if(userAgent.indexOf('msie')<0) throw e;
         } else {
-            UI("div",{title:"Error"},e,["pre",e.stack]).dialog({width:800});
+            UI("div",{title:"Error"},e+"",["pre",e.stack]).dialog({width:800});
             stop();
             //alertOnce(e);
             //throw e;
@@ -422,9 +423,13 @@ $(function () {
     }
     function fixEditorIndent(prog) {
         var cur=prog.getCursorPosition();
-        prog.setValue(fixIndent( prog.getValue() ));
-        prog.clearSelection();
-        prog.moveCursorTo(cur.row, cur.column);
+        var orig=prog.getValue();
+        var fixed=fixIndent( orig );
+        if (orig!=fixed) {
+            prog.setValue(fixed);
+            prog.clearSelection();
+            prog.moveCursorTo(cur.row, cur.column);
+        }
     }
     function reloadFromFiles() {
         for (var path in editors) {

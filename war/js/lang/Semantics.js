@@ -34,10 +34,10 @@ function initClassDecls(klass, env ) {//S
     //console.log(s+"",  !!klass.node, klass.nodeTimestamp, s.lastUpdate());
     //if (!klass.testid) klass.testid=Math.random();
     //console.log(klass.testid);
-    var MAIN={name:"main",stmts:[],pos:0};
+    var MAIN={name:"main",stmts:[],pos:0, isMain:true};
     // method := fiber | function
-    var fields={}, methods={main: MAIN}, natives={};
-    klass.decls={fields:fields, methods:methods, natives: natives};
+    var fields={}, methods={main: MAIN}, natives={}, amds={};
+    klass.decls={fields:fields, methods:methods, natives: natives, amds:amds };
     klass.node=node;
     /*function nc(o, mesg) {
         if (!o) throw mesg+" is null";
@@ -71,6 +71,8 @@ function initClassDecls(klass, env ) {//S
                 throw TError ( "親クラス "+spcn+"は定義されていません", s, pos);
             }
             klass.superclass=spc;
+        } else {
+            delete klass.superclass;
         }
         program.stmts.forEach(function (stmt) {
             if (stmt.type=="funcDecl") {
@@ -113,8 +115,9 @@ function annotateSource2(klass, env) {//B
     var decls=klass.decls;
     var fields=decls.fields,
         methods=decls.methods,
-        natives=decls.natives;
-    // ↑ このクラスが持つフィールド，ファイバ，関数，ネイティブ変数の集まり．親クラスの宣言は含まない
+        natives=decls.natives,
+        amds=decls.amds;
+    // ↑ このクラスが持つフィールド，ファイバ，関数，ネイティブ変数，モジュール変数の集まり．親クラスの宣言は含まない
     var ST=ScopeTypes;
     var topLevelScope={};
     // ↑ このソースコードのトップレベル変数の種類 ，親クラスの宣言を含む
@@ -136,6 +139,9 @@ function annotateSource2(klass, env) {//B
             left: OM.T,
             op:{type:"member",name:{text:OM.N}}
     };
+    // These has same value but different purposes: 
+    //  myMethodCallTmpl: avoid using bounded field for normal method(); call
+    //  fiberCallTmpl: detect fiber call
     var myMethodCallTmpl=fiberCallTmpl={
             type:"postfix",
             left:{type:"varAccess", name: {text:OM.N}},
@@ -235,17 +241,31 @@ function annotateSource2(klass, env) {//B
         var si=ctx.scope[n];
         var t=stype(si);
         if (!t) {
-            var isg=n.match(/^\$/);
-            t=isg?ST.GLOBAL:ST.FIELD;
+            if (env.amdPaths && env.amdPaths[n]) {
+                t=ST.MODULE;
+                klass.decls.amds[n]=env.amdPaths[n];
+                //console.log(n,"is module");
+            } else {
+                var isg=n.match(/^\$/);
+                t=isg?ST.GLOBAL:ST.FIELD;
+            }
             var opt={name:n};
-            if (!isg) opt.klass=klass.name;
+            if (t==ST.FIELD) {
+                opt.klass=klass.name;
+                klass.decls.fields[n]=si;
+            }
             si=topLevelScope[n]=genSt(t,opt);
         }
         return si;
     }
     var localsCollector=Visitor({
         varDecl: function (node) {
-            ctx.locals.varDecls[node.name.text]=node;
+            if (ctx.isMain) {
+                annotation(node,{varInMain:true});
+                //console.log("var in main",node.name.text);
+            } else {
+                ctx.locals.varDecls[node.name.text]=node;
+            }
         },
         funcDecl: function (node) {/*FDITSELFIGNORE*/
             ctx.locals.subFuncDecls[node.head.name.text]=node;
@@ -305,6 +325,7 @@ function annotateSource2(klass, env) {//B
     var varAccessesAnnotator=Visitor({//S
         varAccess: function (node) {
             var si=getScopeInfo(node.name.text);
+            var t=stype(si);
             annotation(node,{scopeInfo:si});
         },
         funcDecl: function (node) {/*FDITSELFIGNORE*/
@@ -446,6 +467,18 @@ function annotateSource2(klass, env) {//B
                 }
             }
             this.visit(node.expr);
+        },
+        varDecl: function (node) {
+            var t;
+            if (!ctx.noWait &&
+                    (t=OM.match(node.value,fiberCallTmpl)) &&
+                    stype(ctx.scope[t.N])==ST.METHOD &&
+                    !getMethod(t.N).nowait) {
+                t.type="varDecl";
+                annotation(node, {fiberCall:t});
+                fiberCallRequired(this.path);
+            }
+            this.visit(node.value);
         }
     });
     varAccessesAnnotator.def=visitSub;//S
@@ -463,8 +496,43 @@ function annotateSource2(klass, env) {//B
         }
     }
     function initParamsLocals(f) {//S
-        f.locals=collectLocals(f.stmts);
-        f.params=getParams(f);
+        //console.log("IS_MAIN", f.name, f.isMain);
+        ctx.enter({isMain:f.isMain}, function () {
+            f.locals=collectLocals(f.stmts);
+            f.params=getParams(f);
+        });
+    }
+    function annotateSubFuncExpr(node) {// annotateSubFunc or FuncExpr
+        var m,ps;
+        var body=node.body;
+        var name=(node.head.name ? node.head.name.text : "anonymous_"+node.pos );
+        if (m=OM.match( node, {head:{params:{params:OM.P}}})) {
+            ps=m.P;
+        } else {
+            ps=[];
+        }
+        var ns=newScope(ctx.scope);
+        ps.forEach(function (p) {
+            ns[p.name.text]=genSt(ST.PARAM);
+        });
+        var locals=collectLocals(body);
+        copyLocals(locals,ns);
+        var finfo=annotation(node);
+        ctx.enter({finfo: finfo}, function () {
+            annotateVarAccesses(body,ns);
+        });
+        var res={scope:ns, locals:locals, name:name, params:ps};
+        annotation(node,res);
+        annotation(node,finfo);
+        annotateSubFuncExprs(locals, ns);
+        return res;
+    }
+    function annotateSubFuncExprs(locals, scope) {//S
+        ctx.enter({scope:scope}, function () {
+            for (var n in locals.subFuncDecls) {
+                annotateSubFuncExpr(locals.subFuncDecls[n]);
+            }
+        });
     }
     function annotateMethodFiber(f) {//S
         var ns=newScope(ctx.scope);
@@ -486,40 +554,8 @@ function annotateSource2(klass, env) {//B
             for (var name in methods) {
                 if (debug) console.log("anon method1", name);
                 var method=methods[name];
-                initParamsLocals(method);
+                initParamsLocals(method);//MAINVAR
                 annotateMethodFiber(method);
-            }
-        });
-    }
-    function annotateSubFuncExpr(node) {// annotateSubFunc or FuncExpr
-        var m,ps;
-        var body=node.body;
-        var name=(node.head.name ? node.head.name.text : "anonymous_"+node.pos );
-        if (m=OM.match( node, {head:{params:{params:OM.P}}})) {
-            ps=m.P;
-        } else {
-            ps=[];
-        }
-        var ns=newScope(ctx.scope);
-        ps.forEach(function (p) {
-            ns[p.name.text]=genSt(ST.PARAM);
-        });
-        var locals=collectLocals(body, ns);
-        copyLocals(locals,ns);
-        var finfo=annotation(node);
-        ctx.enter({finfo: finfo}, function () {
-            annotateVarAccesses(body,ns);
-        });
-        var res={scope:ns, locals:locals, name:name, params:ps};
-        annotation(node,res);
-        annotation(node,finfo);
-        annotateSubFuncExprs(locals, ns);
-        return res;
-    }
-    function annotateSubFuncExprs(locals, scope) {//S
-        ctx.enter({scope:scope}, function () {
-            for (var n in locals.subFuncDecls) {
-                annotateSubFuncExpr(locals.subFuncDecls[n]);
             }
         });
     }

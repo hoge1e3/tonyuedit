@@ -1,10 +1,36 @@
 define([], function () {
     var DU;
     DU={
+            ensureDefer: function (v) {
+                var d=new $.Deferred;
+                var isDeferred;
+                $.when(v).then(function (r) {
+                    if (!isDeferred) {
+                        setTimeout(function () {
+                            d.resolve(r);
+                        },0);
+                    } else {
+                        d.resolve(r);
+                    }
+                }).fail(function (r) {
+                    if (!isDeferred) {
+                        setTimeout(function () {
+                            d.reject(r);
+                        },0);
+                    } else {
+                        d.reject(r);
+                    }
+                });
+                isDeferred=true;
+                return d.promise();
+            },
             directPromise:function (v) {
                 var d=new $.Deferred;
                 setTimeout(function () {d.resolve(v);},0);
                 return d.promise();
+            },
+            then: function (f) {
+                return DU.directPromise().then(f);
             },
             timeout:function (timeout) {
                 var d=new $.Deferred;
@@ -21,7 +47,7 @@ define([], function () {
                 return d.promise();
             },
             throwPromise:function (e) {
-                d=new $.Deferred;
+                var d=new $.Deferred;
                 setTimeout(function () {
                     d.reject(e);
                 }, 0);
@@ -32,7 +58,7 @@ define([], function () {
                     try {
                         return f.apply(this,arguments);
                     } catch(e) {
-                        console.log(e.stack);
+                        console.log(e,e.stack);
                         return DU.throwPromise(e);
                     }
                 };

@@ -86,7 +86,7 @@ var TPRC=function (dir) {
      };
      TPR.getOutputFile=function (lang) {
          var opt=TPR.getOptions();
-         var outF=TPR.resolve(A(opt.compiler.outputFile,"output file should be specified in options"));
+         var outF=TPR.resolve(A(opt.compiler.outputFile,"outputFile should be specified in options"));
          if (outF.isDir()) {
              throw new Error("out: directory style not supported");
          }
@@ -106,6 +106,7 @@ var TPRC=function (dir) {
      // Difference of ctx and env:  env is of THIS project. ctx is of cross-project
      TPR.loadClasses=function (ctx/*or options(For external call)*/) {
          Tonyu.runMode=false;
+         TPR.showProgress("LoadClasses: "+dir.name());
          console.log("LoadClasses: "+dir.path());
          ctx=initCtx(ctx);
          var visited=ctx.visited||{};
@@ -118,29 +119,14 @@ var TPRC=function (dir) {
                  return TPR.compile(ctx);
              } else {
                  var outF=TPR.getOutputFile("js");
+                 TPR.showProgress("Eval "+outF.name());
                  return evalFile(outF);//.then(F(copyToClasses));
              }
          });
-         /*function copyToClasses() {
-             var ns=TPR.getNamespace();
-            //same as compiledProject (XXXX)
-             var cls=Tonyu.classes;
-             ns.split(".").forEach(function (c) {
-                 if (cls) cls=cls[c];
-                 // comment out : when empty concat.js
-                 //if (!cls) throw new Error("namespace Not found :"+ns);
-             });
-             if (cls) {
-                 for (var cln in cls) {
-                     var cl=cls[cln];
-                     var m=Tonyu.klass.getMeta(cl);
-                     ctx.classes[m.fullName]=m;
-                 }
-             }
-             //------------------XXXX
-         }*/
      };
      function initCtx(ctx) {
+         //どうしてclassMetasとclassesをわけるのか？
+         // metaはFunctionより先に作られるから
          var env=TPR.env;
          if (!ctx) ctx={};
          if (!ctx.visited) {
@@ -150,14 +136,16 @@ var TPRC=function (dir) {
      }
      TPR.compile=function (ctx/*or options(For external call)*/) {
          Tonyu.runMode=false;
+         TPR.showProgress("Compile: "+dir.name());
          console.log("Compile: "+dir.path());
          ctx=initCtx(ctx);
          var myNsp=TPR.getNamespace();
+         var baseClasses,ctxOpt,env,myClasses,fileAddedOrRemoved,sf;
+         var compilingClasses;
          return TPR.loadDependingClasses(ctx).then(F(function () {
-             var baseClasses=ctx.classes;
-             //console.log("baseClasses", baseClasses);
-             var ctxOpt=ctx.options;
-             var env=TPR.env;
+             baseClasses=ctx.classes;
+             ctxOpt=ctx.options;
+             env=TPR.env;
              env.aliases={};
              env.parsedNode=env.parsedNode||{};
              env.classes=baseClasses;
@@ -165,13 +153,18 @@ var TPRC=function (dir) {
                  var cl=baseClasses[n];
                  env.aliases[ cl.shortName] = cl.fullName;
              }
-             var newClasses={};
-             var sf=TPR.sourceFiles(myNsp);
+             myClasses={};
+             fileAddedOrRemoved=!!ctxOpt.noIncremental;
+             sf=TPR.sourceFiles(myNsp);
              for (var shortCn in sf) {
                  var f=sf[shortCn];
                  var fullCn=myNsp+"."+shortCn;
+                 if (!baseClasses[fullCn]) {
+                     console.log("Class",fullCn,"is added.");
+                     fileAddedOrRemoved=true;
+                 }
                  var m=Tonyu.klass.getMeta(fullCn);
-                 newClasses[fullCn]=baseClasses[fullCn]=m;
+                 myClasses[fullCn]=baseClasses[fullCn]=m;
                  Tonyu.extend(m,{
                      fullName:  fullCn,
                      shortName: shortCn,
@@ -181,29 +174,74 @@ var TPRC=function (dir) {
                  m.src.tonyu=f;
                  env.aliases[shortCn]=fullCn;
              }
-             for (var n in newClasses) {
-                 console.log("initClassDecl: "+n);
-                 Semantics.initClassDecls(newClasses[n], env);/*ENVC*/
+             for (var n in baseClasses) {
+                 if (myClasses[n] && myClasses[n].src && !myClasses[n].src.js) {
+                     //前回コンパイルエラーだとここにくるかも
+                     console.log("Class",n,"has no js src");
+                     fileAddedOrRemoved=true;
+                 }
+                 if (!myClasses[n] && baseClasses[n].namespace==myNsp) {
+                     console.log("Class",n,"is removed");
+                     Tonyu.klass.removeMeta(n);
+                     fileAddedOrRemoved=true;
+                 }
              }
-             var ord=orderByInheritance(newClasses);/*ENVC*/
+             if (!fileAddedOrRemoved) {
+                 compilingClasses={};
+                 for (var n in myClasses) {
+                     if (Tonyu.klass.shouldCompile(myClasses[n])) {
+                         compilingClasses[n]=myClasses[n];
+                     }
+                 }
+             } else {
+                 compilingClasses=myClasses;
+             }
+             for (var n in compilingClasses) {
+                 console.log("initClassDecl: "+n);
+                 Semantics.initClassDecls(compilingClasses[n], env);/*ENVC*/
+             }
+             var ord=orderByInheritance(myClasses);/*ENVC*/
              ord.forEach(function (c) {
-                 console.log("annotate :"+c.fullName);
-                 Semantics.annotate(c, env);
+                 if (compilingClasses[c.fullName]) {
+                     console.log("annotate :"+c.fullName);
+                     Semantics.annotate(c, env);
+                 }
              });
-             TPR.concatJS(ord);
+             TPR.genJS(ord.filter(function (c) {
+                 return compilingClasses[c.fullName];
+             }));
+             var copt=TPR.getOptions().compiler;
+             if (!copt.genAMD) {
+                 return TPR.concatJS(ord);
+             }
          }));
      };
-     TPR.concatJS=function (ord) {
+     TPR.genJS=function (ord) {
+         // 途中でコンパイルエラーを起こすと。。。
          var env=TPR.env;
-         var cbuf="";
          ord.forEach(function (c) {
-             console.log("concatJS :"+c.fullName);
+             console.log("genJS :"+c.fullName);
              JSGenerator.genJS(c, env);
-             cbuf+=c.src.js+"\n";
          });
+     };
+     TPR.concatJS=function (ord) {
+         var cbuf="";
          var outf=TPR.getOutputFile();
+         TPR.showProgress("generate :"+outf.name());
+         console.log("generate :"+outf);
+         ord.forEach(function (c) {
+             if (typeof (c.src.js)=="string") {
+                 cbuf+=c.src.js+"\n";
+             } else if (c.src.js && c.src.js.isSFile && c.src.js.isSFile()) {
+                 /*return $.when(c.src.text()).then(function () {
+                 });*/
+                 cbuf+=c.src.js.text()+"\n";
+             } else {
+                 throw new Error("Src for "+c.fullName+" not generated ");
+             }
+         });
          outf.text(cbuf);
-         evalFile(outf);
+         return evalFile(outf);
      };
      TPR.getDependingProjects=function () {
          var opt=TPR.getOptions();
@@ -337,6 +375,11 @@ var TPRC=function (dir) {
                 }
             }
         }
+    };
+    TPR.showProgress=function (m) {
+    };
+    TPR.setAMDPaths=function (paths) {
+        TPR.env.amdPaths=paths;
     };
     return TPR;
 }

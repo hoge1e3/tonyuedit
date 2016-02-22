@@ -1,4 +1,4 @@
-define(["Class"],function (Class) {
+define(["DeferredUtil","Class"],function (DU,Class) {
     var cnts={enterC:{},exitC:0};
     try {window.cnts=cnts;}catch(e){}
     var TonyuThread=Class({
@@ -139,34 +139,19 @@ define(["Class"],function (Class) {
             var fb=this;
             fb._isWaiting=true;
             fb.suspend();
-            if (!j) return;
-            /*if (j.addTerminatedListener) j.addTerminatedListener(function () {
-                fb._isWaiting=false;
-                if (fb.group) fb.group.notifyResume();
-                else if (fb.isAlive()) {
-                    try {
-                        fb.steps();
-                    }catch(e) {
-                        fb.handleEx(e);
-                    }
+            return DU.ensureDefer(j).then(function (r) {
+                fb.retVal=r;
+                fb.steps();
+            }).fail(function (e) {
+                if (e instanceof Error) {
+                    fb.gotoCatch(e);
+                } else {
+                    var re=new Error(e);
+                    re.original=e;
+                    fb.gotoCatch(re);
                 }
+                fb.steps();
             });
-            else */if (j.then && j.fail) {
-                j.then(function (r) {
-                    fb.retVal=r;
-                    fb.steps();
-                });
-                j.fail(function (e) {
-                    if (e instanceof Error) {
-                        fb.gotoCatch(e);
-                    } else {
-                        var re=new Error(e);
-                        re.original=e;
-                        fb.gotoCatch(re);
-                    }
-                    fb.steps();
-                });
-            }
         },
         resume: function (retVal) {
             this.retVal=retVal;
