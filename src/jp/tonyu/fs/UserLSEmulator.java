@@ -6,6 +6,7 @@ import jp.tonyu.auth.Auth;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.Key;
 
 public class UserLSEmulator extends LSEmulator {
 	//PathResolver resolver;
@@ -32,10 +33,10 @@ public class UserLSEmulator extends LSEmulator {
 	}
 
 	@Override
-	public void setItemEntity(Entity e) {
+	public Key setItemEntity(Entity e) {
 		String realDir=e.getProperty(KEY_DIR)+"";
 		if (auth.isRoot() || inMyHome(realDir) || realDir.startsWith("/tmp/") || realDir.startsWith("/Tonyu/doc/")) {
-			super.setItemEntity(e);
+			return super.setItemEntity(e);
 		} else {
 			throw new RuntimeException("Write Permission denied: "+e.getProperty(KEY_DIR)+e.getProperty(KEY_NAME));
 		}

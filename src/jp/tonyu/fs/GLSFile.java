@@ -39,6 +39,7 @@ import com.google.appengine.api.blobstore.BlobstoreService;
 import com.google.appengine.api.blobstore.BlobstoreServiceFactory;
 import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.Text;
 
 public class GLSFile implements Wrappable,Iterable<GLSFile> {
@@ -49,6 +50,7 @@ public class GLSFile implements Wrappable,Iterable<GLSFile> {
 	static final String KEY_VALUE = "value";
 	static final String KEY_LAST_UPDATE = "lastUpdate";
 	static final String KEY_TRASHED = "trashed";
+    public static final String KEY_DATASTORE_KEY = "datastoreKey";
 	private final LSEmulator localStorage;
     private final String path;
 	private Entity ent;
@@ -85,14 +87,14 @@ public class GLSFile implements Wrappable,Iterable<GLSFile> {
 		}
 		return o+"";
 	}
-	public void setItem(Object value) {
+	public Key setItem(Object value) {
 		Entity e=getItemEntity(true);
 		putValue(e, value);
 		e.setProperty(KEY_LAST_UPDATE, new Date());
 		if (e.hasProperty(KEY_TRASHED)) {
 			e.removeProperty(KEY_TRASHED);
 		}
-		localStorage.setItemEntity(e);
+		return localStorage.setItemEntity(e);
 	}
 
 	public static void putValue(Entity e,Object value) {
@@ -152,6 +154,7 @@ public class GLSFile implements Wrappable,Iterable<GLSFile> {
 			ScriptableObject.putProperty(res, KEY_TRASHED, true);
 		}
 		ScriptableObject.putProperty(res, KEY_LAST_UPDATE, lastUpdate());
+		ScriptableObject.putProperty(res , KEY_DATASTORE_KEY,getItemEntity(false).getKey().toString());
 		return res;
 	}
 	public void metaInfo(Scriptable m) {

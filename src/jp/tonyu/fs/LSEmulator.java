@@ -8,6 +8,7 @@ import jp.tonyu.edit.CountingEntityIterable;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.CompositeFilterOperator;
 import com.google.appengine.api.datastore.Query.Filter;
@@ -21,14 +22,14 @@ public class LSEmulator implements ILocalStorage {
 	public static final String SEP = "/";
 	public static final String kind="ServerStorage";
 	//PathResolver pathResolver;
-	final MemCache cache;/*=new MemCache();
-	public MemCache getCache() {
+	//final MemCache cache;/*=new MemCache();
+	/*public MemCache getCache() {
 	    return cache;
 	}*/
 	final DatastoreService datastoreService;// = DatastoreServiceFactory.getDatastoreService();
 	public LSEmulator(DatastoreService d, MemCache cache) {
 		datastoreService=d;
-		this.cache=cache;
+		//this.cache=cache;
 
 	}
 	/*public LSEmulator(PathResolver pathResolver) {
@@ -50,7 +51,7 @@ public class LSEmulator implements ILocalStorage {
     		res=e;
     		break;
     	}
-    	res=cache.getItemEntity(p[0],p[1],res);
+    	//res=cache.getItemEntity(p[0],p[1],res);
 
     	if (createIfNotExist && res==null) {
     		res=new Entity(kind);
@@ -59,9 +60,9 @@ public class LSEmulator implements ILocalStorage {
     	}
     	return res;
 	}
-	public void setItemEntity(Entity e) {
-        cache.setItemEntity(e);
-		datastoreService.put(e);
+	public Key setItemEntity(Entity e) {
+//        cache.setItemEntity(e);
+		return datastoreService.put(e);
 	}
 
 
@@ -88,7 +89,7 @@ public class LSEmulator implements ILocalStorage {
 	@Override
 	public void removeItemEntity(Entity e) {
 		if (e!=null) {
-		    cache.removeItemEntity(e);
+	//	    cache.removeItemEntity(e);
 			datastoreService.delete(e.getKey());
 		}
 	}
@@ -98,9 +99,9 @@ public class LSEmulator implements ILocalStorage {
     	Filter filter= new Query.FilterPredicate(KEY_DIR, FilterOperator.EQUAL, path);
     	vQuery.setFilter(filter);
     	Iterable<Entity> it = new CountingEntityIterable( datastoreService.prepare(vQuery).asIterable() );
-    	Map<String, Entity> cm=cache.ls(path, it);
+    	//Map<String, Entity> cm=cache.ls(path, it);
     	Vector<Entity> v=new Vector<Entity>();
-    	for (Entity e:cm.values()) {
+    	for (Entity e:it/*cm.values()*/) {
     	    v.add(e);
     	}
     	return v;

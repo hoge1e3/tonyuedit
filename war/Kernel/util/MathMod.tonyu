@@ -1,0 +1,78 @@
+extends null;
+native Math;
+native parseFloat;
+
+nowait \sin(d) {
+    return Math.sin(rad(d));
+}
+nowait \cos(d) {
+    return Math.cos(rad(d));
+}
+nowait \rad(d) {
+    return d/180*Math.PI;
+}
+nowait \deg(d) {
+    return d/Math.PI*180;
+}
+
+nowait \abs(v) {
+    return Math.abs(v);
+}
+nowait \atan2(y,x) {
+    return deg(Math.atan2(y,x));
+}
+nowait \atanxy(x,y) {
+    return atan2(y,x);
+}
+
+nowait \floor(x) {
+    return Math.floor(x);
+}
+nowait \angleDiff(a,b) {
+    var c;
+    a=floor(a);
+    b=floor(b);
+    if (a>=b) {
+        c=(a-b) % 360;
+        if (c>=180) c-=360;
+    } else {
+        c=-((b-a) % 360);
+        if (c<-180) c+=360;
+    }
+    return c;
+}
+nowait \sqrt(t) {
+    return Math.sqrt(t);
+}
+nowait \dist(dx,dy) {
+    if (typeof dx=="object") {
+        var t=dx;
+        dx=t.x-x;dy=t.y-y;
+    }
+    return sqrt(dx*dx+dy*dy);
+}
+nowait \trunc(f) {
+    if(f>=0) return Math.floor(f);
+    else return Math.ceil(f);
+}
+nowait \ceil(f){
+    return Math.ceil(f);
+}
+
+nowait \rnd(r) {
+    if (typeof r=="number") {
+        return Math.floor(Math.random()*(r>0?r:0));
+    }
+    return Math.random();
+}
+nowait \parseFloat(s) {
+    return parseFloat(s);
+}
+nowait \clamp(v,min,max) {
+    if (min>max) return clamp(v,max,min);
+    return v<min?min:v>max?max:v;
+}
+nowait \clamped(v,min,max) {
+    return clamp(v,min,max)-v;
+}
+

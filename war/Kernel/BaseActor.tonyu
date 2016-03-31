@@ -16,7 +16,7 @@ native Array;
         this.y=y;
         this.p=p;
     }
-
+    layer=layer||$mainLayer;
     if (scaleX==null) scaleX=1;
     if (rotation==null) rotation=0;
     if (rotate==null) rotate=0;
@@ -123,9 +123,6 @@ nowait \crashTo(t) {
 }
 nowait \crashTo1(t) {
     if (!t || t._isDead) return false;
-    /*if (_sprite && t._sprite) {
-        return _sprite.crashTo(t._sprite);
-    }*/
     var t1=getCrashRect();
     var t2=t.getCrashRect();
     return
@@ -222,18 +219,10 @@ nowait \die() {
     }
 }
 nowait \hide() {
-    if(layer && typeof layer.remove=="function"){
-        layer.remove(this);
-    }else{
-        $Sprites.remove(this);
-    }
+    layer.remove(this);
 }
 nowait \show(x,y,p) {
-    if(layer && typeof layer.add=="function"){
-        layer.add(this);
-    }else{
-        $Sprites.add(this);
-    }
+    layer.add(this);
     if (x!=null) this.x=x;
     if (y!=null) this.y=y;
     if (p!=null) this.p=p;
@@ -245,23 +234,16 @@ nowait \detectShape() {
         p=0;
     }
     p=Math.floor(p);
-    pImg=$Sprites.getImageList()[p];
+    pImg=$imageList[p];
     if (!pImg) return;
     width=pImg.width;
     height=pImg.height;
 }
-/*
-\waitFor(f) {
-    if (_thread) {
-        _thread.waitFor(f);
-    }
-    //update();
-}*/
 nowait \isDead() {
     return _isDead;
 }
 
-nowait \animation(){
+nowait \_animation(){
     age++;
     if(animMode && age%animFps==0){
         p=anim[animFrame%anim.length];
@@ -276,7 +258,7 @@ nowait \draw(ctx) {
         ctx.translate(x,y);
         //if (typeof rotate=="number" ) rotation=rotate;// 削除予定
         //ctx.rotate(this.rotation/180*Math.PI);
-        animation();
+        _animation();
         if(this.rotation!=0){
             ctx.rotate(this.rotation/180*Math.PI);
         }else{
@@ -319,9 +301,6 @@ nowait \draw(ctx) {
         }
     }
 }
-/*nowait \asyncResult() {//@deperecated
-    return Tonyu.asyncResult();
-}*/
 
 \runAsync(f) {
     if (!_thread) throw new Error("runAsync should run in wait mode");
@@ -341,7 +320,6 @@ nowait \draw(ctx) {
     return r;
 }
 \screenOutChecker(d,f){
-    //print("yobareta!", getClassInfo().fullName);
     while(true){
         while(true){
             if(screenOut()>d){
@@ -368,24 +346,6 @@ nowait \draw(ctx) {
     runAsync \(f){
         $InputDevice.addOnetimeListener(f);
     };
-    /*if (fl!==false) {
-        if (!origTG) {
-            ifwait {
-                origTG=_thread.group;
-                _thread.setGroup(null);
-            }
-        }
-        a=asyncResult();
-        $InputDevice.addOnetimeListener(a.receiver);
-        waitFor(a);
-    } else {
-        if (origTG) {
-            ifwait {
-                _thread.setGroup(origTG);
-                origTG=null;
-            }
-        }
-    }*/
 }
 \redrawScreen() {
     $Sprites.draw($Screen.buf[0]);
@@ -396,28 +356,6 @@ nowait \draw(ctx) {
 \color(r,g,b) {
     return "rgb("+[r,g,b].join(",")+")";
 }
-/*
-\drawText(x,y,text,col,size) {
-    if ($debug) return;
-    if (!size) size=15;
-    if (!col) col="cyan";
-    var tp=all(T1Text).find \(t) {return t.hidden;};
-    if (tp.length>0) {
-        tp[0].extend{x,y,text,fillStyle:col, size,hidden:false};
-    }else {
-        new T1Text{x,y,text,fillStyle:col, size};
-    }
-}
-\drawLine(x,y,tx,ty,col) {
-    if (!col) col="white";
-    var tp=all(T1Line).find \(t) {return t.hidden;};
-    if (tp.length>0) {
-        tp[0].extend{x,y,tx,ty,col, hidden:false};
-    }else {
-        new T1Line{x,y,tx,ty,col};
-    }
-}
-*/
 \loadPage(page,arg){
     all().die();
     new page(arg);
