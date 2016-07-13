@@ -10,10 +10,10 @@ native Tonyu;
     if (canvas) {
         width=canvas.width;
         height=canvas.height;
+        parallel("watchResize");
     } else {
-        width=width||$screenWidth||465;
-        height=height||$screenHeight||465;
-        setPanel(width,height); //buf=$("<canvas>").attr{width,height};
+        setPanel(width||$screenWidth||465,height||$screenHeight||465); 
+        //buf=$("<canvas>").attr{width,height};
     }
     x=x||width/2;
     y=y||height/2;
@@ -21,14 +21,25 @@ native Tonyu;
     if(alpha==null) alpha=255;
     if(_drawn==null) _drawn=false;
 }
+\watchResize() {
+    while(true) {
+        if (width!=canvas.width || height!=canvas.height) {
+            width=canvas.width;height=canvas.height;
+            fireEvent("resize",{width,height});
+        }
+        update();
+    }
+}
 //\setPanel({width,height})
 \setPanel(width,height){
     this.width=width;
     this.height=height;
     buf=$("<canvas>").attr{width,height};
     canvas=buf[0];
+    fireEvent("resize",{width,height,force:true});
 }
 \resize(width,height){
+    if (this.width==width && this.height==height) return;
     setPanel(width,height);
 }
 \getContext(){
@@ -155,5 +166,43 @@ nowait \copy() {
         if (sw*sh*dw*dh!=0) {
             context.drawImage(srcPanel.image,sx, sy, sw, sh, dx, dy, dw, dh);
         }
+    }
+}
+\convert(obj, toLayer) {
+    if (toLayer==null) toLayer=this;
+    var scaleY=this.scaleY||scaleX;
+    if (!obj.layer) throw new Error("layer not set");
+    if (obj.layer===this && toLayer===layer) {   
+        var dx=obj.x-width/2;
+        var dy=obj.y-height/2;
+        var rt=rotation;
+        // (x,y)= l.sp + R(rt)*(obj-l.wp)/l.scale; 
+        // (x)= l.spx + (cos(rt) cos(rt+90))*(dx)/l.scale; 
+        // (y)= l.spy + (sin(rt) sin(rt+90))*(dy)/l.scale; 
+        var x=this.x+(cos(rt)*dx+cos(rt+90)*dy)*scaleX;
+        var y=this.y+(sin(rt)*dx+sin(rt+90)*dy)*scaleY;
+        return {x,y,
+            rotation:obj.rotation,
+            scale:obj.scale,
+            layer:toLayer
+        };
+    } else if (obj.layer===layer && toLayer===this) { 
+        var rt=-rotation;
+        var dx=obj.x-(this.x);
+        var dy=obj.y-(this.y);
+        //   print(width,height,rt,scaleX,scaleY);
+        // (x,y)= l.sp + R(rt)*(obj-l.wp)/l.scale; 
+        // (x)= l.spx + (cos(rt) cos(rt+90))*(dx)/l.scale; 
+        // (y)= l.spy + (sin(rt) sin(rt+90))*(dy)/l.scale; 
+        var x=width/2 + (cos(rt)*dx+cos(rt+90)*dy)/scaleX;
+        var y=height/2 + (sin(rt)*dx+sin(rt+90)*dy)/scaleY;
+        return {x,y,
+            rotation:rt,
+            scale:1/scaleX,
+            layer:toLayer
+        };
+    } else {
+        print("no support",obj.layer, toLayer);
+        throw new Error("not support");
     }
 }
