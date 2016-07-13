@@ -209,6 +209,7 @@ return Tonyu=function () {
         return res;//classes[n];
     }
     function bindFunc(t,meth) {
+        if (typeof meth!="function") return meth;
         var res=function () {
             return meth.apply(t,arguments);
         };
@@ -273,7 +274,7 @@ return Tonyu=function () {
             bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             run:run,iterator:IT,
-            VERSION:1459687222784,//EMBED_VERSION
+            VERSION:1468378258241,//EMBED_VERSION
             A:A};
 }();
 });

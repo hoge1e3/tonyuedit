@@ -8,7 +8,7 @@ function startsWith(str,prefix) {
     return str.substring(0, prefix.length)===prefix;
 }
 var driveLetter=/^([a-zA-Z]):/;
-var url=/^([a-z]+):\/\/([^\/]+)\//;
+var url=/^([a-z]+):\/\/\/?([^\/]+)\//;
 var PathUtil;
 var Path=assert.f(function (s) {
     this.is(s,String);
@@ -143,7 +143,7 @@ PathUtil={
         return resPath;
     },
     relPath: function(path,base) {
-		assert.is(arguments,[Absolute,AbsDir]);
+		assert.is(arguments,[Absolute,Absolute]);
         if (path.substring(0,base.length)!=base) {
             return "../"+PathUtil.relPath(path, this.up(base));
         }
