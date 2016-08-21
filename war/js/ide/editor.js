@@ -5,7 +5,7 @@ requirejs(["Util", "Tonyu", "FS", "PathUtil","FileList", "FileMenu",
            "UI","ResEditor","WebSite","exceptionCatcher","Tonyu.TraceTbl",
            "Log","MainClassDialog","DeferredUtil","NWMenu",
            "ProjectCompiler","compiledProject","mkrunDiag","zip","LSFS","WebFS",
-           "extLink"
+           "extLink","DiagAdjuster"
           ],
 function (Util, Tonyu, FS, PathUtil, FileList, FileMenu,
           showErrorPos, fixIndent, Wiki, Tonyu_Project,
@@ -14,7 +14,7 @@ function (Util, Tonyu, FS, PathUtil, FileList, FileMenu,
           UI,ResEditor,WebSite,EC,TTB,
           Log,MainClassDialog,DU,NWMenu,
           TPRC,CPPRJ,mkrunDiag,zip,LSFS,WebFS,
-          extLink
+          extLink,DiagAdjuster
           ) {
 $(function () {
     if (!WebSite.isNW) {
@@ -79,19 +79,52 @@ $(function () {
     //ImageList(Tonyu.defaultResource.images, Sprites.setImageList);
 
     var screenH;
+    var runDialogMode,dialogClosed;
     function onResize() {
         //console.log($(window).height(), $("#navBar").height());
         var h=$(window).height()-$("#navBar").height();
         h-=20;
         screenH=h;
-        var rw=$("#runArea").width();
+        if (!runDialogMode) resizeCanvas($("#runArea").width(),screenH);
         $("#progs pre").css("height",h+"px");
-        console.log("canvas size",rw,h);
-        $("#cv").attr("height", h).attr("width", rw);
-        cv=$("#cv")[0].getContext("2d");
         $("#fileItemList").height(h);
     }
+    function resizeCanvas(w,h) {
+        console.log("canvas size",w,h);
+        $("#cv").attr("height", h).attr("width",w);
+        cv=$("#cv")[0].getContext("2d");
+    }
     onResize();
+    $("#runDialog").click(F(showRunDialog));
+    //var rszt;
+    /*var da=new DiagAdjuster($("#runArea"));
+    da.afterResize=function (d) {
+        //resizeCanvas(d.width(),d.height());
+    };*/
+    var dialogSize={};
+    function showRunDialog() {
+        runDialogMode=true;
+        $("#mainArea").removeClass("col-xs-6").addClass("col-xs-11");
+        var d=$("#runArea");
+        //$("#runArea").css({height:screenH-100});
+        dialogSize.w=dialogSize.w||$(window).width()-100;
+        dialogSize.h=dialogSize.h||screenH;
+        $("#runArea").dialog({
+            width:dialogSize.w,
+            height:dialogSize.h,
+            resize:function () {
+                dialogSize.w=d.width();    
+                dialogSize.h=d.height();    
+                resizeCanvas(d.width(),d.height());       
+            },//da.handleResizeF(),
+            close:function () {dialogClosed=true;stop();}
+        });
+        resizeCanvas(d.width(),d.height());       
+        //da.handleResize();
+        console.log("Diag",dialogSize);
+        //resizeCanvas(w,screenH-100);
+    }
+    
     var editors={};
 
     KeyEventChecker.down(document,"F9",F(run));
@@ -296,6 +329,9 @@ $(function () {
                 $("#runAreaParent").show().attr("class","col-xs-12");
                 $("#mainArea").hide();//attr("class","col-xs-12");
                 onResize();
+            }
+            if (runDialogMode && dialogClosed) {
+                showRunDialog();
             }
             break;
         case "compile_error":
@@ -601,6 +637,11 @@ $(function () {
         desktopEnv.editorFontSize=parseInt(s);
         if (prog) prog.setFontSize(desktopEnv.editorFontSize||12);
         saveDesktopEnv();
+    }));
+    $("#openFolder").click(F(function () {
+        var f=curPrjDir;
+        var gui = nwDispatcher.requireNwGui(); 
+        gui.Shell.showItemInFolder(f.path().replace(/\//g,"\\"));
     }));
     sh.curFile=function () {
         return fl.curFile();

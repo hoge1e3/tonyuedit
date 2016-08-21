@@ -82,6 +82,8 @@ requirejs(["ide/editor","buildAll"],function (){});
                             <li><a href="#" id="soundResEditor">音声リスト</a></li>
 							<li><a href="#" id="prjOptEditor">プロジェクト オプション</a></li>
 							<li><a href="#" id="editorEditor">エディタの設定</a></li>
+							<li><a href="#" id="openFolder">フォルダを開く</a></li>
+							<li><a href="#" id="runDialog">ダイアログで実行</a></li>
 						</ul>
 					</li>
 					<li><a href="#" id="publish" class="dropdown-toggle" data-toggle="dropdown">公開</a>
@@ -116,7 +118,7 @@ requirejs(["ide/editor","buildAll"],function (){});
 				</div>
 			</div>
 			<div id=runAreaParent class="col-xs-5">
-				<div id="runArea" style="text-align : center ;" class="runArea">
+				<div id="runArea" style="text-align : center ;overflow:hidden;" class="runArea">
 					<canvas id="cv" width=465 height=465 style=" margin-left : auto ; margin-right : auto ;"></canvas>
 				</div>
 			</div>
