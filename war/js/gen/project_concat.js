@@ -1,4 +1,4 @@
-// Created at Sun Aug 21 2016 12:15:39 GMT+0900 (東京 (標準時))
+// Created at Fri Oct 07 2016 18:53:52 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -1207,7 +1207,7 @@ return Tonyu=function () {
             bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             run:run,iterator:IT,
-            VERSION:1471749335201,//EMBED_VERSION
+            VERSION:1475834029413,//EMBED_VERSION
             A:A};
 }();
 });
@@ -3282,6 +3282,7 @@ define(["Util","exceptionCatcher"],function (Util, EC) {
             $edits.forEach(function (edit) {
                 $edits.writeToJq(edit.params.$edit, edit.jq);
             });
+            $edits.validator.on.validate.call($edits.validator, $edits.model);
         };
         $edits.writeToJq=function ($edit, jq) {
         	var m=$edits.model;
@@ -10448,7 +10449,8 @@ var T2MediaLib = {
     	var ary = buffer.getChannelData(0);
     	var lam = Math.floor(myContext.sampleRate/860);
         for (var i = 0; i < ary.length; i++) {
-    	     ary[i] = (i % lam<lam/2?0.1:-0.1)*(i<lam?2:1) ;
+    	     //ary[i] = (i % lam<lam/2?0.1:-0.1)*(i<lam?2:1) ;
+    	     ary[i] = 0; // 無音化
     	}
         //console.log(ary);
 	    var source = myContext.createBufferSource();
