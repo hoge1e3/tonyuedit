@@ -1,13 +1,14 @@
 requirejs(["FS","Util","NewProjectDialog","ScriptTagFS","UI","forkBlobs","WebSite"],
         function (FS,Util,NPD,STF,UI,fb,WebSite) {
-    var home=FS.get(WebSite.tonyuHome);
-
-	$("button.selDir").click(selDir);
-	$("#diag").append($("<h1>").text("インポート先のフォルダを入力してください"));
-	$("#diag").append( NPD.embed(home.rel("Projects/"), confirm) );
+    var projectsDir=FS.get(WebSite.projects[0]/*WebSite.tonyuHome*/);
 	var user=Util.getQueryString("user");
     var project=Util.getQueryString("project");
     var forkFromExe=(user && project);
+    var defName=forkFromExe?user+"_"+project:"";
+	$("button.selDir").click(selDir);
+	$("#diag").append($("<h1>").text("インポート先のフォルダを入力してください"));
+	$("#diag").append( NPD.embed(projectsDir/*home.rel("Projects/")*/,
+	confirm,{defName:defName}) );
 	if (forkFromExe) {
 	    $("#prog").attr("placeholder", "コードを取得中です．しばらくお待ちください．");
 	    var url="http://tonyuexe.appspot.com";
@@ -16,6 +17,7 @@ requirejs(["FS","Util","NewProjectDialog","ScriptTagFS","UI","forkBlobs","WebSit
 	    }
 	    window.projectInfoIs=function (s){
 	        $("#prog").val(s);
+	        selDir();
 	    };
 	  //TODO: urlchange!
 	    $("<script>").attr("src",url+"/exe/fork?user="+user+"&"+"project="+project).appendTo("head");

@@ -1,4 +1,4 @@
-// Created at Sat Oct 08 2016 14:51:00 GMT+0900 (東京 (標準時))
+// Created at Thu Dec 22 2016 11:11:36 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -852,9 +852,12 @@ define(["PathUtil"], function (P) {
         WebSite.projects=[P.rel(WebSite.tonyuHome,"Projects/")];
     }
     if (loc.match(/tonyuedit\.appspot\.com/) ||
+        loc.match(/localhost:888/)) {
+        WebSite.kernelDir=location.protocol+"//"+location.host+"/Kernel/";
+    }
+    if (loc.match(/tonyuedit\.appspot\.com/) ||
         loc.match(/localhost:888/) ||
         WebSite.isNW) {
-        WebSite.kernelDir=location.protocol+"//"+location.host+"/Kernel/";
         WebSite.compiledKernel=WebSite.top+"/Kernel/js/concat.js";
     } else {
         WebSite.compiledKernel="http://tonyuexe.appspot.com/Kernel/js/concat.js";
