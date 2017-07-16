@@ -36,7 +36,7 @@ function genJS(klass, env) {//B
     function getSource(node) {
         return cu.getSource(srcCont,node);
     }
-    var buf=IndentBuffer();
+    var buf=IndentBuffer({fixLazyLength:6});
     var printf=buf.printf;
     var ctx=context();
     var debug=false;
@@ -318,6 +318,15 @@ function genJS(klass, env) {//B
             buf.printf("%v%v%v%v%v", node.left, node.op1, node.mid, node.op2, node.right);
         },
         prefix: function (node) {
+            if (node.op.text==="__typeof") {
+                var a=annotation(node.right);
+                if (a.vtype) {
+                  buf.printf("%l",a.vtype.name||a.vtype.fullName||"No type name?");
+                } else {
+                  buf.printf("%l","Any");
+                }
+                return;
+            }
             buf.printf("%v %v", node.op, node.right);
         },
         postfix: function (node) {
@@ -642,7 +651,7 @@ function genJS(klass, env) {//B
             var an=annotation(node);
             if (!ctx.noWait &&
                     (an.fiberCallRequired || an.hasJump || an.hasReturn)) {
-                var fipos={}, elpos={};
+                var fipos=buf.lazy(), elpos=buf.lazy();
                 if (node._else) {
                     buf.printf(
                             "if (!(%v)) { %s=%z; break; }%n" +
@@ -844,10 +853,23 @@ function genJS(klass, env) {//B
         //}
     }
     function digestDecls(klass) {
-        var res={methods:{}};
+        var res={methods:{},fields:{}};
         for (var i in klass.decls.methods) {
             res.methods[i]=
             {nowait:!!klass.decls.methods[i].nowait};
+        }
+        for (var i in klass.decls.fields) {
+          var src=klass.decls.fields[i];
+          var dst={};
+          console.log("digestDecls",src);
+          if (src.vtype) {
+            if (typeof (src.vtype)==="string") {
+              dst.vtype=src.vtype;
+            } else {
+              dst.vtype=src.vtype.fullName || src.vtype.name;
+            }
+          }
+          res.fields[i]=dst;
         }
         return res;
     }
@@ -957,7 +979,7 @@ function genJS(klass, env) {//B
         }
     }
     function genFuncExpr(node) {//G
-        var finfo=annotation(node);// annotateSubFuncExpr(node);
+        var finfo=annotation(node).info;// annotateSubFuncExpr(node);
 
         buf.printf("(function %s(%j) {%{"+
                        "%f%n"+
@@ -983,7 +1005,7 @@ function genJS(klass, env) {//B
 //        return ("_trc_func_"+traceTbl.add(klass,pos )+"_"+(fnSeq++));//  Math.random()).replace(/\./g,"");
     }
     function genSubFunc(node) {//G
-        var finfo=annotation(node);// annotateSubFuncExpr(node);
+        var finfo=annotation(node).info;// annotateSubFuncExpr(node);
         buf.printf("function %s(%j) {%{"+
                       "%f%n"+
                       "%f"+

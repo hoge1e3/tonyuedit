@@ -50,11 +50,27 @@ define(["Tonyu","ObjectMatcher", "TError"],
         }
         return res;
     }
+    cu.extend=function (res,aobj) {
+        for (var i in aobj) res[i]=aobj[i];
+        return res;
+    };
     cu.annotation=annotation3;
     function getSource(srcCont,node) {//B
         return srcCont.substring(node.pos,node.pos+node.len);
     }
     cu.getSource=getSource;
+    cu.getField=function(klass,name){
+        if (klass instanceof Function) return null;
+        var res=null;
+        getDependingClasses(klass).forEach(function (k) {
+            if (res) return;
+            res=k.decls.fields[name];
+        });
+        if (typeof (res.vtype)==="string") {
+            res.vtype=Tonyu.classMetas[res.vtype] || window[res.vtype];
+        }
+        return res;
+    };
     function getMethod2(klass,name) {//B
         var res=null;
         getDependingClasses(klass).forEach(function (k) {

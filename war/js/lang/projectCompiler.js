@@ -1,7 +1,9 @@
 define(["Tonyu","Tonyu.Compiler.JSGenerator","Tonyu.Compiler.Semantics",
-        "Tonyu.TraceTbl","FS","assert","SFile","DeferredUtil","compiledProject"],
+        "Tonyu.TraceTbl","FS","assert","SFile","DeferredUtil","compiledProject",
+        "TypeChecker"],
         function (Tonyu,JSGenerator,Semantics,
-                ttb,FS,A,SFile,DU,CPR) {
+                ttb,FS,A,SFile,DU,CPR,
+                TypeChecker) {
 var TPRC=function (dir) {
      A(SFile.is(dir) && dir.isDir(), "projectCompiler: "+dir+" is not dir obj");
      var TPR={env:{}};
@@ -207,6 +209,17 @@ var TPRC=function (dir) {
                      Semantics.annotate(c, env);
                  }
              });
+             try {
+                /*for (var n in compilingClasses) {
+                    TypeChecker.checkTypeDecl(compilingClasses[n],env);
+                }
+                for (var n in compilingClasses) {
+                    TypeChecker.checkExpr(compilingClasses[n],env);
+                }*/
+             } catch(e) {
+                console.log("Error in Typecheck(It doesnt matter because Experimental)",e.stack);
+             }
+             //throw "test break";
              TPR.genJS(ord.filter(function (c) {
                  return compilingClasses[c.fullName];
              }));
@@ -381,6 +394,16 @@ var TPRC=function (dir) {
     TPR.setAMDPaths=function (paths) {
         TPR.env.amdPaths=paths;
     };
+    TPR.genXML=function (cname) {//"user.Main"
+        requirejs(["XMLBuffer"],function (x) {
+            var c=TPR.env.classes[cname];
+            if (!c) throw new Error("Class "+cname+" not found");
+            if (!c.node) throw new Error("Node not found compile it");
+            var b=x(c.src.tonyu.text());
+            b(c.node);
+            console.log(b.buf);
+        });
+    };
     return TPR;
 }
 if (typeof sh=="object") {
@@ -391,4 +414,3 @@ if (typeof sh=="object") {
 }
 return TPRC;
 });
-
