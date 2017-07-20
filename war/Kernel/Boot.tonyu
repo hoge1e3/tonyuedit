@@ -53,6 +53,7 @@ mainLoop();
     $Navigator=new Navigator;
     $mouseX=$mouseX||0;
     $mouseY=$mouseY||0;
+    debugCnt=0;
 }
 \initLayers() {
     $mainLayer=$Sprites=new Sprites();
@@ -89,6 +90,11 @@ mainLoop();
     $uiScreen.addLayer($uiLayer);
     $layoutManager=new UILayout{layer:$uiLayer};
     //drawFrame();
+}
+\debug() {
+    if (!debugCnt) return;
+    debugCnt--;
+    console.log.apply(console,arguments);
 }
 /*----OLD
 \initLayers() {
