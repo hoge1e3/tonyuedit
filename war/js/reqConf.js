@@ -199,7 +199,7 @@ var reqConf={
             importFromJsdoit: "social/importFromJsdoit",
             importFromTonyu1:"tonyu1/importFromTonyu1",
             forkBlobs: "social/forkBlobs",
-            JSZip:"lib/jszip.min",
+            JSZip:"lib/jszip",
             FileSaver:"lib/FileSaver.min",
             Klass:"lib/Klass",
             plugins:"plugins/plugins",
@@ -231,6 +231,7 @@ var reqConf={
             "WebFS":"fs2/WebFS",
             "jquery.binarytransport":"lib/jquery.binarytransport",
             "Class":"lib/Class",
+            "tonyu.kernel":"../Kernel/js/concat.js",
 
             "foo":"bar"
         },
