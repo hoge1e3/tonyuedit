@@ -1,5 +1,7 @@
 package jp.tonyu.cartridges;
 
+import static jp.tonyu.servlet.UI.*;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
@@ -7,12 +9,8 @@ import java.security.NoSuchAlgorithmException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.arnx.jsonic.JSON;
-
 import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
-
 
 import jp.tonyu.auth.Auth;
 import jp.tonyu.auth.OAuthCartridge;
@@ -22,18 +20,21 @@ import jp.tonyu.debug.Log;
 import jp.tonyu.edit.EQ;
 import jp.tonyu.edit.FS;
 import jp.tonyu.fs.GLSFile;
-import jp.tonyu.fs.LSEmulator;
-import jp.tonyu.fs.MemCache;
-import jp.tonyu.fs.UserLSEmulator;
 import jp.tonyu.servlet.MultiServletCartridge;
 import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.util.Html;
 import jp.tonyu.util.MD5;
 import jp.tonyu.util.col.Maps;
-import static jp.tonyu.servlet.UI.t;
+import net.arnx.jsonic.JSON;
 
 public class LoginCartridge implements ServletCartridge{
+	/*
+	 initial setup:
+	 $.post("/edit/passwd",{user:"root",new:"root-passwd"});
+	 Login as root from /edit/login (Where is the form?)
+	 $.post("/edit/oauthKey",{service:"",key:"",secret:""});
+	 */
 	private static final String KEY_PASSWD = "passwd";
     static final String LOGIN="login";
 	private static final String PARAM_UID = "uid";
