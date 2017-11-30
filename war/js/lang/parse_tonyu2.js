@@ -22,7 +22,7 @@ return TonyuLang=function () {
 	var num=tk("number").ret(function (n) {
 		n.type="number";
 		if (typeof n.text!="string") throw "No text for "+disp(n);
-		n.value=parseFloat(n.text);
+		n.value=(n.text-0);
 		if (isNaN(n.value)) throw "No value for "+disp(n);
 		return n;
 	});
@@ -51,10 +51,14 @@ return TonyuLang=function () {
 			return arguments[n];
 		};
 	}
-
+	function comLastOpt(p) {
+		return p.sep0(tk(","),true).and(tk(",").opt()).ret(function (list,opt) {
+			return list;
+		});
+	};
 	var e=ExpressionParser() ;
 	var arrayElem=g("arrayElem").ands(tk("["), e.lazy() , tk("]")).ret(null,"subscript");
-	var argList=g("argList").ands(tk("("), e.lazy().sep0(tk(","),true) , tk(")")).ret(null,"args");
+	var argList=g("argList").ands(tk("("), comLastOpt(e.lazy()) , tk(")")).ret(null,"args");
 	var member=g("member").ands(tk(".") , symbol ).ret(null,     "name" );
 	var parenExpr = g("parenExpr").ands(tk("("), e.lazy() , tk(")")).ret(null,"expr");
 	var varAccess = g("varAccess").ands(symbol).ret("name");
@@ -221,7 +225,7 @@ return TonyuLang=function () {
 	var varDecl=g("varDecl").ands(symbol, typeDecl.opt(), tk("=").and(expr).ret(retF(1)).opt() ).ret("name","typeDecl","value");
 	var varsDecl= g("varsDecl").ands(tk("var"), varDecl.sep1(tk(","),true), tk(";") ).ret(null ,"decls");
 	var paramDecl= g("paramDecl").ands(symbol,typeDecl.opt() ).ret("name","typeDecl");
-	var paramDecls=g("paramDecls").ands(tk("("), paramDecl.sep0(tk(","),true), tk(")")  ).ret(null, "params");
+	var paramDecls=g("paramDecls").ands(tk("("), comLastOpt(paramDecl), tk(")")  ).ret(null, "params");
 	var setterDecl= g("setterDecl").ands(tk("="), paramDecl).ret(null,"value");
 	g("funcDeclHead").ands(
 			tk("nowait").opt(),
@@ -232,7 +236,8 @@ return TonyuLang=function () {
 	var nativeDecl=g("nativeDecl").ands(tk("native"),symbol,tk(";")).ret(null, "name");
 	var ifwait=g("ifWait").ands(tk("ifwait"),"stmt",elseP.opt()).ret(null, "then","_else");
 	//var useThread=g("useThread").ands(tk("usethread"),symbol,"stmt").ret(null, "threadVarName","stmt");
-	stmt=g("stmt").ors("return", "if", "for", "while", "do","break", "continue", "switch","ifWait","try", "throw","nativeDecl", "funcDecl", "compound", "exprstmt", "varsDecl");
+	var empty=g("empty").ands(tk(";")).ret(null);
+	stmt=g("stmt").ors("return", "if", "for", "while", "do","break", "continue", "switch","ifWait","try", "throw","nativeDecl", "funcDecl", "compound", "exprstmt", "varsDecl","empty");
 	// ------- end of stmts
 	g("funcExprHead").ands(tk("function").or(tk("\\")), symbol.opt() ,paramDecls.opt() ).ret(null,"name","params");
 	var funcExpr=g("funcExpr").ands("funcExprHead","compound").ret("head","body");
@@ -240,8 +245,8 @@ return TonyuLang=function () {
 			symbol.or(literal),
 			tk(":").or(tk("=")).and(expr).ret(function (c,v) {return v;}).opt()
 	).ret("key","value");
-	var objlit=g("objlit").ands(tk("{"), jsonElem.sep0(tk(","),true), tk(",").opt(), tk("}")).ret(null, "elems");
-	var arylit=g("arylit").ands(tk("["), expr.sep0(tk(","),true),  tk("]")).ret(null, "elems");
+	var objlit=g("objlit").ands(tk("{"), comLastOpt( jsonElem ), tk("}")).ret(null, "elems");
+	var arylit=g("arylit").ands(tk("["), comLastOpt( expr ),  tk("]")).ret(null, "elems");
 	var ext=g("extends").ands(tk("extends"),symbol.or(tk("null")), tk(";")).
 	ret(null, "superclassName");
 	var incl=g("includes").ands(tk("includes"), symbol.sep1(tk(","),true),tk(";")).

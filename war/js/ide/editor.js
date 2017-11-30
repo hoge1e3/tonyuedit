@@ -20,6 +20,9 @@ $(function () {
     if (!WebSite.isNW) {
         FS.mount(location.protocol+"//"+location.host+"/", new WebFS);
     }
+    if (WebSite.serverType==="projectBoard") {
+        $.ajax("../../../a.php?Test/test").then(function (r){console.log("Session",r);})
+    }
     /*
     location.href
 "chrome-extension://olbcdbbkoeedndbghihgpljnlppogeia/Demo/index.html"
@@ -133,6 +136,9 @@ window.open("chrome-extension://olbcdbbkoeedndbghihgpljnlppogeia/Demo/Explode/in
 
     var editors={};
 
+    /*KeyEventChecker.down(document,"F12",F(function () {
+        require('nw.gui').Window.get().showDevTools();
+    }));*/
     KeyEventChecker.down(document,"F9",F(run));
     KeyEventChecker.down(document,"F2",F(stop));
     KeyEventChecker.down(document,"ctrl+s",F(function (e) {
@@ -360,12 +366,15 @@ window.open("chrome-extension://olbcdbbkoeedndbghihgpljnlppogeia/Demo/Explode/in
         }
     }
     function stop() {
-        curPrj.stop();
-        displayMode("edit");
+        return $.when(curPrj.stop()).then(function () {
+            displayMode("edit");
+        });
     }
     //\run
     function run(name) {
-        curPrj.stop();
+        return $.when(curPrj.stop()).then(function () {run2(name);});
+    }
+    function run2(name) {
         if (typeof name!="string") {
             if (runMenuOrd.length==0) {
                 alert("ファイルを作成してください");
@@ -411,13 +420,6 @@ window.open("chrome-extension://olbcdbbkoeedndbghihgpljnlppogeia/Demo/Explode/in
             te=curPrj.decodeTrace(tid);
         }
         console.log("onRunTimeError:stackTrace1",e.stack,te,$LASTPOS);
-        /*var trc;//=StackTrace.get(e,t);
-        var te=((trc && trc[0]) ? trc[0] : t.decode($LASTPOS));
-        console.log("onRunTimeError:stackTrace1",e.stack,te,$LASTPOS);
-        if (te) {
-            te=curPrj.decodeTrace(te);
-        }
-        console.log("onRunTimeError:stackTrace2",te,$LASTPOS);*/
         if (te) {
             te.mesg=e;
             if (e.pluginName) {
@@ -427,19 +429,21 @@ window.open("chrome-extension://olbcdbbkoeedndbghihgpljnlppogeia/Demo/Explode/in
                 displayMode("runtime_error");
                 $("#errorPos").find(".quickFix").append(
                         UI("button",{on:{click: function () {
-                            setDiagMode(true);
-                            diag.dialog("close");
-                            run();
-                        }}},"診断モードで実行しなおす"));
+                            //setDiagMode(true);
+                            //diag.dialog("close");
+                            //run();
+                            var trcpre=UI("pre",e.stack);
+                            var html=trcpre.html().replace(/_trc_([\w]*)/g,function (n) {
+                                return "<strong>"+n+"</strong>";
+                            });
+                            trcpre.html(html);
+                            $("#errorPos").find(".quickFix").append(trcpre);
+                        }}},"トレース表示"));
             }
             stop();
-            //var userAgent = window.navigator.userAgent.toLowerCase();
-            //if(userAgent.indexOf('msie')<0) throw e;
         } else {
             UI("div",{title:"Error"},e+"",["pre",e.stack]).dialog({width:800});
             stop();
-            //alertOnce(e);
-            //throw e;
         }
     };
     $("#mapEditor").click(F(function () {
@@ -603,10 +607,16 @@ window.open("chrome-extension://olbcdbbkoeedndbghihgpljnlppogeia/Demo/Explode/in
     }));
     $("#imgResEditor").click(F(function () {
         //ImgResEdit(curPrj);
-        ResEditor(curPrj,"image");
+        if (window.curResEditor) {
+            window.curResEditor.dialog("close");
+        }
+        window.curResEditor=ResEditor(curPrj,"image");
     }));
     $("#soundResEditor").click(F(function () {
-        ResEditor(curPrj,"sound");
+        if (window.curResEditor) {
+            window.curResEditor.dialog("close");
+        }
+        window.curResEditor=ResEditor(curPrj,"sound");
     }));
     $("#prjOptEditor").click(F(function () {
         ProjectOptionsEditor(curPrj);

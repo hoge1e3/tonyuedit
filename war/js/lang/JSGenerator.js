@@ -714,6 +714,9 @@ function genJS(klass, env) {//B
 				}
 			}
 		},
+		empty: function (node) {
+			buf.printf(";%n");
+		},
 		call: function (node) {
 			buf.printf("(%j)", [",",node.args]);
 		},
@@ -871,7 +874,7 @@ function genJS(klass, env) {//B
 		for (var i in klass.decls.fields) {
 			var src=klass.decls.fields[i];
 			var dst={};
-			console.log("digestDecls",src);
+			//console.log("digestDecls",src);
 			if (src.vtype) {
 			if (typeof (src.vtype)==="string") {
 				dst.vtype=src.vtype;

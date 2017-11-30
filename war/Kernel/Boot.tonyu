@@ -15,7 +15,7 @@ native Array;
 
 Tonyu.resetLoopCheck(10000);
 $Boot=this;
-scheduler=$Scheduler=new Scheduler;
+_scheduler=$Scheduler=new Scheduler;
 initEvents();
 initLayers();
 initPeripherals();
@@ -28,6 +28,35 @@ mainLoop();
 
 \new(param) {
     extend(param);
+    _th=Tonyu.thread();
+    _th.apply(this,"main");
+    _th.stepsLoop();
+    on ("die") \{
+        if (_th) _th.kill();
+    };
+}
+\timeStop(except) {
+    var oldS=_scheduler;
+    _scheduler=$Scheduler=new Scheduler;
+    var newS=_scheduler;
+    var res={
+        release: \(a) {
+            a._scheduler=newS;
+            oldS.findByThreadGroup(a).forEach \(th) {
+                if (th.scheduled===newS) return;
+                th.scheduled=null;
+                newS.addToNext(th);
+            };
+        },
+        releaseAll: \{
+            var a=$Screen.all();
+            for (var e in a) {
+                res.release(e);
+            }
+        }
+    };
+    res.release(except);
+    return res;
 }
 \update() {
     waitFor(Tonyu.timeout(50)); // waitFor calls update...
@@ -143,7 +172,7 @@ mainLoop();
     loadFromProject($currentProject);
     progress("Loading sounds done.");
     on("stop")\{
-        clearSEData();
+        allClearSoundData();
     };
     $sound=this;
 }
@@ -166,15 +195,28 @@ mainLoop();
     new page(arg);
 }
 \stop() {
-    fireEvent("stop");
-    die();
+    var res=new $.Deferred();
+    var evt={
+        die: \{
+            die();
+            res.resolve();
+        },
+        preventDefault: \{evt.defaultPrevented=true;}
+    };
+    var r=fireEvent("stop",evt);
+    if(!evt.defaultPrevented) {
+        evt.die();
+        res.resolve();
+    }
+    return res;
 }
 \hide() {
 }
 \schedule(obj,method,args) {
     if (!method) throw new Error("指定されたメソッドは定義されていません:"+method);
     args=args||[];
-    var th=scheduler.newThread(obj, method, args);
+    var s=obj._scheduler||_scheduler;
+    var th=s.newThread(obj, method, args);
     obj.setThreadGroup(this);
     th.setThreadGroup(obj);
     return th;
@@ -183,6 +225,12 @@ mainLoop();
     if (typeof SplashScreen=="undefined") return;
     if (m) {
         console.log.apply(console,arguments);
+        SplashScreen.progress(m);
+    } else SplashScreen.hide();
+}
+\progressNoLog(m) {
+    if (typeof SplashScreen=="undefined") return;
+    if (m) {
         SplashScreen.progress(m);
     } else SplashScreen.hide();
 }
@@ -322,10 +370,11 @@ nowait \drawFrame() {
 */
 nowait \moveFrame() {
 	var s=now();
+    $_printCount=0;
     Tonyu.resetLoopCheck();
     if (newLimit) newLimitCount=newLimit;
     //debug("MoveFrame",1);
-    scheduler.stepsAll();
+    _scheduler.stepsAll();
     //debug("MoveFrame",2);
     $Keys.update();
     //debug("MoveFrame",3);

@@ -258,15 +258,15 @@ return Tonyu=function () {
 		if (!bootClass) throw new Error( bootClassName+" というクラスはありません");
 		Tonyu.runMode=true;
 		var boot=new bootClass();
-		var th=thread();
-		th.apply(boot,"main");
+		//var th=thread();
+		//th.apply(boot,"main");
 		var TPR;
 		if (TPR=Tonyu.currentProject) {
-			TPR.runningThread=th;
+			//TPR.runningThread=th;
 			TPR.runningObj=boot;
 		}
 		$LASTPOS=0;
-		th.steps();
+		//th.steps();
 	}
 	var lastLoopCheck=new Date().getTime();
 	var prevCheckLoopCalled;
@@ -281,6 +281,18 @@ return Tonyu=function () {
 	function resetLoopCheck(disableTime) {
 		lastLoopCheck=new Date().getTime()+(disableTime||0);
 	}
+	function is(obj,klass) {
+		if (klass===Number) {
+			return typeof obj==="number";
+		}
+		if (klass===String) {
+			return typeof obj==="string";
+		}
+		if (klass===Boolean) {
+			return typeof obj==="boolean";
+		}
+		//Functi.... never mind.
+	}
 	setInterval(resetLoopCheck,16);
 	return Tonyu={thread:thread, /*threadGroup:threadGroup,*/ klass:klass, bless:bless, extend:extend,
 			globals:globals, classes:classes, classMetas:classMetas, setGlobal:setGlobal, getGlobal:getGlobal, getClass:getClass,
@@ -288,7 +300,7 @@ return Tonyu=function () {
 			bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
 			hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
 			run:run,iterator:IT,checkLoop:checkLoop,resetLoopCheck:resetLoopCheck,
-			VERSION:1503453200013,//EMBED_VERSION
+			VERSION:1511935986846,//EMBED_VERSION
 			A:A};
 }();
 });

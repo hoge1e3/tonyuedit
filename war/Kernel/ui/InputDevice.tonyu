@@ -23,6 +23,7 @@ native T2MediaLib;
     var cv=cvj[0];
     var ID_MOUSE=31238612;
     $handleMouseDown=\(e) {
+        Tonyu.resetLoopCheck();
         var p=cvj.offset();
         var mp={x:e.clientX-p.left, y:e.clientY-p.top,layer:$Screen.layer};
         mp=$Screen.convert(mp,defaultLayer);// $Screen.canvas2buf(mp);
@@ -44,6 +45,7 @@ native T2MediaLib;
         handleListeners();
     };
     $handleMouseMove=\(e) {
+        Tonyu.resetLoopCheck();
         var p=cvj.offset();
         var mp={x:e.clientX-p.left, y:e.clientY-p.top,layer:$Screen.layer};
         mp=$Screen.convert(mp,defaultLayer);// $Screen.canvas2buf(mp);
@@ -65,6 +67,7 @@ native T2MediaLib;
         //window.console.log("MXY2",$mouseX,$mouseY);
     };
     $handleMouseUp=\(e) {
+        Tonyu.resetLoopCheck();
         isMouseDown=false;
         if ($InputDevice.touchEmu) {
             $handleTouchEnd({
@@ -96,7 +99,8 @@ native T2MediaLib;
         }
     };
     $handleTouchStart=\(e) {
-        T2MediaLib.activate();
+        Tonyu.resetLoopCheck();
+        $t2MediaLib.activate();
         var p=cvj.offset();
         e.preventDefault();
         var ts=e.originalEvent.changedTouches;
@@ -123,7 +127,8 @@ native T2MediaLib;
         handleListeners();
     };
     $handleTouchMove=\(e) {
-        T2MediaLib.activate();
+        Tonyu.resetLoopCheck();
+        $t2MediaLib.activate();
         var p=cvj.offset();
         e.preventDefault();
         var ts=e.originalEvent.changedTouches;
@@ -143,7 +148,8 @@ native T2MediaLib;
         handleListeners();
     };
     $handleTouchEnd=\(e) {
-        T2MediaLib.activate();
+        Tonyu.resetLoopCheck();
+        $t2MediaLib.activate();
         var ts=e.originalEvent.changedTouches;
         for (var i =0 ; i<ts.length ; i++) {
             var src=ts[i];
@@ -161,6 +167,7 @@ native T2MediaLib;
         handleListeners();
     };
     $unsetTouchEmu=\() {
+        Tonyu.resetLoopCheck();
         $InputDevice.touchEmu=false;
         for (var i,t in $touches) {
             if (t.identifier==ID_MOUSE) {
@@ -183,6 +190,7 @@ native T2MediaLib;
         cvj.on("touchstart",handleTouchStart);
         cvj.on("touchmove",handleTouchMove);
         cvj.on("touchend",handleTouchEnd);
+        cvj.on("touchcancel",handleTouchEnd);
     }
 }
 

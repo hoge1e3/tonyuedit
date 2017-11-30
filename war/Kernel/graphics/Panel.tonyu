@@ -3,6 +3,7 @@ native $;
 native Math;
 native isNaN;
 native Tonyu;
+native Image;
 \new(opt){
     super(opt);
     //this.width=width;
@@ -15,6 +16,7 @@ native Tonyu;
         setPanel(width||$screenWidth||465,height||$screenHeight||465);
         //buf=$("<canvas>").attr{width,height};
     }
+    if (_fillStyle && canvas) canvas.getContext("2d").fillStyle=_fillStyle;
     x=x||width/2;
     y=y||height/2;
     if(align==null) align="center";
@@ -62,7 +64,14 @@ native Tonyu;
 }
 \fillStyle=val {
     _fillStyle=val;
+    if (!canvas) return;
     context.fillStyle=val;
+}
+\strokeStyle=val {
+    context.strokeStyle=val;
+}
+\lineWidth=val {
+    context.lineWidth=val;
 }
 \fillCircle(x,y,r) {
     var ctx=context;
@@ -86,9 +95,11 @@ native Tonyu;
     text=text+"";
     var splits = text.split("\n");
     //ctx.clearRect(0,0,this.width,this.height);
-    ctx.textAlign = align;
+    ctx.textAlign = align ||"center";
+    size=size||15;
     ctx.fillStyle=fillStyle;
-    ctx.font=size+"px 'Courier New'";
+    var f=ctx.font.replace(/^[0-9\.]+/,"");
+    ctx.font=size+f;
     for(var colCount=0;colCount<splits.length;colCount++){
         ctx.fillText(splits[colCount],x,y);
         y+=size;
@@ -240,4 +251,59 @@ nowait \copy() {
         print("no support",obj.layer, toLayer);
         throw new Error("not support");
     }
+}
+\drawLine(x,y,dx,dy) {
+    if (dx==null && dy==null) {
+        if (x==null && y==null) {
+            px=null;py=null;return;
+        }
+        if (px==null && py==null) {
+            px=x;py=y;return;
+        }
+        dx=x;dy=y;x=px;y=py;px=dx;py=dy;
+    }
+    context.beginPath();
+    context.moveTo(x,y);
+    context.lineTo(dx,dy);
+    context.stroke();
+}
+\slicePattern(x,y,width,height) {
+    return {image:canvas,x,y,width,height};
+}
+\addPattern(x,y,width,height) {
+    $imageList.push(slicePattern(x,y,width,height));
+    return $imageList.length-1;
+}
+\getImageData(x,y,width,height) {
+    return context.getImageData(x,y,width,height);
+}
+\putImageData(data,x,y) {
+    return context.putImageData(data,x,y);
+}
+
+\replace(x,y,width,height,replacement) {
+
+}
+\save(fn) {
+    var url=buf[0].toDataURL();
+    if (typeof fn==="string") fn=file(fn);
+    fn.text( url );
+}
+\load(fn) {
+    if (typeof fn==="string") fn=file(fn);
+    var d=new $.Deferred();
+    var url=fn.text();
+    var element=$("<img>").css{display:"none"}.appendTo("body");
+    element.on("load") \{
+        var img = new Image();
+        img.src = element.attr('src');
+        var width = img.width;
+        var height = img.height;
+        //print(width,height);
+        resize(width,height);
+        context.drawImage(img, 0,0);
+        d.resolve(this);
+    };
+    element.attr{src=url};
+    return d.promise();
 }
