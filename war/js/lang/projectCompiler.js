@@ -11,6 +11,7 @@ var TPRC=function (dir) {
 	var F=DU.throwF;
 	TPR.env.traceTbl=traceTbl;
 	TPR.EXT=".tonyu";
+	TPR.getDir=function () {return dir;};
 	TPR.getOptionsFile=function () {
 		var resFile=dir.rel("options.json");
 		return resFile;
@@ -88,9 +89,19 @@ var TPRC=function (dir) {
 		});
 		return res;
 	};
+	TPR.getName=function () { return dir.name().replace(/\/$/,""); };
 	TPR.getNamespace=function () {
 		var opt=TPR.getOptions();
 		return A(opt.compiler.namespace,"namespace not specified opt="+JSON.stringify(opt));
+	};
+	TPR.getPublishedURL=function () {//ADDBA
+		if (TPR._publishedURL) return TPR._publishedURL;
+		return DU.requirejs(["Auth"]).then(function (Auth) {
+			return Auth.publishedURL(TPR.getName()+"/");
+		}).then(function (r) {
+			TPR._publishedURL=r;
+			return r;
+		});
 	};
 	TPR.getOutputFile=function (lang) {
 		var opt=TPR.getOptions();
@@ -236,10 +247,10 @@ var TPRC=function (dir) {
 			return TPR.showProgress("genJS");
 		})).then(F(function () {
 			//throw "test break";
-			TPR.genJS(ord.filter(function (c) {
+			return TPR.genJS(ord.filter(function (c) {
 				return compilingClasses[c.fullName];
 			}));
-			return TPR.showProgress("concat");
+			//return TPR.showProgress("concat");
 		})).then(F(function () {
 			var copt=TPR.getOptions().compiler;
 			if (!copt.genAMD) {
@@ -250,9 +261,10 @@ var TPRC=function (dir) {
 	TPR.genJS=function (ord) {
 		// 途中でコンパイルエラーを起こすと。。。
 		var env=TPR.env;
-		ord.forEach(function (c) {
+		return DU.each(ord,function (c) {
 			console.log("genJS :"+c.fullName);
 			JSGenerator.genJS(c, env);
+			return TPR.showProgress("genJS :"+c.fullName);
 		});
 	};
 	TPR.concatJS=function (ord) {
@@ -398,7 +410,7 @@ var TPRC=function (dir) {
 		return res;
 	}
 	function evalFile(f) {
-		console.log("loading: "+f.path());
+		console.log("evalFile: "+f.path());
 		var lastEvaled=new Function(f.text());
 		traceTbl.addSource(f.path(),lastEvaled+"");
 		return DU.directPromise( lastEvaled() );
