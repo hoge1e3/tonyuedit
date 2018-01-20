@@ -131,7 +131,7 @@ return Tonyu=function () {
 			Object.defineProperty(res.prototype, k , props[k]);
 		}
 		res.meta=addMeta(fullName,{
-			fullName:fullName,shortName:shortName,namepsace:namespace,decls:decls,
+			fullName:fullName,shortName:shortName,namespace:namespace,decls:decls,
 			superclass:parent ? parent.meta : null,func:res,
 			includes:includes.map(function(c){return c.meta;})
 		});
@@ -300,7 +300,7 @@ return Tonyu=function () {
 			bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
 			hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
 			run:run,iterator:IT,checkLoop:checkLoop,resetLoopCheck:resetLoopCheck,
-			VERSION:1513414431368,//EMBED_VERSION
+			VERSION:1516280479576,//EMBED_VERSION
 			A:A};
 }();
 });
