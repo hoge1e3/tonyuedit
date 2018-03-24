@@ -29,7 +29,11 @@
 $(function () { SplashScreen.show(); });
 </script>
 <script src="../../js/gen/index_concat.js"></script>
-
+<script>
+$(function () {
+	$("#notice").dialog({width:600,height:400,modal:true});
+});
+</script>
 </head>
 <body>
 	<div id=navBar class="navbar navbar-inverse navbar-fixed-top">
@@ -90,9 +94,31 @@ $(function () { SplashScreen.show(); });
 
 	<!-- /.container -->
     <script src="../../js/lib/bootstrap.min.js"></script>
+<div id="notice" title="お知らせ">
+<p>本サイトの機能は新サイト
+（<a target='edit' href='https://edit.tonyu.jp/'>https://edit.tonyu.jp/</a>）に移転しました．
+本サイトは今後更新を行いません．</p>
+<p>ここで作成したプロジェクトを引き続き新サイトで編集するには，
+各プロジェクトアイコンの▼→「ZIPダウンロード」でダウンロードを行い，
+<a target='edit' href='https://edit.tonyu.jp/'>新サイト</a>のプロジェクト一覧にドラッグ＆ドロップ
+してください．</p>
+<p><a id=dlAllLink href="javascript:dlAll()">全プロジェクトをまとめてダウンロード</a>
+することもできます</p>
+<p>また，本サイトからtonyuexeへのアップロードを停止しました．今後は，新サイトから
+<a href="https://www.tonyu.jp/project">プロジェクトボード</a>へのアップロードをご利用ください．
+</p>
+</div>
 
 </body>
 <script>
+function dlAll() {
+	var a=$("#dlAllLink");
+	var old=a.text();
+	a.text("お待ちください...");
+	FS.zip.zip(FS.get('/Tonyu/Projects/')).then(function () {
+		a.text(old);
+	});
+}
 var using=0;
 for (var i in localStorage) {
     if (typeof localStorage[i]=="string"){
